@@ -31,10 +31,10 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    optimizePackageImports: ['@heroicons/react', 'lucide-react'],
+    optimizePackageImports: ["@heroicons/react", "lucide-react"],
   },
   // Add Cloudflare compatibility
-  output: 'standalone',
+  output: "standalone",
   async headers() {
     return [
       {
@@ -45,4 +45,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

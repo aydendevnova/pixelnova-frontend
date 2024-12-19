@@ -1,5 +1,5 @@
 {
-  "name": "web-pixel-art-editor",
+  "name": "pixlabs-frontend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -42,6 +42,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "server-only": "^0.0.1",
+    "sharp": "^0.33.5",
     "superjson": "^2.2.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
