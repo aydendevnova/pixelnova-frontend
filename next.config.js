@@ -48,7 +48,15 @@ const nextConfig = {
     config.experiments = {
       ...config.experiments,
       asyncWebAssembly: true,
+      layers: true,
     };
+
+    // Add WASM MIME type
+    config.module.rules.push({
+      test: /\.wasm$/,
+      type: "webassembly/async",
+    });
+
     return config;
   },
 };

@@ -17,7 +17,7 @@ const config = {
     "**/image.worker.js",
     "**/*.wasm",
     "dist/*",
-    ".next/*"
+    ".next/*",
   ],
   rules: {
     "@typescript-eslint/array-type": "off",
@@ -55,13 +55,14 @@ const config = {
     "@typescript-eslint/no-unsafe-member-access": "off",
     "@typescript-eslint/prefer-optional-chain": "off",
     "@typescript-eslint/no-explicit-any": "off",
+    "@next/next/no-assign-module-variable": "warn",
   },
   overrides: [
     {
       files: ["!public/wasm_exec.js", "!src/workers/image.worker.js"],
-      excludedFiles: ["public/wasm_exec.js", "src/workers/image.worker.js"]
-    }
-  ]
+      excludedFiles: ["public/wasm_exec.js", "src/workers/image.worker.js"],
+    },
+  ],
 };
 
 module.exports = config;
