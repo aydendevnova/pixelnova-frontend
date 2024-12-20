@@ -1,9 +1,9 @@
-// Load wasm_exec.js content as a text
+const wasmExecPath = `${self.location.origin}/wasm_exec.js`;
+const wasmPath = `${self.location.origin}/main.wasm`;
+
 async function loadWasmExec() {
-  console.log("[WASM Worker] Fetching wasm_exec.js");
-  const response = await fetch("/wasm_exec.js");
+  const response = await fetch(wasmExecPath);
   const text = await response.text();
-  console.log("[WASM Worker] Executing wasm_exec.js content");
   eval(text);
 }
 
@@ -23,7 +23,7 @@ async function initWasmInWorker() {
     const go = new Go();
 
     console.log("[WASM Worker] Fetching main.wasm");
-    const response = await fetch("/main.wasm");
+    const response = await fetch(wasmPath);
     if (!response.ok) {
       throw new Error(
         `Failed to fetch main.wasm: ${response.status} ${response.statusText}`,
