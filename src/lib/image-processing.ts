@@ -34,7 +34,18 @@ export async function estimateGridSize(
     };
 
     worker.onerror = (error) => {
-      console.error("[Image Processing] Worker error event:", error);
+      console.error("[Image Processing] Worker error details:", {
+        message: error.message,
+        filename: error.filename,
+        lineno: error.lineno,
+        colno: error.colno,
+        error: error.error,
+      });
+      console.error("[Image Processing] Worker state:", {
+        origin: self.location.origin,
+        wasmExecPath: `${self.location.origin}/wasm_exec.js`,
+        wasmPath: `${self.location.origin}/main.wasm`,
+      });
       reject(error);
     };
 
@@ -67,7 +78,18 @@ export async function downscaleImage(
     };
 
     worker.onerror = (error) => {
-      console.error("[Image Processing] Worker error event:", error);
+      console.error("[Image Processing] Worker error details:", {
+        message: error.message,
+        filename: error.filename,
+        lineno: error.lineno,
+        colno: error.colno,
+        error: error.error,
+      });
+      console.error("[Image Processing] Worker state:", {
+        origin: self.location.origin,
+        wasmExecPath: `${self.location.origin}/wasm_exec.js`,
+        wasmPath: `${self.location.origin}/main.wasm`,
+      });
       reject(error);
     };
 

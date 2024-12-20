@@ -17,33 +17,73 @@ async function initWasmInWorker() {
 
   try {
     console.log("[WASM Worker] Starting WASM initialization in worker");
+    console.log("[WASM Worker] Worker location:", self.location.href);
+    console.log("[WASM Worker] WASM exec path:", wasmExecPath);
+    console.log("[WASM Worker] WASM path:", wasmPath);
+
     await loadWasmExec();
 
-    console.log("[WASM Worker] Creating Go instance");
-    const go = new Go();
-
-    console.log("[WASM Worker] Fetching main.wasm");
-    const response = await fetch(wasmPath);
-    if (!response.ok) {
+    if (typeof Go === "undefined") {
       throw new Error(
-        `Failed to fetch main.wasm: ${response.status} ${response.statusText}`,
+        "[WASM Worker] Go is not defined after loading wasm_exec.js",
       );
     }
 
-    console.log("[WASM Worker] Instantiating WASM module");
-    const result = await WebAssembly.instantiateStreaming(
-      response,
-      go.importObject,
+    console.log("[WASM Worker] Creating Go instance");
+    const go = new Go();
+    console.log(
+      "[WASM Worker] Go instance created:",
+      !!go,
+      "importObject:",
+      !!go.importObject,
     );
 
-    console.log("[WASM Worker] Running WASM instance");
-    go.run(result.instance);
+    console.log("[WASM Worker] Fetching main.wasm");
+    const response = await fetch(wasmPath);
+    console.log("[WASM Worker] WASM fetch response:", {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+    });
 
-    wasmInstance = self;
-    console.log("[WASM Worker] WASM initialization complete in worker");
-    return wasmInstance;
+    if (!response.ok) {
+      throw new Error(
+        `[WASM Worker] Failed to fetch main.wasm: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    try {
+      console.log("[WASM Worker] Instantiating WASM module");
+      const result = await WebAssembly.instantiateStreaming(
+        response,
+        go.importObject,
+      );
+      console.log("[WASM Worker] WASM instantiation successful:", !!result);
+
+      console.log("[WASM Worker] Running WASM instance");
+      await go.run(result.instance);
+
+      wasmInstance = self;
+      console.log(
+        "[WASM Worker] Available global functions:",
+        Object.keys(self),
+      );
+      return wasmInstance;
+    } catch (instantiateError) {
+      console.error("[WASM Worker] WASM instantiation error:", {
+        name: instantiateError.name,
+        message: instantiateError.message,
+        stack: instantiateError.stack,
+      });
+      throw instantiateError;
+    }
   } catch (error) {
-    console.error("[WASM Worker] Failed to initialize WASM in worker:", error);
+    console.error("[WASM Worker] Full initialization error:", {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    });
     throw error;
   }
 }
