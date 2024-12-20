@@ -30,12 +30,13 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
   experimental: {
     optimizePackageImports: ["@heroicons/react", "lucide-react"],
     webpackBuildWorker: true,
   },
   // Add Cloudflare compatibility
-  output: "standalone",
+  output: "export",
   async headers() {
     return [
       {
@@ -51,10 +52,13 @@ const nextConfig = {
       layers: true,
     };
 
-    // Add WASM MIME type
+    // Add WASM MIME type and asset handling
     config.module.rules.push({
       test: /\.wasm$/,
-      type: "webassembly/async",
+      type: "asset/resource",
+      generator: {
+        filename: "static/wasm/[name].[hash][ext]",
+      },
     });
 
     return config;

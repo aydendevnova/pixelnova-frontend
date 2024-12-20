@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm run build:wasm && next build",
+    "build": "next build",
     "build:cloudflare": "next build && npx @cloudflare/next-on-pages@1",
     "check": "next lint && tsc --noEmit",
     "dev": "next dev --turbo",
@@ -12,10 +12,11 @@
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "preview": "next build && next start",
+    "preview": "wrangler dev",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "build:wasm": "bash ./build-wasm.sh"
+    "build:wasm": "bash ./build-wasm.sh",
+    "deploy": "next build && wrangler deploy"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
