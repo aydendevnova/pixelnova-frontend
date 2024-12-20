@@ -15,13 +15,11 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Alert } from "@/components/ui/alert";
 
-import {
-  useDownscaleImage,
-  useEstimateGridSize,
-  useGenerateImage,
-} from "@/hooks/use-api";
+import { useEstimateGridSize, useGenerateImage } from "@/hooks/use-api";
 import { Loader2, Sparkle } from "lucide-react";
 import { DownscaleResponse } from "@/shared-types";
+
+import { estimateGridSize, downscaleImage } from "@/lib/image-processing";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string) => void;
@@ -173,18 +171,21 @@ const StepTwo = ({
   imageDimensions,
 }: StepTwoProps) => {
   const [error, setError] = useState<string | null>(null);
-  const { mutateAsync: estimateGridSize, isLoading } = useEstimateGridSize();
+  const [isLoading, setIsLoading] = useState(false);
 
   async function handleEstimateGridSize() {
     try {
-      if (!uploadedFile) return;
-      const response = await estimateGridSize({ imageFile: uploadedFile });
-      if (response.gridSize) {
-        setGridSize(response.gridSize);
+      if (!uploadedImage) return;
+      setIsLoading(true);
+      const result = await estimateGridSize(uploadedImage);
+      if (result.gridSize) {
+        setGridSize(result.gridSize);
       }
     } catch (error) {
       console.error("Error estimating grid size: ", error);
       setError("Failed to estimate grid size. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -313,6 +314,7 @@ export default function AiPixelArtModal({
 
   const [results, setResults] = useState<DownscaleResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDownscaling, setIsDownscaling] = useState(false);
 
   const handleImageGenerated = (file: File, imageUrl: string) => {
     const img = new Image();
@@ -325,25 +327,18 @@ export default function AiPixelArtModal({
     setStep(2);
   };
 
-  const { mutateAsync: downscaleImage, isLoading: isDownscaling } =
-    useDownscaleImage({
-      onSuccess: (data) => {
-        setResults(data);
-        setStep(3);
-      },
-    });
-
   async function handleDownscaleImage() {
     try {
-      if (!uploadedFile) return;
-      const response = await downscaleImage({
-        imageFile: uploadedFile,
-        grid: gridSize,
-      });
+      if (!uploadedImage) return;
+      setIsDownscaling(true);
+      const response = await downscaleImage(uploadedImage, gridSize);
       setResults(response);
+      setStep(3);
     } catch (error) {
       console.error("Error downscaling image: ", error);
       setError("Failed to downscale image. Please try again.");
+    } finally {
+      setIsDownscaling(false);
     }
   }
 

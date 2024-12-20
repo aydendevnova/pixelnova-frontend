@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build",
+    "build": "npm run build:wasm && next build",
     "build:cloudflare": "next build && npx @cloudflare/next-on-pages@1",
     "check": "next lint && tsc --noEmit",
     "dev": "next dev --turbo",
@@ -14,7 +14,8 @@
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:wasm": "bash ./build-wasm.sh"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

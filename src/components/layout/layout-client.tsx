@@ -7,6 +7,7 @@ import { env } from "@/env";
 import Header from "./header";
 import { ErrorBoundary } from "../error-boundary";
 import ErrorView from "../error-view";
+import { WasmProvider } from "../wasm-provider";
 
 // Create a Supabase client
 const supabase = createClient(
@@ -27,13 +28,15 @@ export default function LayoutClient({
         <UserProvider>
           <div className="relative">
             <Header />
-            <ErrorBoundary
-              fallback={({ error, reset }) => (
-                <ErrorView error={error} reset={reset} />
-              )}
-            >
-              {children}
-            </ErrorBoundary>
+            <WasmProvider>
+              <ErrorBoundary
+                fallback={({ error, reset }) => (
+                  <ErrorView error={error} reset={reset} />
+                )}
+              >
+                {children}
+              </ErrorBoundary>
+            </WasmProvider>
           </div>
         </UserProvider>
       </SessionContextProvider>
