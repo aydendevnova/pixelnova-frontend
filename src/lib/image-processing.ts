@@ -1,45 +1,60 @@
-import { initWasm } from "./wasm";
 import { EstimateGridSizeResponse, DownscaleResponse } from "../shared-types";
+
+let worker: Worker | null = null;
+
+function getWorker() {
+  if (!worker) {
+    worker = new Worker(
+      new URL("../workers/image.worker.js", import.meta.url),
+      {
+        type: "module",
+      },
+    );
+  }
+  return worker;
+}
 
 export async function estimateGridSize(
   base64Image: string,
 ): Promise<EstimateGridSizeResponse> {
-  try {
-    const wasm = await initWasm();
-    const result = wasm.estimateGridSize(base64Image);
+  return new Promise((resolve, reject) => {
+    const worker = getWorker();
 
-    if (result.error) {
-      throw new Error(result.error);
-    }
+    worker.onmessage = (e) => {
+      if (e.data.success) {
+        resolve({ gridSize: e.data.result.gridSize });
+      } else {
+        reject(new Error(e.data.error));
+      }
+    };
 
-    return { gridSize: result.gridSize };
-  } catch (error) {
-    console.error("Estimate grid size error:", error);
-    throw error;
-  }
+    worker.postMessage({
+      type: "estimateGridSize",
+      payload: { base64Image },
+    });
+  });
 }
 
 export async function downscaleImage(
   base64Image: string,
   grid: number,
 ): Promise<DownscaleResponse> {
-  try {
-    const wasm = await initWasm();
-    const result = wasm.downscaleImage(base64Image, grid);
+  return new Promise((resolve, reject) => {
+    const worker = getWorker();
 
-    if (!result) {
-      throw new Error("WASM function returned no result");
-    }
+    worker.onmessage = (e) => {
+      if (e.data.success) {
+        resolve(e.data.result);
+      } else {
+        reject(new Error(e.data.error));
+      }
+    };
 
-    if (result.error) {
-      throw new Error(result.error);
-    }
-
-    return result;
-  } catch (error) {
-    console.error("Downscale image error:", error);
-    throw error;
-  }
+    worker.postMessage({
+      type: "downscaleImage",
+      payload: { base64Image, grid },
+    });
+  });
 }
 
 // Helper function if you need to convert a File to base64

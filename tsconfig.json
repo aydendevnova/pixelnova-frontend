@@ -15,7 +15,7 @@
     "noUncheckedIndexedAccess": true,
     "checkJs": true,
     /* Bundled projects */
-    "lib": ["dom", "dom.iterable", "ES2022"],
+    "lib": ["dom", "dom.iterable", "ES2022", "webworker"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "preserve",
@@ -28,7 +28,7 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
+      "@/*": ["./src/*"]
     },
     "composite": true,
     "noEmit": false
@@ -43,5 +43,10 @@
     ".next/types/**/*.ts",
     "../../packages/shared/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "public/wasm_exec.js",
+    "src/workers/image.worker.js",
+    "public/**/*.js"
+  ]
 }

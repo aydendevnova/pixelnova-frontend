@@ -32,6 +32,7 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     optimizePackageImports: ["@heroicons/react", "lucide-react"],
+    webpackBuildWorker: true,
   },
   // Add Cloudflare compatibility
   output: "standalone",
@@ -42,6 +43,13 @@ const nextConfig = {
         headers: securityHeaders,
       },
     ];
+  },
+  webpack(config) {
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+    };
+    return config;
   },
 };
 
