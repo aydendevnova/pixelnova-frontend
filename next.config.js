@@ -3,6 +3,8 @@
  * for Docker builds.
  */
 import "./src/env.js";
+import fs from "fs";
+import path from "path";
 
 const securityHeaders = [
   {
@@ -33,7 +35,6 @@ const nextConfig = {
 
   experimental: {
     optimizePackageImports: ["@heroicons/react", "lucide-react"],
-    webpackBuildWorker: true,
   },
   // Add Cloudflare compatibility
   output: "export",
@@ -47,17 +48,26 @@ const nextConfig = {
   },
   webpack(config) {
     config.experiments = {
-      ...config.experiments,
       asyncWebAssembly: true,
       layers: true,
     };
 
-    // Add WASM MIME type and asset handling
+    // Add WASM handling
     config.module.rules.push({
       test: /\.wasm$/,
       type: "asset/resource",
       generator: {
-        filename: "static/wasm/[name].[hash][ext]",
+        filename: "static/wasm/[name][ext]",
+      },
+    });
+
+    // Add copy plugin to ensure WASM files are in the root as well
+    config.plugins.push({
+      apply: (compiler) => {
+        compiler.hooks.afterEmit.tap("CopyWasmPlugin", (compilation) => {
+          fs.copyFileSync("public/main.wasm", "out/main.wasm");
+          fs.copyFileSync("public/wasm_exec.js", "out/wasm_exec.js");
+        });
       },
     });
 
