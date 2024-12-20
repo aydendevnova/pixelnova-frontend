@@ -1,0 +1,11 @@
+/*
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Content-Security-Policy: worker-src 'self' blob:; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; connect-src 'self' blob: data: https://*.supabase.co; img-src 'self' blob: data: https://*.supabase.co
+
+/*.wasm
+  Content-Type: application/wasm
+
+/*.js
+  Content-Type: text/javascript 
