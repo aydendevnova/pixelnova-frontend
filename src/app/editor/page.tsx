@@ -200,6 +200,7 @@ export default function Editor() {
           onBrushSizeChange={setBrushSize}
           showGrid={showGrid}
           onToggleGrid={() => setShowGrid(!showGrid)}
+          layers={layers}
         />
 
         <div className="flex flex-1">

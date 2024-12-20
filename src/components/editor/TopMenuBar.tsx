@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Grid2X2 } from "lucide-react";
 import ApiTestDialog from "../modals/api-modal";
 import AiPixelArtModal from "../modals/ai-pixel-art";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
@@ -23,6 +25,7 @@ interface TopMenuBarProps {
   onBrushSizeChange: (value: number) => void;
   showGrid: boolean;
   onToggleGrid: () => void;
+  layers: any[];
 }
 
 export default function TopMenuBar({
@@ -36,6 +39,7 @@ export default function TopMenuBar({
   onBrushSizeChange,
   showGrid,
   onToggleGrid,
+  layers,
 }: TopMenuBarProps) {
   const handleToleranceChange = (value: string) => {
     const numValue = Math.max(1, Math.min(10, Number(value) || 1));
@@ -79,10 +83,10 @@ export default function TopMenuBar({
   );
 
   // Function to handle file export
-  const handleExport = useCallback(() => {
-    console.log("Export button clicked"); // Debug log
+  const handleExport = useCallback(async () => {
+    const zip = new JSZip();
 
-    // Get the drawing canvas specifically
+    // Get the drawing canvas
     const drawingCanvas = document.querySelector(
       'canvas[data-canvas="drawing"]',
     ) as HTMLCanvasElement | null;
@@ -93,35 +97,80 @@ export default function TopMenuBar({
     }
 
     try {
-      // Create a temporary canvas to handle the export
-      const exportCanvas = document.createElement("canvas");
-      exportCanvas.width = drawingCanvas.width;
-      exportCanvas.height = drawingCanvas.height;
+      // Export each layer individually
+      layers.forEach((layer, index) => {
+        if (!layer.imageData) return;
 
-      const ctx = exportCanvas.getContext("2d");
-      if (!ctx) {
-        console.error("Could not get export canvas context");
-        return;
+        // Create a temporary canvas for this layer
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = drawingCanvas.width;
+        tempCanvas.height = drawingCanvas.height;
+        const tempCtx = tempCanvas.getContext("2d", {
+          willReadFrequently: true,
+        });
+
+        if (tempCtx) {
+          // Set composite operation to ensure proper transparency
+          tempCtx.globalCompositeOperation = "source-over";
+
+          // Only export if layer is visible
+          if (layer.visible) {
+            tempCtx.putImageData(layer.imageData, 0, 0);
+
+            // Convert to base64 and add to zip
+            const imageData = tempCanvas.toDataURL("image/png");
+            if (!imageData) {
+              console.error("Image data not found");
+              return;
+            }
+            zip.file(`${layer.name}.png`, imageData.split(",")[1]!, {
+              base64: true,
+            });
+          }
+        }
+      });
+
+      // For combined image, create a new canvas and compose all visible layers
+      const combinedCanvas = document.createElement("canvas");
+      combinedCanvas.width = drawingCanvas.width;
+      combinedCanvas.height = drawingCanvas.height;
+      const combinedCtx = combinedCanvas.getContext("2d", {
+        willReadFrequently: true,
+      });
+
+      if (combinedCtx) {
+        // Draw all visible layers in order
+        layers.forEach((layer) => {
+          if (layer.visible && layer.imageData) {
+            const layerCanvas = document.createElement("canvas");
+            layerCanvas.width = drawingCanvas.width;
+            layerCanvas.height = drawingCanvas.height;
+            const layerCtx = layerCanvas.getContext("2d");
+
+            if (layerCtx) {
+              layerCtx.putImageData(layer.imageData, 0, 0);
+              combinedCtx.drawImage(layerCanvas, 0, 0);
+            }
+          }
+        });
+
+        const combinedImageData = combinedCanvas.toDataURL("image/png");
+        if (!combinedImageData) {
+          console.error("Combined image data not found");
+          return;
+        }
+        zip.file("combined_image.png", combinedImageData.split(",")[1]!, {
+          base64: true,
+        });
       }
 
-      // Draw the content with transparency
-      ctx.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
-      ctx.drawImage(drawingCanvas, 0, 0);
-
-      // Create and trigger download
-      const dataUrl = exportCanvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.href = dataUrl;
-      link.download = "pixel-art.png";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      console.log("Export completed"); // Debug log
+      // Generate and save zip file
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `pixel_art_layers_${Date.now()}.zip`);
     } catch (error) {
       console.error("Export failed:", error);
     }
-  }, []);
+  }, [layers]);
 
   // Function to extract unique colors from image data
   const extractColors = useCallback((imageData: ImageData) => {
