@@ -2,7 +2,7 @@
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: cross-origin
-  Content-Security-Policy: worker-src 'self' blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline' 'wasm-unsafe-eval'; connect-src 'self' blob: data: https://*.supabase.co https://pixlabs-backend.fly.dev; img-src 'self' blob: data: https://*.supabase.co
+  Content-Security-Policy: worker-src 'self' blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline' 'wasm-unsafe-eval' https://static.cloudflareinsights.com; connect-src 'self' blob: data: https://*.supabase.co https://pixlabs-backend.fly.dev; img-src 'self' blob: data: https://*.supabase.co
 
 /*.wasm
   Content-Type: application/wasm
