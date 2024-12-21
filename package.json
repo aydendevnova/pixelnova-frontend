@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build && cp public/*.wasm out/ && cp public/wasm_exec.js out/",
+    "build": "next build",
     "build:cloudflare": "next build && npx @cloudflare/next-on-pages@1",
     "check": "next lint && tsc --noEmit",
     "dev": "next dev --turbo",

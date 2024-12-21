@@ -1,5 +1,5 @@
-const wasmExecPath = `${self.location.origin}/wasm_exec.js`;
-const wasmPath = `${self.location.origin}/main.wasm`;
+const wasmExecPath = new URL("/wasm_exec.js", self.location.origin).href;
+const wasmPath = new URL("/main.wasm", self.location.origin).href;
 
 async function loadWasmExec() {
   const response = await fetch(wasmExecPath);
