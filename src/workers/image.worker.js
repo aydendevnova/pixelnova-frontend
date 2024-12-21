@@ -1,8 +1,16 @@
-const wasmExecPath = new URL("/wasm_exec.js", self.location.origin).href;
-const wasmPath = new URL("/main.wasm", self.location.origin).href;
+const wasmExecPath = "/wasm_exec.js";
+const wasmPath = "/main.wasm";
 
 async function loadWasmExec() {
   const response = await fetch(wasmExecPath);
+  if (!response.ok) {
+    console.error(
+      "[WASM Worker] Failed to load wasm_exec.js:",
+      response.status,
+      response.statusText,
+    );
+    throw new Error(`Failed to load wasm_exec.js: ${response.status}`);
+  }
   const text = await response.text();
   eval(text);
 }
@@ -62,21 +70,40 @@ async function initWasmInWorker() {
       console.log("[WASM Worker] WASM instantiation successful:", !!result);
 
       console.log("[WASM Worker] Running WASM instance");
-      await go.run(result.instance);
+      const originalConsole = console.log;
+      console.log = (...args) => {
+        originalConsole("[Go Runtime]", ...args);
+      };
 
-      wasmInstance = self;
-      console.log(
-        "[WASM Worker] Available global functions:",
-        Object.keys(self),
-      );
-      return wasmInstance;
-    } catch (instantiateError) {
-      console.error("[WASM Worker] WASM instantiation error:", {
-        name: instantiateError.name,
-        message: instantiateError.message,
-        stack: instantiateError.stack,
+      // Run Go instance in the background
+      go.run(result.instance).catch((err) => {
+        console.error("[WASM Worker] Go runtime error:", err);
       });
-      throw instantiateError;
+
+      // Wait for initialization
+      for (let i = 0; i < 100; i++) {
+        if (globalThis.wasmInitialized) {
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 50));
+      }
+
+      console.log = originalConsole;
+
+      if (!globalThis.wasmInitialized) {
+        throw new Error("WASM initialization timeout");
+      }
+
+      wasmInstance = {
+        estimateGridSize: globalThis.estimateGridSize,
+        downscaleImage: globalThis.downscaleImage,
+      };
+
+      console.log("[WASM Worker] WASM instance initialized with functions");
+      return wasmInstance;
+    } catch (error) {
+      console.error("[WASM Worker] Error in WASM execution:", error);
+      throw error;
     }
   } catch (error) {
     console.error("[WASM Worker] Full initialization error:", {

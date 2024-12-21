@@ -36,13 +36,17 @@ func init() {
 }
 
 func main() {
-	c := make(chan struct{})
+	fmt.Println("[WASM] Starting Go WASM initialization")
 	
-	// Register functions to be called from JavaScript
+	// Register functions
+	fmt.Println("[WASM] Registering functions")
 	js.Global().Set("downscaleImage", js.FuncOf(downscaleImage))
 	js.Global().Set("estimateGridSize", js.FuncOf(estimateGridSize))
+	js.Global().Set("wasmInitialized", js.ValueOf(true))
+	fmt.Println("[WASM] Functions registered successfully")
 	
-	<-c
+	// Keep the Go program running
+	select {}
 }
 
 func downscaleImage(this js.Value, args []js.Value) interface{} {

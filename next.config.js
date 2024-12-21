@@ -47,15 +47,16 @@ const nextConfig = {
     ];
   },
   webpack(config) {
-    config.experiments = {
-      asyncWebAssembly: true,
-      layers: true,
-    };
+    config.experiments = { asyncWebAssembly: true, layers: true };
 
-    // Add WASM handling
+    // Handle both WASM and wasm_exec.js
     config.module.rules.push({
-      test: /\.wasm$/,
+      test: /\.(wasm|js)$/,
+      include: /public\/(main\.wasm|wasm_exec\.js)$/,
       type: "asset/resource",
+      generator: {
+        filename: "main.wasm", // Force consistent name
+      },
     });
 
     return config;

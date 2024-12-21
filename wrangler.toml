@@ -4,6 +4,11 @@ compatibility_date = "2024-01-01"
 [site]
 bucket = "./out"
 
+[[rules]]
+type = "Data"
+globs = ["**/*.wasm"]
+fallthrough = true
+
 [[headers]]
 for = "/*.wasm"
 [headers.values]

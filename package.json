@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build",
+    "start": "npx serve@latest out",
+    "build": "npm run build:wasm && next build && cp public/*.wasm out/ && cp public/wasm_exec.js out/ && ls -la out/main.wasm",
     "build:cloudflare": "next build && npx @cloudflare/next-on-pages@1",
     "check": "next lint && tsc --noEmit",
     "dev": "next dev --turbo",
@@ -13,10 +14,9 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "preview": "wrangler dev",
-    "start": "next start",
     "typecheck": "tsc --noEmit",
     "build:wasm": "bash ./build-wasm.sh",
-    "deploy": "next build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
