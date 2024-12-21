@@ -61,16 +61,6 @@ const nextConfig = {
       },
     });
 
-    // Add copy plugin to ensure WASM files are in the root as well
-    // config.plugins.push({
-    //   apply: (compiler) => {
-    //     compiler.hooks.afterEmit.tap("CopyWasmPlugin", (compilation) => {
-    //       fs.copyFileSync("public/main.wasm", "out/main.wasm");
-    //       fs.copyFileSync("public/wasm_exec.js", "out/wasm_exec.js");
-    //     });
-    //   },
-    // });
-
     return config;
   },
 };
