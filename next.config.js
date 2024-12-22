@@ -3,8 +3,6 @@
  * for Docker builds.
  */
 import "./src/env.js";
-import fs from "fs";
-import path from "path";
 
 const securityHeaders = [
   {
@@ -38,14 +36,10 @@ const nextConfig = {
   },
   // Add Cloudflare compatibility
   output: "export",
-  async headers() {
-    return [
-      {
-        source: "/:path*",
-        headers: securityHeaders,
-      },
-    ];
+  images: {
+    unoptimized: true,
   },
+
   webpack(config) {
     config.experiments = { asyncWebAssembly: true, layers: true };
 
@@ -55,7 +49,7 @@ const nextConfig = {
       include: /public\/(main\.wasm|wasm_exec\.js)$/,
       type: "asset/resource",
       generator: {
-        filename: "main.wasm", // Force consistent name
+        filename: "[name][ext]",
       },
     });
 
