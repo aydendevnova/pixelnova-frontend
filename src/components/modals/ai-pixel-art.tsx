@@ -49,7 +49,7 @@ const StepOne = ({ onImageGenerated }: StepOneProps) => {
     if (!prompt) return;
     try {
       generateImage(prompt, {
-        onSuccess: async (response: any) => {
+        onSuccess: (response: any) => {
           // Convert the response to a blob
           const blob = new Blob([response], { type: "image/png" });
 
