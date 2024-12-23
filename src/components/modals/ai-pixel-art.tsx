@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,17 +15,36 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Alert } from "@/components/ui/alert";
 
-import { useEstimateGridSize, useGenerateImage } from "@/hooks/use-api";
-import { Loader2, Sparkle } from "lucide-react";
+import { useGenerateImage } from "@/hooks/use-api";
+import { Loader2, Sparkle, Trash2, UndoIcon } from "lucide-react";
 import { DownscaleResponse } from "@/shared-types";
 
 import { estimateGridSize, downscaleImage } from "@/lib/image-processing";
+import { useIndexedDB } from "@/hooks/use-indexed-db";
+import { GeneratedImage } from "@/types/types";
 
 interface StepOneProps {
-  onImageGenerated: (file: File, imageUrl: string) => void;
+  onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;
+  recentImages: Array<{
+    id: number;
+    url: string;
+    prompt: string;
+    timestamp: string;
+  }>;
+  onHistoryImageSelect: (imageUrl: string) => void;
+  handleDeleteImage: (id: number) => void;
+  searchTerm: string;
+  setSearchTerm: (searchTerm: string) => void;
 }
 
-const StepOne = ({ onImageGenerated }: StepOneProps) => {
+const StepOne = ({
+  onImageGenerated,
+  recentImages,
+  onHistoryImageSelect,
+  handleDeleteImage,
+  searchTerm,
+  setSearchTerm,
+}: StepOneProps) => {
   const [prompt, setPrompt] = useState("");
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,7 +58,7 @@ const StepOne = ({ onImageGenerated }: StepOneProps) => {
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        onImageGenerated(file, event.target.result as string);
+        onImageGenerated(file, event.target.result as string, prompt);
       }
     };
     reader.readAsDataURL(file);
@@ -50,41 +69,16 @@ const StepOne = ({ onImageGenerated }: StepOneProps) => {
     try {
       generateImage(prompt, {
         onSuccess: (response: any) => {
-          // Convert the response to a blob
           const blob = new Blob([response], { type: "image/png" });
-
-          // Convert blob to base64
           const reader = new FileReader();
           reader.onload = async (event) => {
             if (!event.target?.result) return;
-
             const base64Image = event.target.result as string;
-
-            // Create a file object for consistency with upload flow
             const file = new File([blob], "ai-generated.png", {
               type: "image/png",
             });
-
-            onImageGenerated(file, base64Image);
-
-            // Save URL and timestamp to local storage
-            const timestamp = new Date().toISOString();
-            const existingData = localStorage.getItem("generatedImages");
-            const generatedImages = existingData
-              ? JSON.parse(existingData)
-              : [];
-
-            generatedImages.push({
-              url: base64Image,
-              timestamp: timestamp,
-            });
-
-            localStorage.setItem(
-              "generatedImages",
-              JSON.stringify(generatedImages),
-            );
+            onImageGenerated(file, base64Image, prompt); // Updated to include prompt
           };
-
           reader.readAsDataURL(blob);
         },
         onError: (error) => {
@@ -98,63 +92,131 @@ const StepOne = ({ onImageGenerated }: StepOneProps) => {
   };
 
   return (
-    <div className="flex min-h-[300px] flex-col items-center justify-center gap-4">
-      {error && <Alert variant="destructive">{error}</Alert>}
-      <div className="w-full max-w-md space-y-4">
-        <div className="space-y-2">
-          <Input
-            placeholder="Describe the image you want to generate..."
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+    <div className="flex h-full min-h-[300px] flex-col gap-8 lg:flex-row lg:items-stretch">
+      {/* AI Generation / Manual Upload Section */}
+      <div className="flex h-full flex-1 flex-col">
+        <div className="flex-1 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold">AI Image Generation</h3>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              {error}
+            </Alert>
+          )}
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label
+                htmlFor="prompt"
+                className="text-sm font-medium text-gray-700"
+              >
+                Image Description
+              </label>
+              <Input
+                id="prompt"
+                placeholder="Describe the image you want to generate..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                className="w-full"
+              />
+            </div>
+
+            <Button
+              variant="default"
+              className="w-full"
+              onClick={handleGenerateAIImage}
+              disabled={isGenerating || !prompt}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  Generate with AI <Sparkle className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold">Manual Upload</h3>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileUpload}
           />
           <Button
-            variant="default"
+            variant="outline"
             className="w-full"
-            onClick={handleGenerateAIImage}
-            disabled={isGenerating || !prompt}
+            onClick={() => fileInputRef.current?.click()}
           >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                Generate AI Image <Sparkle className="ml-2 h-4 w-4" />
-              </>
-            )}
+            Upload Image
           </Button>
         </div>
+      </div>
 
-        <div className="relative">
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
-            <div className="flex items-center justify-center">
-              <span className="bg-background px-2 text-sm text-muted-foreground">
-                or
-              </span>
-            </div>
+      {/* History Section */}
+      <div className="flex h-full flex-1 flex-col">
+        <div className="flex-1 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold">Recent Generations</h3>
+
+          <div className="w-full max-w-md">
+            <Input
+              placeholder="Search your generated images..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="mb-4"
+            />
           </div>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+
+          <div className="overflow-y-auto">
+            <div className="grid h-[300px] grid-cols-1 gap-4 sm:grid-cols-2">
+              {recentImages.length === 0 && (
+                <p className="text-sm text-gray-500">No recent images found.</p>
+              )}
+              {recentImages.map((image) => (
+                <div key={image.timestamp} className="space-y-2">
+                  <div className="group relative aspect-square overflow-hidden rounded-lg">
+                    <img
+                      src={image.url}
+                      alt={image.prompt}
+                      className="h-full w-full cursor-pointer object-cover transition-transform duration-200 ease-in-out group-hover:scale-105"
+                      onClick={() => onHistoryImageSelect(image.url)}
+                    />
+                  </div>
+
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p
+                        className="line-clamp-2 text-sm font-medium text-gray-900"
+                        title={image.prompt}
+                      >
+                        {image.prompt}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(image.timestamp).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteImage(image.id);
+                      }}
+                      className="ml-2 rounded-full bg-gray-100 p-2 text-gray-500 transition-colors hover:bg-red-500 hover:text-white"
+                      title="Delete image"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="image/*"
-          onChange={handleFileUpload}
-        />
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          Upload Image
-        </Button>
       </div>
     </div>
   );
@@ -171,6 +233,8 @@ interface StepTwoProps {
     width: number;
     height: number;
   };
+  originalGridSizeEstimate: number | null;
+  setOriginalGridSizeEstimate: (size: number | null) => void;
 }
 
 const StepTwo = ({
@@ -181,29 +245,12 @@ const StepTwo = ({
   setGridSize,
   gridSize,
   imageDimensions,
+  originalGridSizeEstimate,
+  setOriginalGridSizeEstimate,
 }: StepTwoProps) => {
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  async function handleEstimateGridSize() {
-    try {
-      if (!uploadedImage) return;
-      setIsLoading(true);
-      const result = await estimateGridSize(uploadedImage);
-      if (result.gridSize) {
-        setGridSize(result.gridSize);
-      }
-    } catch (error) {
-      console.error("Error estimating grid size: ", error);
-      setError("Failed to estimate grid size. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
   return (
     <div className="flex gap-4">
-      {error && <Alert variant="destructive">{error}</Alert>}
+      {/* {error && <Alert variant="destructive">{error}</Alert>} */}
       <div className="w-64 space-y-4 rounded-lg border border-gray-400 bg-gray-200 p-4">
         <h3 className="text-lg font-medium">Grid Settings</h3>
 
@@ -215,24 +262,38 @@ const StepTwo = ({
 
           <div className="space-y-2">
             <label className="text-sm">Grid Size</label>
-            <Input
-              type="number"
-              min={1}
-              max={256}
-              value={gridSize}
-              onChange={(e) => setGridSize(parseInt(e.target.value))}
-              className="w-full"
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={1}
+                max={256}
+                value={gridSize}
+                onChange={(e) => setGridSize(parseInt(e.target.value))}
+                className="w-full"
+              />
+              <Button
+                onClick={() => {
+                  if (originalGridSizeEstimate) {
+                    setGridSize(originalGridSizeEstimate);
+                  }
+                }}
+                disabled={
+                  originalGridSizeEstimate === gridSize ||
+                  !originalGridSizeEstimate
+                }
+              >
+                {!originalGridSizeEstimate ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UndoIcon className="h-4 w-4" size="icon" />
+                )}
+              </Button>
+            </div>
             <p className="text-xs text-gray-700">
               Adjust grid to match pixel size
             </p>
           </div>
         </div>
-        {uploadedFile && (
-          <Button onClick={handleEstimateGridSize} disabled={isLoading}>
-            Estimate Grid
-          </Button>
-        )}
 
         <div className="space-y-2">
           <h4 className="font-medium">Instructions</h4>
@@ -252,7 +313,7 @@ const StepTwo = ({
               className="h-[60vh] w-auto object-contain"
               style={{ imageRendering: "pixelated" }}
             />
-            {showGrid && (
+            {showGrid && originalGridSizeEstimate && (
               <div
                 className="pointer-events-none absolute inset-0"
                 style={{
@@ -282,7 +343,7 @@ interface StepThreeProps {
 
 const StepThree = ({ results, onFinish, setOpen }: StepThreeProps) => (
   <div className="flex flex-col gap-4">
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-3 gap-4">
       {results?.results.map((result, index) => (
         <div key={index} className="space-y-2">
           <h3 className="text-sm font-medium">Grid Size: {result.grid}</h3>
@@ -323,42 +384,148 @@ export default function AiPixelArtModal({
     width: 0,
     height: 0,
   });
+  const [originalGridSizeEstimate, setOriginalGridSizeEstimate] = useState<
+    number | null
+  >(null);
 
   const [results, setResults] = useState<DownscaleResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDownscaling, setIsDownscaling] = useState(false);
+  const [recentImages, setRecentImages] = useState<GeneratedImage[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const handleImageGenerated = (file: File, imageUrl: string) => {
+  const { saveImage, getImages, deleteImage, searchByPrompt } = useIndexedDB();
+
+  useEffect(() => {
+    const loadImages = async () => {
+      try {
+        if (open) {
+          if (searchTerm.trim()) {
+            const results = await searchByPrompt(searchTerm);
+            setRecentImages(results);
+          } else {
+            const images = await getImages();
+            setRecentImages(images);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load/search images:", error);
+      }
+    };
+    void loadImages();
+  }, [open, searchTerm, searchByPrompt, getImages]);
+
+  const handleDeleteImage = async (id: number) => {
+    if (typeof id === "undefined") return;
+
+    try {
+      await deleteImage(id);
+      const updatedImages = await getImages();
+      setRecentImages(updatedImages);
+    } catch (error) {
+      console.error("Failed to delete image:", error);
+      setError("Failed to delete image. Please try again.");
+    }
+  };
+
+  const handleImageGenerated = async (
+    file: File,
+    imageUrl: string,
+    prompt: string,
+  ) => {
+    const img = new Image();
+    img.onload = async () => {
+      setImageDimensions({ width: img.width, height: img.height });
+      setUploadedImage(imageUrl);
+      setUploadedFile(file);
+
+      if (prompt) {
+        try {
+          await saveImage({
+            url: imageUrl,
+            prompt,
+            timestamp: new Date().toISOString(),
+          });
+          const updatedImages = await getImages();
+          setRecentImages(updatedImages);
+        } catch (error) {
+          console.error("Failed to save generated image:", error);
+        }
+      }
+
+      setStep(2);
+      setOriginalGridSizeEstimate(null);
+      estimateGridSize(imageUrl)
+        .then((result) => {
+          setGridSize(result.gridSize);
+          setOriginalGridSizeEstimate(result.gridSize);
+        })
+        .catch((error) => {
+          console.error("Failed to estimate grid size:", error);
+        });
+    };
+    img.src = imageUrl;
+  };
+
+  const handleHistoryImageSelect = (imageUrl: string) => {
     const img = new Image();
     img.onload = () => {
       setImageDimensions({ width: img.width, height: img.height });
+      fetch(imageUrl)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const file = new File([blob], "history-image.png", {
+            type: "image/png",
+          });
+          setUploadedImage(imageUrl);
+          setUploadedFile(file);
+          setOriginalGridSizeEstimate(null);
+          estimateGridSize(imageUrl)
+            .then((result) => {
+              setGridSize(result.gridSize);
+              setOriginalGridSizeEstimate(result.gridSize);
+            })
+            .catch((error) => {
+              console.error("Failed to estimate grid size:", error);
+            });
+          setStep(2);
+        })
+        .catch((error) => {
+          console.error("Failed to process history image:", error);
+          setError("Failed to load image from history. Please try again.");
+        });
     };
     img.src = imageUrl;
-    setUploadedImage(imageUrl);
-    setUploadedFile(file);
-    setStep(2);
   };
 
-  async function handleDownscaleImage() {
-    try {
-      if (!uploadedImage) return;
-      setIsDownscaling(true);
-      const response = await downscaleImage(uploadedImage, gridSize);
-      setResults(response);
-      setStep(3);
-    } catch (error) {
-      console.error("Error downscaling image: ", error);
-      setError("Failed to downscale image. Please try again.");
-    } finally {
-      setIsDownscaling(false);
-    }
-  }
+  const handleDownscaleImage = async () => {
+    if (!uploadedImage) return;
+    setIsDownscaling(true);
+    const result = await downscaleImage(uploadedImage, gridSize);
+    setResults(result);
+    setIsDownscaling(false);
+    setStep(3);
+  };
 
   const steps = [
     {
       title: "Convert Image to Pixel Art",
-      description: "Upload an image to convert to pixel art",
-      content: <StepOne onImageGenerated={handleImageGenerated} />,
+      description:
+        "Generate with AI or upload an image to convert to pixel art",
+      content: (
+        <div className="space-y-4">
+          {error && <Alert variant="destructive">{error}</Alert>}
+
+          <StepOne
+            onImageGenerated={handleImageGenerated}
+            recentImages={recentImages}
+            onHistoryImageSelect={handleHistoryImageSelect}
+            handleDeleteImage={handleDeleteImage}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+          />
+        </div>
+      ),
     },
     {
       title: "Set Image Grid",
@@ -372,6 +539,8 @@ export default function AiPixelArtModal({
           gridSize={gridSize}
           setGridSize={setGridSize}
           imageDimensions={imageDimensions}
+          originalGridSizeEstimate={originalGridSizeEstimate}
+          setOriginalGridSizeEstimate={setOriginalGridSizeEstimate}
         />
       ),
     },
@@ -410,7 +579,6 @@ export default function AiPixelArtModal({
           <DialogDescription>{currentStep.description}</DialogDescription>
         </DialogHeader>
 
-        {/* Step indicator */}
         <div className="mb-4 flex w-full gap-2">
           {steps.map((_, index) => (
             <div
@@ -422,10 +590,8 @@ export default function AiPixelArtModal({
           ))}
         </div>
 
-        {/* Step content */}
         {currentStep.content}
 
-        {/* Navigation buttons */}
         <DialogFooter className="">
           <div className="mt-auto flex w-full flex-1 justify-between">
             <Button
