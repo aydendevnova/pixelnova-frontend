@@ -49,31 +49,43 @@ const StepOne = ({ onImageGenerated }: StepOneProps) => {
     if (!prompt) return;
     try {
       generateImage(prompt, {
-        onSuccess: (response: any) => {
+        onSuccess: async (response: any) => {
           // Convert the response to a blob
           const blob = new Blob([response], { type: "image/png" });
-          const file = new File([blob], "ai-generated.png", {
-            type: "image/png",
-          });
 
-          // Create an object URL for displaying the image
-          const imageUrl = URL.createObjectURL(blob);
-          onImageGenerated(file, imageUrl);
+          // Convert blob to base64
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            if (!event.target?.result) return;
 
-          // Save URL and timestamp to local storage
-          const timestamp = new Date().toISOString();
-          const existingData = localStorage.getItem("generatedImages");
-          const generatedImages = existingData ? JSON.parse(existingData) : [];
+            const base64Image = event.target.result as string;
 
-          generatedImages.push({
-            url: imageUrl,
-            timestamp: timestamp,
-          });
+            // Create a file object for consistency with upload flow
+            const file = new File([blob], "ai-generated.png", {
+              type: "image/png",
+            });
 
-          localStorage.setItem(
-            "generatedImages",
-            JSON.stringify(generatedImages),
-          );
+            onImageGenerated(file, base64Image);
+
+            // Save URL and timestamp to local storage
+            const timestamp = new Date().toISOString();
+            const existingData = localStorage.getItem("generatedImages");
+            const generatedImages = existingData
+              ? JSON.parse(existingData)
+              : [];
+
+            generatedImages.push({
+              url: base64Image,
+              timestamp: timestamp,
+            });
+
+            localStorage.setItem(
+              "generatedImages",
+              JSON.stringify(generatedImages),
+            );
+          };
+
+          reader.readAsDataURL(blob);
         },
         onError: (error) => {
           setError("Failed to generate AI image. Please try again.");
