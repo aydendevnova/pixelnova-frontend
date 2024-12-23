@@ -67,25 +67,22 @@ export function useCheckUsername() {
 export function useEstimateGridSize() {
   const session = useSession();
   return useMutation({
-    mutationFn: async ({ imageFile }: { imageFile: File }) => {
+    mutationFn: async () => {
       if (!session) {
         throw new Error("No session found");
       }
 
-      const formData = new FormData();
-      formData.append("image", imageFile);
-
       const response = await axios.post(
         `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.ESTIMATE_GRID_SIZE}`,
-        formData,
+        { test: "Test" },
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
         },
       );
-      return response.data;
+      return response.data.key;
     },
   });
 }
@@ -93,42 +90,35 @@ export function useEstimateGridSize() {
 export function useDownscaleImage({
   onSuccess,
 }: {
-  onSuccess: (data: DownscaleResponse) => void;
+  onSuccess?: (data: DownscaleResponse) => void;
 }) {
   const session = useSession();
   return useMutation({
-    mutationFn: async ({
-      imageFile,
-      grid,
-    }: {
-      imageFile: File;
-      grid: number;
-    }) => {
+    mutationFn: async () => {
       if (!session) {
         throw new Error("No session found");
       }
 
-      const formData = new FormData();
-      formData.append("image", imageFile);
-      formData.append("grid", grid.toString());
-
       const response = await axios.post(
         `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.DOWNSCALE_IMAGE}`,
-        formData,
+        {},
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
         },
       );
-      return response.data;
+      return response.data.key;
     },
     onSuccess: (data) => {
-      onSuccess(data);
+      if (onSuccess) {
+        onSuccess(data);
+      }
     },
   });
 }
+
 export const useGenerateImage = () => {
   const session = useSession();
 

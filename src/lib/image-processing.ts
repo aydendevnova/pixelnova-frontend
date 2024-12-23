@@ -1,4 +1,9 @@
-import { EstimateGridSizeResponse, DownscaleResponse } from "../shared-types";
+import {
+  EstimateGridSizeResponse,
+  DownscaleResponse,
+  EstimateGridSizeWASMResponse,
+  DownscaleImageWASMResponse,
+} from "../shared-types";
 
 let worker: Worker | null = null;
 
@@ -16,9 +21,9 @@ function getWorker() {
   return worker;
 }
 
-export async function estimateGridSize(
+export async function estimateGridSizeWASM(
   base64Image: string,
-): Promise<EstimateGridSizeResponse> {
+): Promise<EstimateGridSizeWASMResponse> {
   console.log("[Image Processing] Starting estimateGridSize");
   return new Promise((resolve, reject) => {
     const worker = getWorker();
@@ -59,10 +64,10 @@ export async function estimateGridSize(
   });
 }
 
-export async function downscaleImage(
+export async function downscaleImageWASM(
   base64Image: string,
   grid: number,
-): Promise<DownscaleResponse> {
+): Promise<DownscaleImageWASMResponse> {
   console.log("[Image Processing] Starting downscaleImage");
   return new Promise((resolve, reject) => {
     const worker = getWorker();

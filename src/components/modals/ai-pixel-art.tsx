@@ -15,11 +15,18 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Alert } from "@/components/ui/alert";
 
-import { useGenerateImage } from "@/hooks/use-api";
+import {
+  useDownscaleImage,
+  useEstimateGridSize,
+  useGenerateImage,
+} from "@/hooks/use-api";
 import { Loader2, Sparkle, Trash2, UndoIcon } from "lucide-react";
-import { DownscaleResponse } from "@/shared-types";
+import { DownscaleImageWASMResponse, DownscaleResponse } from "@/shared-types";
 
-import { estimateGridSize, downscaleImage } from "@/lib/image-processing";
+import {
+  estimateGridSizeWASM,
+  downscaleImageWASM,
+} from "@/lib/image-processing";
 import { useIndexedDB } from "@/hooks/use-indexed-db";
 import { GeneratedImage } from "@/types/types";
 
@@ -336,7 +343,7 @@ const StepTwo = ({
 };
 
 interface StepThreeProps {
-  results: DownscaleResponse | null;
+  results: DownscaleImageWASMResponse | null;
   onFinish: (image: string) => void;
   setOpen: (open: boolean) => void;
 }
@@ -388,7 +395,9 @@ export default function AiPixelArtModal({
     number | null
   >(null);
 
-  const [results, setResults] = useState<DownscaleResponse | null>(null);
+  const [results, setResults] = useState<DownscaleImageWASMResponse | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [isDownscaling, setIsDownscaling] = useState(false);
   const [recentImages, setRecentImages] = useState<GeneratedImage[]>([]);
@@ -455,14 +464,7 @@ export default function AiPixelArtModal({
 
       setStep(2);
       setOriginalGridSizeEstimate(null);
-      estimateGridSize(imageUrl)
-        .then((result) => {
-          setGridSize(result.gridSize);
-          setOriginalGridSizeEstimate(result.gridSize);
-        })
-        .catch((error) => {
-          console.error("Failed to estimate grid size:", error);
-        });
+      void handleEstimateGridSize(imageUrl);
     };
     img.src = imageUrl;
   };
@@ -480,14 +482,7 @@ export default function AiPixelArtModal({
           setUploadedImage(imageUrl);
           setUploadedFile(file);
           setOriginalGridSizeEstimate(null);
-          estimateGridSize(imageUrl)
-            .then((result) => {
-              setGridSize(result.gridSize);
-              setOriginalGridSizeEstimate(result.gridSize);
-            })
-            .catch((error) => {
-              console.error("Failed to estimate grid size:", error);
-            });
+          void handleEstimateGridSize(imageUrl);
           setStep(2);
         })
         .catch((error) => {
@@ -498,13 +493,47 @@ export default function AiPixelArtModal({
     img.src = imageUrl;
   };
 
+  const { mutateAsync: downscaleImage, isLoading: isDownscalingKey } =
+    useDownscaleImage({
+      onSuccess: (data) => {
+        console.log("Key retrieved:", data);
+      },
+    });
+
   const handleDownscaleImage = async () => {
     if (!uploadedImage) return;
-    setIsDownscaling(true);
-    const result = await downscaleImage(uploadedImage, gridSize);
-    setResults(result);
-    setIsDownscaling(false);
-    setStep(3);
+    try {
+      const key = await downscaleImage();
+      if (!key) {
+        throw new Error("Failed to get key!");
+      }
+      console.log("Key retrieved:", key);
+      setIsDownscaling(true);
+      const result = await downscaleImageWASM(uploadedImage, gridSize);
+      setResults(result);
+      setIsDownscaling(false);
+      setStep(3);
+    } catch (error) {
+      console.error("Failed to downscale image:", error);
+    }
+  };
+
+  const { mutateAsync: estimateGridSize, isLoading: isEstimatingGridSize } =
+    useEstimateGridSize();
+
+  const handleEstimateGridSize = async (imageUrl: string) => {
+    try {
+      const key = await estimateGridSize();
+      if (!key) {
+        throw new Error("Failed to get key!");
+      }
+      console.log("Key retrieved:", key);
+      const result = await estimateGridSizeWASM(imageUrl);
+      setGridSize(result.gridSize);
+      setOriginalGridSizeEstimate(result.gridSize);
+    } catch (error) {
+      console.error("Failed to estimate grid size:", error);
+    }
   };
 
   const steps = [

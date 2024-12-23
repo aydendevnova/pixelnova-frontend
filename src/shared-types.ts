@@ -9,7 +9,7 @@ export const checkUsernameSchema = z.object({
     .string()
     .regex(
       usernameRegex,
-      "Username can only contain letters, numbers and underscores"
+      "Username can only contain letters, numbers and underscores",
     )
     .min(3)
     .max(20),
@@ -20,7 +20,7 @@ export const updateAccountSchema = z.object({
     .string()
     .regex(
       fullNameRegex,
-      "Full name can only contain letters, numbers and spaces"
+      "Full name can only contain letters, numbers and spaces",
     )
     .min(2)
     .max(50)
@@ -29,7 +29,7 @@ export const updateAccountSchema = z.object({
     .string()
     .regex(
       usernameRegex,
-      "Username can only contain letters, numbers and underscores"
+      "Username can only contain letters, numbers and underscores",
     )
     .min(3)
     .max(20)
@@ -43,21 +43,21 @@ export type UpdateAccountBody = z.infer<typeof updateAccountSchema> & {
 
 export type CheckUsernameBody = z.infer<typeof checkUsernameSchema>;
 
-export type EstimateGridSizeBody = {
-  image: File;
+export type EstimateGridSizeResponse = {
+  key: string;
 };
 
-export type EstimateGridSizeResponse = {
+export type EstimateGridSizeWASMResponse = {
   gridSize: number;
 };
 
-export type DownscaleResponse = {
+export type DownscaleImageWASMResponse = {
   results: {
     grid: number;
     image: string;
   }[];
 };
 
-export type DownscaleImageBody = {
-  image: File;
+export type DownscaleResponse = {
+  key: string;
 };
