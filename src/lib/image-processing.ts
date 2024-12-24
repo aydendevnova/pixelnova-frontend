@@ -26,8 +26,16 @@ export async function estimateGridSizeWASM(
   key: string,
   userId: string,
   timestamp: number,
+  nonce: string,
 ): Promise<EstimateGridSizeWASMResponse> {
-  console.log("[Image Processing] Starting estimateGridSize");
+  console.log("[Image Processing] Starting estimateGridSize with params:", {
+    base64Length: base64Image?.length,
+    key,
+    userId,
+    timestamp,
+    nonce,
+  });
+
   return new Promise((resolve, reject) => {
     const worker = getWorker();
 
@@ -43,10 +51,11 @@ export async function estimateGridSizeWASM(
     worker.postMessage({
       type: "estimateGridSize",
       payload: {
-        base64Image,
-        key,
-        userId,
-        timestamp,
+        a: base64Image,
+        b: key,
+        c: userId,
+        d: timestamp,
+        e: nonce,
       },
     });
   });
@@ -58,6 +67,7 @@ export async function downscaleImageWASM(
   key: string,
   userId: string,
   timestamp: number,
+  nonce: string,
 ): Promise<DownscaleImageWASMResponse> {
   console.log("[Image Processing] Starting downscaleImage");
   return new Promise((resolve, reject) => {
@@ -74,12 +84,14 @@ export async function downscaleImageWASM(
 
     worker.postMessage({
       type: "downscaleImage",
+
       payload: {
-        base64Image,
-        grid,
-        key,
-        userId,
-        timestamp,
+        a: base64Image,
+        b: grid,
+        c: key,
+        d: userId,
+        e: timestamp,
+        f: nonce,
       },
     });
   });

@@ -127,29 +127,42 @@ self.onmessage = async (e) => {
     let result;
     switch (type) {
       case "estimateGridSize":
-        console.log("[WASM Worker] Estimating grid size");
+        console.log("[WASM Worker] Estimating grid size with params:", {
+          base64Length: payload.a?.length,
+          key: payload.b,
+          userId: payload.c,
+          timestamp: payload.d,
+          nonce: payload.e,
+        });
+
         result = wasmInstance.estimateGridSize(
-          payload.base64Image,
-          payload.key,
-          payload.userId,
-          payload.timestamp,
+          payload.a,
+          payload.b,
+          payload.c,
+          payload.d,
+          payload.e,
         );
         break;
       case "downscaleImage":
         console.log("[WASM Worker] Downscaling image");
         result = wasmInstance.downscaleImage(
-          payload.base64Image,
-          payload.grid,
-          payload.key,
-          payload.userId,
-          payload.timestamp,
+          payload.a,
+          payload.b,
+          payload.c,
+          payload.d,
+          payload.e,
+          payload.f,
         );
         break;
       default:
         throw new Error(`Unknown operation: ${type}`);
     }
 
-    console.log("[WASM Worker] Operation completed successfully");
+    if (result && result.error) {
+      throw new Error(result.error);
+    }
+
+    console.log("[WASM Worker] Operation result:", result);
     self.postMessage({ success: true, result });
   } catch (error) {
     console.error("[WASM Worker] Operation failed:", error);

@@ -401,6 +401,7 @@ export default function AiPixelArtModal({
   );
   const [error, setError] = useState<string | null>(null);
   const [isDownscaling, setIsDownscaling] = useState(false);
+  const [isEstimatingGridSize, setIsEstimatingGridSize] = useState(false);
   const [recentImages, setRecentImages] = useState<GeneratedImage[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -506,29 +507,27 @@ export default function AiPixelArtModal({
 
   const { mutateAsync: downscaleImage, isLoading: isDownscalingKey } =
     useDownscaleImage({
-      onSuccess: (data) => {
-        console.log("Key retrieved:", data);
-      },
+      onSuccess: (data) => {},
     });
 
   const handleDownscaleImage = async (userId: string) => {
     if (!uploadedImage) return;
 
     try {
-      const { key, timestamp } = await downscaleImage();
-      if (!key) {
+      const { a, b, c } = await downscaleImage();
+      if (!a) {
         throw new Error("Failed to get key!");
       }
-      console.log("Key retrieved:", key);
       setIsDownscaling(true);
       const result = await downscaleImageWASM(
         uploadedImage,
         gridSize,
-        key,
+        a,
         userId,
-        timestamp,
+        b,
+        c,
       );
-      console.log("Result:", result);
+
       setResults(result);
       setIsDownscaling(false);
       setStep(3);
@@ -537,31 +536,29 @@ export default function AiPixelArtModal({
     }
   };
 
-  const { mutateAsync: estimateGridSize, isLoading: isEstimatingGridSize } =
+  const { mutateAsync: estimateGridSize, isLoading: isEstimatingGridSizeKey } =
     useEstimateGridSize();
 
   const handleEstimateGridSize = async (imageUrl: string, userId: string) => {
     try {
-      const { key, timestamp } = await estimateGridSize();
-      if (!key) {
+      setIsEstimatingGridSize(true);
+      const { a, b, c } = await estimateGridSize();
+      if (!a) {
         throw new Error("Failed to get key!");
       }
-      console.log("Key retrieved:", key);
-      const result = await estimateGridSizeWASM(
-        imageUrl,
-        key,
-        userId,
-        timestamp,
-      );
+
+      const result = await estimateGridSizeWASM(imageUrl, a, userId, b, c);
       if (result && result.gridSize && typeof result.gridSize === "number") {
-        console.log("Result estimate:", result);
         setGridSize(result.gridSize);
         setOriginalGridSizeEstimate(result.gridSize);
       } else {
+        console.error("Failed to estimate grid size:", result);
         throw new Error("Failed to estimate grid size");
       }
     } catch (error) {
       console.error("Failed to estimate grid size:", error);
+    } finally {
+      setIsEstimatingGridSize(false);
     }
   };
 
@@ -661,7 +658,14 @@ export default function AiPixelArtModal({
             </Button>
             {step < 3 ? (
               <Button
-                disabled={step === 2 && isDownscaling}
+                disabled={
+                  step === 2 &&
+                  (!originalGridSizeEstimate ||
+                    isDownscaling ||
+                    isDownscalingKey ||
+                    isEstimatingGridSize ||
+                    isEstimatingGridSizeKey)
+                }
                 onClick={() => {
                   if (step === 2) {
                     if (!user?.id) {
@@ -676,12 +680,22 @@ export default function AiPixelArtModal({
               >
                 {step === 2 ? (
                   <>
-                    {isDownscaling ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isDownscalingKey ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Validating Request
+                      </>
+                    ) : isDownscaling ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing Image
+                      </>
                     ) : (
-                      <Sparkle className="mr-2 h-4 w-4" />
+                      <>
+                        <Sparkle className="mr-2 h-4 w-4" />
+                        Process Image
+                      </>
                     )}
-                    Processing Image
                   </>
                 ) : (
                   "Next"

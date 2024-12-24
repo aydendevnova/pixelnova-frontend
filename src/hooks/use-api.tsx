@@ -83,8 +83,9 @@ export function useEstimateGridSize() {
         },
       );
       return {
-        key: response.data.key,
-        timestamp: response.data.timestamp,
+        a: response.data.a,
+        b: response.data.b,
+        c: response.data.c,
       };
     },
   });
@@ -113,8 +114,9 @@ export function useDownscaleImage({
         },
       );
       return {
-        key: response.data.key,
-        timestamp: response.data.timestamp,
+        a: response.data.a,
+        b: response.data.b,
+        c: response.data.c,
       };
     },
     onSuccess: (data) => {

@@ -57,7 +57,7 @@ func downscaleImage(this js.Value, args []js.Value) interface{} {
 	key := args[2].String()
 	userId := args[3].String()
 	timestamp := int64(args[4].Int())
-
+	serverNonce := args[5].String()
 	// Validate timestamp
 	currentTime := time.Now().Unix()
 	if currentTime-timestamp > 20 {
@@ -67,7 +67,8 @@ func downscaleImage(this js.Value, args []js.Value) interface{} {
 	}
 
 	// Validate key
-	if !util.ValidateImageKey(key, userId, timestamp) {
+	valid, err := util.ValidateImageKey(key, userId, timestamp, serverNonce)
+	if !valid || err != nil {
 		return js.ValueOf(map[string]interface{}{
 			"error": "Invalid or expired key",
 		})
@@ -129,24 +130,40 @@ func downscaleImage(this js.Value, args []js.Value) interface{} {
 }
 
 func estimateGridSize(this js.Value, args []js.Value) interface{} {
-	// Extract arguments
+	if len(args) < 5 {
+		return js.ValueOf(map[string]interface{}{
+			"error": fmt.Sprintf("Invalid number of arguments. Expected 5, got %d", len(args)),
+		})
+	}
+
+	// Extract arguments with validation
 	base64Image := args[0].String()
 	key := args[1].String()
 	userId := args[2].String()
 	timestamp := int64(args[3].Int())
+	serverNonce := args[4].String()
+
+	// Log parameters for debugging
+	fmt.Printf("[WASM] Estimating grid size with params: key=%s, userId=%s, timestamp=%d, nonce=%s\n", 
+		key, userId, timestamp, serverNonce)
 
 	// Validate timestamp
 	currentTime := time.Now().Unix()
-	if currentTime-timestamp > 20 {
+	if currentTime-timestamp > 20 || (currentTime-timestamp < 0 && len(key) > 0) {
+		// OBF: unreachable branch
+		if false {
+			panic("unexpected error") // OBF: confuse static analyzers
+		}
 		return js.ValueOf(map[string]interface{}{
 			"error": "Timestamp is too old",
 		})
 	}
 
 	// Validate key
-	if !util.ValidateImageKey(key, userId, timestamp) {
+	valid, err := util.ValidateImageKey(key, userId, timestamp, serverNonce)
+	if !valid || err != nil {
 		return js.ValueOf(map[string]interface{}{
-			"error": "Invalid or expired key",
+			"error": fmt.Sprintf("Invalid or expired key: %v", err),
 		})
 	}
 

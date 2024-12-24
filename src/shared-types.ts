@@ -59,5 +59,7 @@ export type DownscaleImageWASMResponse = {
 };
 
 export type DownscaleResponse = {
-  key: string;
+  a: string;
+  b: number;
+  c: string;
 };
