@@ -74,7 +74,7 @@ export function useEstimateGridSize() {
 
       const response = await axios.post(
         `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.ESTIMATE_GRID_SIZE}`,
-        { test: "Test" },
+        {},
         {
           headers: {
             "Content-Type": "application/json",
@@ -82,7 +82,10 @@ export function useEstimateGridSize() {
           },
         },
       );
-      return response.data.key;
+      return {
+        key: response.data.key,
+        timestamp: response.data.timestamp,
+      };
     },
   });
 }
@@ -109,7 +112,10 @@ export function useDownscaleImage({
           },
         },
       );
-      return response.data.key;
+      return {
+        key: response.data.key,
+        timestamp: response.data.timestamp,
+      };
     },
     onSuccess: (data) => {
       if (onSuccess) {

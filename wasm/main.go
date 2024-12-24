@@ -11,6 +11,7 @@ import (
 	"io"
 	"pixlabs/wasm/util"
 	"strings"
+	"time"
 
 	// Explicitly import decoders
 	_ "image/jpeg"
@@ -50,25 +51,43 @@ func main() {
 }
 
 func downscaleImage(this js.Value, args []js.Value) interface{} {
-	// Get base64 image data from JavaScript
-	imageData := args[0].String()
-	grid := args[1].Int()
-	
+	// Extract arguments
+	base64Image := args[0].String()
+	gridSize := args[1].Int()
+	key := args[2].String()
+	userId := args[3].String()
+	timestamp := int64(args[4].Int())
+
+	// Validate timestamp
+	currentTime := time.Now().Unix()
+	if currentTime-timestamp > 20 {
+		return js.ValueOf(map[string]interface{}{
+			"error": "Timestamp is too old",
+		})
+	}
+
+	// Validate key
+	if !util.ValidateImageKey(key, userId, timestamp) {
+		return js.ValueOf(map[string]interface{}{
+			"error": "Invalid or expired key",
+		})
+	}
+
 	// Remove data:image/... prefix if present
 	originalFormat := ""
 	switch {
-	case strings.HasPrefix(imageData, "data:image/webp;base64,"):
+	case strings.HasPrefix(base64Image, "data:image/webp;base64,"):
 		originalFormat = "webp"
-		imageData = strings.TrimPrefix(imageData, "data:image/webp;base64,")
-	case strings.HasPrefix(imageData, "data:image/png;base64,"):
+		base64Image = strings.TrimPrefix(base64Image, "data:image/webp;base64,")
+	case strings.HasPrefix(base64Image, "data:image/png;base64,"):
 		originalFormat = "png"
-		imageData = strings.TrimPrefix(imageData, "data:image/png;base64,")
-	case strings.HasPrefix(imageData, "data:image/jpeg;base64,"):
+		base64Image = strings.TrimPrefix(base64Image, "data:image/png;base64,")
+	case strings.HasPrefix(base64Image, "data:image/jpeg;base64,"):
 		originalFormat = "jpeg"
-		imageData = strings.TrimPrefix(imageData, "data:image/jpeg;base64,")
-	case strings.HasPrefix(imageData, "data:image/jpg;base64,"):
+		base64Image = strings.TrimPrefix(base64Image, "data:image/jpeg;base64,")
+	case strings.HasPrefix(base64Image, "data:image/jpg;base64,"):
 		originalFormat = "jpeg"
-		imageData = strings.TrimPrefix(imageData, "data:image/jpg;base64,")
+		base64Image = strings.TrimPrefix(base64Image, "data:image/jpg;base64,")
 	default:
 		return map[string]interface{}{
 			"error": "Unsupported image format",
@@ -76,7 +95,7 @@ func downscaleImage(this js.Value, args []js.Value) interface{} {
 	}
 	
 	// Decode base64 image
-	decodedData, err := base64.StdEncoding.DecodeString(imageData)
+	decodedData, err := base64.StdEncoding.DecodeString(base64Image)
 	if err != nil {
 		return map[string]interface{}{
 			"error": fmt.Sprintf("Base64 decode error: %v", err),
@@ -92,7 +111,7 @@ func downscaleImage(this js.Value, args []js.Value) interface{} {
 	}
 
 	// Process image using downscaleImage function
-	result, err := util.DownscaleImageUtil(img, grid, 32, true, 32, "kmeans")
+	result, err := util.DownscaleImageUtil(img, gridSize, 32, true, 32, "kmeans")
 	if err != nil {
 		return map[string]interface{}{
 			"error": fmt.Sprintf("Processing error: %v", err),
@@ -110,24 +129,42 @@ func downscaleImage(this js.Value, args []js.Value) interface{} {
 }
 
 func estimateGridSize(this js.Value, args []js.Value) interface{} {
-	// Get base64 image data from JavaScript
-	imageData := args[0].String()
-	
+	// Extract arguments
+	base64Image := args[0].String()
+	key := args[1].String()
+	userId := args[2].String()
+	timestamp := int64(args[3].Int())
+
+	// Validate timestamp
+	currentTime := time.Now().Unix()
+	if currentTime-timestamp > 20 {
+		return js.ValueOf(map[string]interface{}{
+			"error": "Timestamp is too old",
+		})
+	}
+
+	// Validate key
+	if !util.ValidateImageKey(key, userId, timestamp) {
+		return js.ValueOf(map[string]interface{}{
+			"error": "Invalid or expired key",
+		})
+	}
+
 	// Remove data:image/... prefix if present
 	originalFormat := ""
 	switch {
-	case strings.HasPrefix(imageData, "data:image/webp;base64,"):
+	case strings.HasPrefix(base64Image, "data:image/webp;base64,"):
 		originalFormat = "webp"
-		imageData = strings.TrimPrefix(imageData, "data:image/webp;base64,")
-	case strings.HasPrefix(imageData, "data:image/png;base64,"):
+		base64Image = strings.TrimPrefix(base64Image, "data:image/webp;base64,")
+	case strings.HasPrefix(base64Image, "data:image/png;base64,"):
 		originalFormat = "png"
-		imageData = strings.TrimPrefix(imageData, "data:image/png;base64,")
-	case strings.HasPrefix(imageData, "data:image/jpeg;base64,"):
+		base64Image = strings.TrimPrefix(base64Image, "data:image/png;base64,")
+	case strings.HasPrefix(base64Image, "data:image/jpeg;base64,"):
 		originalFormat = "jpeg"
-		imageData = strings.TrimPrefix(imageData, "data:image/jpeg;base64,")
-	case strings.HasPrefix(imageData, "data:image/jpg;base64,"):
+		base64Image = strings.TrimPrefix(base64Image, "data:image/jpeg;base64,")
+	case strings.HasPrefix(base64Image, "data:image/jpg;base64,"):
 		originalFormat = "jpeg"
-		imageData = strings.TrimPrefix(imageData, "data:image/jpg;base64,")
+		base64Image = strings.TrimPrefix(base64Image, "data:image/jpg;base64,")
 	default:
 		return map[string]interface{}{
 			"error": "Unsupported image format",
@@ -135,7 +172,7 @@ func estimateGridSize(this js.Value, args []js.Value) interface{} {
 	}
 	
 	// Decode base64 image
-	decodedData, err := base64.StdEncoding.DecodeString(imageData)
+	decodedData, err := base64.StdEncoding.DecodeString(base64Image)
 	if err != nil {
 		return map[string]interface{}{
 			"error": fmt.Sprintf("Base64 decode error: %v", err),

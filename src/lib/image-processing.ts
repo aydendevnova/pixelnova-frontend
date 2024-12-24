@@ -23,13 +23,15 @@ function getWorker() {
 
 export async function estimateGridSizeWASM(
   base64Image: string,
+  key: string,
+  userId: string,
+  timestamp: number,
 ): Promise<EstimateGridSizeWASMResponse> {
   console.log("[Image Processing] Starting estimateGridSize");
   return new Promise((resolve, reject) => {
     const worker = getWorker();
 
     worker.onmessage = (e) => {
-      console.log("[Image Processing] Received worker response:", e.data);
       if (e.data.success) {
         resolve({ gridSize: e.data.result.gridSize });
       } else {
@@ -38,28 +40,14 @@ export async function estimateGridSizeWASM(
       }
     };
 
-    worker.onerror = (error) => {
-      console.error("[Image Processing] Worker error details:", {
-        message: error.message,
-        filename: error.filename,
-        lineno: error.lineno,
-        colno: error.colno,
-        error: error.error,
-      });
-      console.error("[Image Processing] Worker state:", {
-        origin: self.location.origin,
-        wasmExecPath: `${self.location.origin}/wasm_exec.js`,
-        wasmPath: `${self.location.origin}/main.wasm`,
-      });
-      reject(error);
-    };
-
-    console.log(
-      "[Image Processing] Sending estimateGridSize request to worker",
-    );
     worker.postMessage({
       type: "estimateGridSize",
-      payload: { base64Image },
+      payload: {
+        base64Image,
+        key,
+        userId,
+        timestamp,
+      },
     });
   });
 }
@@ -67,13 +55,15 @@ export async function estimateGridSizeWASM(
 export async function downscaleImageWASM(
   base64Image: string,
   grid: number,
+  key: string,
+  userId: string,
+  timestamp: number,
 ): Promise<DownscaleImageWASMResponse> {
   console.log("[Image Processing] Starting downscaleImage");
   return new Promise((resolve, reject) => {
     const worker = getWorker();
 
     worker.onmessage = (e) => {
-      console.log("[Image Processing] Received worker response:", e.data);
       if (e.data.success) {
         resolve(e.data.result);
       } else {
@@ -82,26 +72,15 @@ export async function downscaleImageWASM(
       }
     };
 
-    worker.onerror = (error) => {
-      console.error("[Image Processing] Worker error details:", {
-        message: error.message,
-        filename: error.filename,
-        lineno: error.lineno,
-        colno: error.colno,
-        error: error.error,
-      });
-      console.error("[Image Processing] Worker state:", {
-        origin: self.location.origin,
-        wasmExecPath: `${self.location.origin}/wasm_exec.js`,
-        wasmPath: `${self.location.origin}/main.wasm`,
-      });
-      reject(error);
-    };
-
-    console.log("[Image Processing] Sending downscaleImage request to worker");
     worker.postMessage({
       type: "downscaleImage",
-      payload: { base64Image, grid },
+      payload: {
+        base64Image,
+        grid,
+        key,
+        userId,
+        timestamp,
+      },
     });
   });
 }

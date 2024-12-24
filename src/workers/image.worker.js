@@ -128,11 +128,22 @@ self.onmessage = async (e) => {
     switch (type) {
       case "estimateGridSize":
         console.log("[WASM Worker] Estimating grid size");
-        result = wasmInstance.estimateGridSize(payload.base64Image);
+        result = wasmInstance.estimateGridSize(
+          payload.base64Image,
+          payload.key,
+          payload.userId,
+          payload.timestamp,
+        );
         break;
       case "downscaleImage":
         console.log("[WASM Worker] Downscaling image");
-        result = wasmInstance.downscaleImage(payload.base64Image, payload.grid);
+        result = wasmInstance.downscaleImage(
+          payload.base64Image,
+          payload.grid,
+          payload.key,
+          payload.userId,
+          payload.timestamp,
+        );
         break;
       default:
         throw new Error(`Unknown operation: ${type}`);

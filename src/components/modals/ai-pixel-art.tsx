@@ -29,6 +29,7 @@ import {
 } from "@/lib/image-processing";
 import { useIndexedDB } from "@/hooks/use-indexed-db";
 import { GeneratedImage } from "@/types/types";
+import useUser from "@/hooks/use-user";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;
@@ -405,6 +406,8 @@ export default function AiPixelArtModal({
 
   const { saveImage, getImages, deleteImage, searchByPrompt } = useIndexedDB();
 
+  const { user } = useUser();
+
   useEffect(() => {
     const loadImages = async () => {
       try {
@@ -442,6 +445,10 @@ export default function AiPixelArtModal({
     imageUrl: string,
     prompt: string,
   ) => {
+    if (!user?.id) {
+      setError("Please login to use this feature");
+      return;
+    }
     const img = new Image();
     img.onload = async () => {
       setImageDimensions({ width: img.width, height: img.height });
@@ -464,12 +471,16 @@ export default function AiPixelArtModal({
 
       setStep(2);
       setOriginalGridSizeEstimate(null);
-      void handleEstimateGridSize(imageUrl);
+      void handleEstimateGridSize(imageUrl, user.id);
     };
     img.src = imageUrl;
   };
 
   const handleHistoryImageSelect = (imageUrl: string) => {
+    if (!user?.id) {
+      setError("Please login to use this feature");
+      return;
+    }
     const img = new Image();
     img.onload = () => {
       setImageDimensions({ width: img.width, height: img.height });
@@ -482,7 +493,7 @@ export default function AiPixelArtModal({
           setUploadedImage(imageUrl);
           setUploadedFile(file);
           setOriginalGridSizeEstimate(null);
-          void handleEstimateGridSize(imageUrl);
+          void handleEstimateGridSize(imageUrl, user.id);
           setStep(2);
         })
         .catch((error) => {
@@ -500,16 +511,24 @@ export default function AiPixelArtModal({
       },
     });
 
-  const handleDownscaleImage = async () => {
+  const handleDownscaleImage = async (userId: string) => {
     if (!uploadedImage) return;
+
     try {
-      const key = await downscaleImage();
+      const { key, timestamp } = await downscaleImage();
       if (!key) {
         throw new Error("Failed to get key!");
       }
       console.log("Key retrieved:", key);
       setIsDownscaling(true);
-      const result = await downscaleImageWASM(uploadedImage, gridSize);
+      const result = await downscaleImageWASM(
+        uploadedImage,
+        gridSize,
+        key,
+        userId,
+        timestamp,
+      );
+      console.log("Result:", result);
       setResults(result);
       setIsDownscaling(false);
       setStep(3);
@@ -521,16 +540,26 @@ export default function AiPixelArtModal({
   const { mutateAsync: estimateGridSize, isLoading: isEstimatingGridSize } =
     useEstimateGridSize();
 
-  const handleEstimateGridSize = async (imageUrl: string) => {
+  const handleEstimateGridSize = async (imageUrl: string, userId: string) => {
     try {
-      const key = await estimateGridSize();
+      const { key, timestamp } = await estimateGridSize();
       if (!key) {
         throw new Error("Failed to get key!");
       }
       console.log("Key retrieved:", key);
-      const result = await estimateGridSizeWASM(imageUrl);
-      setGridSize(result.gridSize);
-      setOriginalGridSizeEstimate(result.gridSize);
+      const result = await estimateGridSizeWASM(
+        imageUrl,
+        key,
+        userId,
+        timestamp,
+      );
+      if (result && result.gridSize && typeof result.gridSize === "number") {
+        console.log("Result estimate:", result);
+        setGridSize(result.gridSize);
+        setOriginalGridSizeEstimate(result.gridSize);
+      } else {
+        throw new Error("Failed to estimate grid size");
+      }
     } catch (error) {
       console.error("Failed to estimate grid size:", error);
     }
@@ -635,7 +664,11 @@ export default function AiPixelArtModal({
                 disabled={step === 2 && isDownscaling}
                 onClick={() => {
                   if (step === 2) {
-                    void handleDownscaleImage();
+                    if (!user?.id) {
+                      setError("Please login to use this feature");
+                      return;
+                    }
+                    void handleDownscaleImage(user.id);
                   } else {
                     setStep((step) => step + 1);
                   }
