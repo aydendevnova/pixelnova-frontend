@@ -1,38 +1,17 @@
 "use client";
 
-import { PencilIcon } from "@heroicons/react/24/outline";
-import {
-  EraserIcon,
-  PaintBucketIcon,
-  TextSelect,
-  Undo2,
-  Redo2,
-  Pipette,
-} from "lucide-react";
+import { Undo2, Redo2 } from "lucide-react";
+import { getAllTools } from "@/lib/tools";
+import { ToolType } from "@/types/editor";
 
 interface ToolbarProps {
-  selectedTool: string;
-  onToolSelect: (tool: string) => void;
+  selectedTool: ToolType;
+  onToolSelect: (tool: ToolType) => void;
   canUndo?: boolean;
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
 }
-
-interface Tool {
-  id: string;
-  name: string;
-  icon: React.ComponentType<{ className?: string }>;
-  shortcut: string;
-}
-
-const tools: Tool[] = [
-  { id: "pencil", name: "Pencil", icon: PencilIcon, shortcut: "B" },
-  { id: "eraser", name: "Eraser", icon: EraserIcon, shortcut: "E" },
-  { id: "bucket", name: "Fill", icon: PaintBucketIcon, shortcut: "G" },
-  { id: "select", name: "Select", icon: TextSelect, shortcut: "M" },
-  { id: "eyedropper", name: "Color Picker", icon: Pipette, shortcut: "I" },
-];
 
 export default function Toolbar({
   selectedTool,
@@ -42,6 +21,8 @@ export default function Toolbar({
   onUndo,
   onRedo,
 }: ToolbarProps) {
+  const tools = getAllTools();
+
   return (
     <div className="flex flex-col gap-2 p-2">
       {/* History controls */}
@@ -80,7 +61,7 @@ export default function Toolbar({
                 : "text-gray-400 hover:bg-gray-700"
             }`}
             onClick={() => onToolSelect(tool.id)}
-            title={tool.name}
+            title={`${tool.name} (${tool.shortcut})`}
           >
             <Icon className="mx-auto h-6 w-6" />
           </button>
