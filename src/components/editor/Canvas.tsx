@@ -9,26 +9,20 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-
-interface Layer {
-  id: string;
-  name: string;
-  visible: boolean;
-  imageData: ImageData | null;
-}
+import { Layer, ToolType } from "@/types/editor";
 
 interface CanvasProps {
   width: number;
   height: number;
   primaryColor: string;
   secondaryColor: string;
-  selectedTool: string;
+  selectedTool: ToolType;
   bucketTolerance: number;
   brushSize: number;
   showGrid: boolean;
   onHistoryChange?: (canUndo: boolean, canRedo: boolean) => void;
   onColorPick?: (color: string, isRightPressed: boolean) => void;
-  onToolSelect: (tool: string) => void;
+  onToolSelect: (tool: ToolType) => void;
   layers: Layer[];
   selectedLayerId: string;
 }

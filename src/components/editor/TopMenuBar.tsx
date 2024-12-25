@@ -13,19 +13,20 @@ import ApiTestDialog from "../modals/api-modal";
 import AiPixelArtModal from "../modals/ai-pixel-art";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import { Layer, ToolType } from "@/types/editor";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
   onImportImage: (imageData: ImageData) => void;
   onGeneratePalette: (colors: string[]) => void;
-  selectedTool: string;
+  selectedTool: ToolType;
   bucketTolerance: number;
   onBucketToleranceChange: (value: number) => void;
   brushSize: number;
   onBrushSizeChange: (value: number) => void;
   showGrid: boolean;
   onToggleGrid: () => void;
-  layers: any[];
+  layers: Layer[];
 }
 
 export default function TopMenuBar({

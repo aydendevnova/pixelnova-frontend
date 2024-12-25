@@ -34,7 +34,7 @@ interface EditorState {
   setBrushSize: (size: number) => void;
   setBucketTolerance: (tolerance: number) => void;
   addCustomColor: (color: string) => void;
-  setLayers: (layers: Layer[]) => void;
+  setLayers: (layers: Layer[] | ((prev: Layer[]) => Layer[])) => void;
   setSelectedLayerId: (id: string) => void;
   pushHistory: (state: HistoryState) => void;
   undo: () => void;
@@ -56,15 +56,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   customColors: [],
 
   // Initial Layers State
-  layers: [
-    {
-      id: "layer_0",
-      name: "Layer 1",
-      visible: true,
-      imageData: null,
-    },
-  ],
-  selectedLayerId: "layer_0",
+  layers: [],
+  selectedLayerId: "",
 
   // Initial History State
   history: [],
@@ -83,7 +76,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((state) => ({
       customColors: [...state.customColors, color],
     })),
-  setLayers: (layers) => set({ layers }),
+  setLayers: (layersOrUpdater) =>
+    set((state) => ({
+      layers:
+        typeof layersOrUpdater === "function"
+          ? layersOrUpdater(state.layers)
+          : layersOrUpdater,
+    })),
   setSelectedLayerId: (id) => set({ selectedLayerId: id }),
 
   pushHistory: (state) =>

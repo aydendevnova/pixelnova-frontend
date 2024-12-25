@@ -12,7 +12,7 @@ import { useEditorStore } from "@/store/editorStore";
 import { commandManager } from "@/lib/commands";
 import { getAllTools } from "@/lib/tools";
 import { createImageData } from "@/lib/utils/canvas";
-import { Layer } from "@/types/editor";
+import { Layer, Tool, ToolType } from "@/types/editor";
 
 export default function Editor() {
   const {
@@ -40,15 +40,23 @@ export default function Editor() {
 
   // Initialize canvas with a blank layer
   useEffect(() => {
-    const blankLayer: Layer = {
-      id: "layer_0",
-      name: "Layer 1",
-      visible: true,
-      imageData: createImageData(canvasSize.width, canvasSize.height),
-    };
-    setLayers([blankLayer]);
-    setSelectedLayerId(blankLayer.id);
-  }, []);
+    if (layers.length === 0) {
+      const blankLayer: Layer = {
+        id: "layer_0",
+        name: "Layer 1",
+        visible: true,
+        imageData: createImageData(canvasSize.width, canvasSize.height),
+      };
+      setLayers([blankLayer]);
+      setSelectedLayerId(blankLayer.id);
+    }
+  }, [
+    canvasSize.width,
+    canvasSize.height,
+    layers.length,
+    setLayers,
+    setSelectedLayerId,
+  ]);
 
   const handleClearCanvas = () => {
     const blankLayer: Layer = {
@@ -70,7 +78,7 @@ export default function Editor() {
       visible: true,
       imageData,
     };
-    setLayers((prev: Layer[]) => [...prev, newLayer]);
+    setLayers((prev) => [...prev, newLayer]);
     setSelectedLayerId(newLayer.id);
   };
 
@@ -88,8 +96,10 @@ export default function Editor() {
         <TopMenuBar
           onClearCanvas={handleClearCanvas}
           onImportImage={handleImageImport}
-          onGeneratePalette={handleGeneratePalette}
-          selectedTool={selectedTool}
+          onGeneratePalette={(colors) => {
+            colors.forEach(addCustomColor);
+          }}
+          selectedTool={selectedTool.id}
           bucketTolerance={bucketTolerance}
           onBucketToleranceChange={setBucketTolerance}
           brushSize={brushSize}
@@ -108,8 +118,11 @@ export default function Editor() {
               )}
             >
               <Toolbar
-                selectedTool={selectedTool}
-                onToolSelect={setSelectedTool}
+                selectedTool={selectedTool.id}
+                onToolSelect={(toolId: ToolType) => {
+                  const tool = getAllTools().find((t) => t.id === toolId);
+                  if (tool) setSelectedTool(tool);
+                }}
                 canUndo={commandManager.canUndo()}
                 canRedo={commandManager.canRedo()}
                 onUndo={() => commandManager.undo()}
@@ -130,18 +143,14 @@ export default function Editor() {
                 height={canvasSize.height}
                 primaryColor={primaryColor}
                 secondaryColor={secondaryColor}
-                selectedTool={selectedTool}
-                onToolSelect={setSelectedTool}
-                onColorPick={(color, isRightPressed) => {
-                  if (isRightPressed) {
-                    setSecondaryColor(color);
-                  } else {
-                    setPrimaryColor(color);
-                  }
-                }}
+                selectedTool={selectedTool.id}
                 bucketTolerance={bucketTolerance}
                 brushSize={brushSize}
                 showGrid={showGrid}
+                onToolSelect={(toolId: ToolType) => {
+                  const tool = getAllTools().find((t) => t.id === toolId);
+                  if (tool) setSelectedTool(tool);
+                }}
                 layers={layers}
                 selectedLayerId={selectedLayerId}
               />
@@ -168,7 +177,7 @@ export default function Editor() {
                 selectedLayerId={selectedLayerId}
                 onLayerSelect={setSelectedLayerId}
                 onLayerVisibilityToggle={(layerId: string) => {
-                  setLayers((prev: Layer[]) =>
+                  setLayers((prev) =>
                     prev.map((layer) =>
                       layer.id === layerId
                         ? { ...layer, visible: !layer.visible }
@@ -186,15 +195,16 @@ export default function Editor() {
                       canvasSize.height,
                     ),
                   };
-                  setLayers((prev: Layer[]) => [...prev, newLayer]);
+                  setLayers((prev) => [...prev, newLayer]);
                   setSelectedLayerId(newLayer.id);
                 }}
                 onDeleteLayer={(layerId: string) => {
                   if (layers.length <= 1) return;
-                  setLayers((prev: Layer[]) => {
+                  setLayers((prev) => {
                     const filtered = prev.filter(
                       (layer) => layer.id !== layerId,
                     );
+                    if (filtered.length === 0) return prev;
                     return filtered.map((layer, index) => ({
                       ...layer,
                       id: `layer_${index}`,
