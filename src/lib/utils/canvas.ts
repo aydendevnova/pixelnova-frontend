@@ -76,18 +76,9 @@ export function getPixelColor(
   y: number,
   layers: Layer[],
 ): string | null {
-  console.log("🎨 getPixelColor called with x:", x, "y:", y);
-  console.log("🎨 Number of layers:", layers.length);
-
   // Find the topmost visible layer with a pixel at the given coordinates
   for (const layer of layers.slice().reverse()) {
     if (!layer.visible || !layer.imageData) {
-      console.log(
-        "🎨 Skipping layer - visible:",
-        layer.visible,
-        "has imageData:",
-        !!layer.imageData,
-      );
       continue;
     }
 
@@ -98,33 +89,36 @@ export function getPixelColor(
     const b = data[index + 2];
     const a = data[index + 3];
 
-    console.log("🎨 Checking pixel - r:", r, "g:", g, "b:", b, "a:", a);
-
-    if (!r || !g || !b || !a) {
-      console.log("🎨 Skipping - missing color component");
-      continue;
+    // If any color component is missing or alpha is 0, this pixel is transparent
+    if (
+      r === undefined ||
+      g === undefined ||
+      b === undefined ||
+      a === undefined ||
+      a === 0
+    ) {
+      return "transparent";
     }
-    if (a === 0) {
-      console.log("🎨 Skipping - transparent pixel");
-      continue;
-    }
 
+    // Handle semi-transparent pixels
     if (a < 255) {
       const color = `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(2)})`;
-      console.log("🎨 Returning rgba color:", color);
+
       return color;
     }
 
+    // Handle fully opaque pixels
     const color = `#${[r, g, b]
       .map((x) => x.toString(16).padStart(2, "0"))
       .join("")
       .toUpperCase()}`;
-    console.log("🎨 Returning hex color:", color);
+
     return color;
   }
 
-  console.log("🎨 No color found, returning null");
-  return null;
+  // If we didn't find any color in any layer, return transparent
+
+  return "transparent";
 }
 
 export function createImageData(

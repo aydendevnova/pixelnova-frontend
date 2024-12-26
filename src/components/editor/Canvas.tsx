@@ -682,7 +682,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Remove tool-specific logic from handleMouseDown
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      console.log("🔍 MouseDown - Tool:", selectedTool, "Button:", e.button);
       setIsMouseDown(true);
       const isRightClick = e.button === 2;
 
@@ -700,7 +699,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         }
 
         const coords = getCanvasCoordinates(e, displayCanvas, viewport);
-        console.log("📍 Canvas coordinates:", coords);
+
         setHoverPosition(coords);
 
         const selectedLayer = layers.find(
@@ -712,7 +711,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         }
 
         const tool = getToolById(selectedTool);
-        console.log("🛠️ Selected tool:", tool);
+
         const toolContext = {
           canvas: drawingCanvas,
           ctx: drawingCanvas.getContext("2d", { willReadFrequently: true })!,
@@ -733,7 +732,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         };
 
         // Pass the coordinates directly to the tool
-        console.log("🎯 Calling tool.onMouseDown with coords:", coords);
+
         tool.onMouseDown?.(
           {
             ...e,
@@ -793,7 +792,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
 
       const tool = getToolById(selectedTool);
-      console.log("🔄 MouseMove - Tool:", selectedTool, "Coords:", coords);
 
       const toolContext = {
         canvas: drawingCanvas,
@@ -851,7 +849,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Update handleMouseUp to use tool architecture
   const handleMouseUp = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      console.log("👆 MouseUp - Tool:", selectedTool);
       setIsMouseDown(false);
 
       if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
@@ -867,7 +864,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
 
       const coords = getCanvasCoordinates(e, displayCanvas, viewport);
-      console.log("📍 MouseUp coordinates:", coords);
 
       const selectedLayer = layers.find(
         (layer) => layer.id === selectedLayerId,
@@ -897,7 +893,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setSelection,
       };
 
-      console.log("🎯 Calling tool.onMouseUp");
       tool.onMouseUp?.(
         {
           ...e,

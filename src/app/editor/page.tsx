@@ -145,6 +145,13 @@ export default function Editor() {
                   const tool = getAllTools().find((t) => t.id === toolId);
                   if (tool) setSelectedTool(tool);
                 }}
+                onColorPick={(color: string, isRightPressed: boolean) => {
+                  if (isRightPressed) {
+                    setSecondaryColor(color);
+                  } else {
+                    setPrimaryColor(color);
+                  }
+                }}
                 layers={layers}
                 selectedLayerId={selectedLayerId}
               />
@@ -161,10 +168,16 @@ export default function Editor() {
               <ColorPicker
                 primaryColor={primaryColor}
                 secondaryColor={secondaryColor}
-                onPrimaryColorSelect={setPrimaryColor}
-                onSecondaryColorSelect={setSecondaryColor}
+                onPrimaryColorSelect={(color: string) => {
+                  setPrimaryColor(color);
+                }}
+                onSecondaryColorSelect={(color: string) => {
+                  setSecondaryColor(color);
+                }}
                 customColors={customColors}
-                onAddCustomColor={addCustomColor}
+                onAddCustomColor={(color: string) => {
+                  addCustomColor(color);
+                }}
               />
               <LayersPanel
                 layers={layers}

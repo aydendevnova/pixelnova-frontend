@@ -71,6 +71,14 @@ export default function ColorPicker({
     return presetColors.includes(color) || customColors.includes(color);
   };
 
+  const handleColorSelect = (color: string, isRightClick: boolean) => {
+    if (isRightClick) {
+      onSecondaryColorSelect(color);
+    } else {
+      onPrimaryColorSelect(color);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
@@ -158,17 +166,17 @@ export default function ColorPicker({
           {presetColors.map((color) => (
             <div
               key={color}
-              className="relative"
+              className="relative cursor-pointer"
               onContextMenu={(e) => {
                 e.preventDefault();
-                onSecondaryColorSelect(color);
+                handleColorSelect(color, true);
               }}
-              onClick={() => onPrimaryColorSelect(color)}
+              onClick={() => handleColorSelect(color, false)}
             >
               <ColorButton
                 color={color}
                 isSelected={primaryColor === color || secondaryColor === color}
-                onClick={() => {}}
+                onClick={() => handleColorSelect(color, false)}
                 title={`${color}\nLeft click: Set primary\nRight click: Set secondary`}
                 isPrimary={primaryColor === color}
               />
@@ -190,19 +198,19 @@ export default function ColorPicker({
             {customColors.map((color) => (
               <div
                 key={color}
-                className="relative"
+                className="relative cursor-pointer"
                 onContextMenu={(e) => {
                   e.preventDefault();
-                  onSecondaryColorSelect(color);
+                  handleColorSelect(color, true);
                 }}
-                onClick={() => onPrimaryColorSelect(color)}
+                onClick={() => handleColorSelect(color, false)}
               >
                 <ColorButton
                   color={color}
                   isSelected={
                     primaryColor === color || secondaryColor === color
                   }
-                  onClick={() => {}}
+                  onClick={() => handleColorSelect(color, false)}
                   title={`${color}\nLeft click: Set primary\nRight click: Set secondary`}
                   isPrimary={primaryColor === color}
                 />
@@ -210,7 +218,7 @@ export default function ColorPicker({
                   <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-blue-500" />
                 )}
                 {secondaryColor === color && (
-                  <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-blue-500" />
+                  <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-green-500" />
                 )}
               </div>
             ))}

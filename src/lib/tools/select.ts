@@ -9,10 +9,8 @@ export const SelectTool: Tool = {
   cursor: "crosshair",
 
   onMouseDown: (e: React.MouseEvent, context: ToolContext) => {
-    console.log("🔲 SELECT onMouseDown");
     const { canvas, viewport, selection, setSelection } = context;
     const coords = getCanvasCoordinates(e, canvas, viewport);
-    console.log("🔲 Mouse coords:", coords);
 
     // If we have an existing selection, check if we're clicking inside it
     if (selection?.selectedImageData) {
@@ -29,7 +27,6 @@ export const SelectTool: Tool = {
         coords.y >= bounds.minY &&
         coords.y <= bounds.maxY
       ) {
-        console.log("🔲 Starting move");
         setSelection({
           ...selection,
           isMoving: true,
@@ -43,7 +40,7 @@ export const SelectTool: Tool = {
     }
 
     // Start a new selection
-    console.log("🔲 Starting new selection");
+
     setSelection({
       isSelecting: true,
       startX: coords.x,
@@ -64,11 +61,6 @@ export const SelectTool: Tool = {
     if (!selection) return;
 
     const coords = getCanvasCoordinates(e, canvas, viewport);
-    console.log("🔲 MOVE", {
-      coords,
-      isSelecting: selection.isSelecting,
-      isMoving: selection.isMoving,
-    });
 
     if (selection.isMoving && selection.selectedImageData) {
       const deltaX = coords.x - selection.moveStartX;
@@ -94,7 +86,6 @@ export const SelectTool: Tool = {
   },
 
   onMouseUp: (e: React.MouseEvent, context: ToolContext) => {
-    console.log("🔲 SELECT onMouseUp");
     const {
       canvas,
       viewport,
@@ -106,11 +97,6 @@ export const SelectTool: Tool = {
     if (!selection) return;
 
     const coords = getCanvasCoordinates(e, canvas, viewport);
-    console.log("🔲 UP", {
-      coords,
-      isSelecting: selection.isSelecting,
-      isMoving: selection.isMoving,
-    });
 
     // If we were moving, apply the selection to the layer and clear it
     if (selection.isMoving && selection.selectedImageData) {
