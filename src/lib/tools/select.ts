@@ -10,18 +10,23 @@ export const SelectTool: Tool = {
   cursor: "crosshair",
 
   onMouseDown: (e: React.MouseEvent, context: ToolContext) => {
+    console.log("🔲 Select onMouseDown");
     const { canvas, viewport, selection, setSelection } = context;
     const coords = getCanvasCoordinates(e, canvas, viewport);
+    console.log("🔲 Coordinates:", coords);
 
     // Check if clicking inside existing selection
     if (selection?.selectedImageData) {
+      console.log("🔲 Checking existing selection");
       const bounds = getSelectionBounds(selection);
+      console.log("🔲 Selection bounds:", bounds);
       if (
         coords.x >= bounds.minX &&
         coords.x <= bounds.maxX &&
         coords.y >= bounds.minY &&
         coords.y <= bounds.maxY
       ) {
+        console.log("🔲 Starting to move existing selection");
         // Start moving existing selection
         setSelection({
           ...selection,
@@ -33,6 +38,7 @@ export const SelectTool: Tool = {
       }
     }
 
+    console.log("🔲 Starting new selection");
     // Start new selection
     setSelection({
       isSelecting: true,
@@ -54,8 +60,10 @@ export const SelectTool: Tool = {
     if (!selection) return;
 
     const coords = getCanvasCoordinates(e, canvas, viewport);
+    console.log("🔲 MouseMove coordinates:", coords);
 
     if (selection.isMoving && selection.selectedImageData) {
+      console.log("🔲 Moving existing selection");
       // Move existing selection
       const deltaX = coords.x - selection.moveStartX;
       const deltaY = coords.y - selection.moveStartY;
@@ -68,6 +76,7 @@ export const SelectTool: Tool = {
         endY: selection.startY + selection.selectedImageData.height,
       });
     } else if (selection.isSelecting) {
+      console.log("🔲 Updating selection rectangle");
       // Update selection rectangle
       setSelection({
         ...selection,
@@ -78,6 +87,7 @@ export const SelectTool: Tool = {
   },
 
   onMouseUp: (e: React.MouseEvent, context: ToolContext) => {
+    console.log("🔲 Select onMouseUp");
     const {
       canvas,
       viewport,
@@ -89,8 +99,10 @@ export const SelectTool: Tool = {
     if (!selection) return;
 
     const coords = getCanvasCoordinates(e, canvas, viewport);
+    console.log("🔲 MouseUp coordinates:", coords);
 
     if (selection.isMoving) {
+      console.log("🔲 Finishing move");
       // Finish moving selection
       setSelection({
         ...selection,
@@ -99,19 +111,27 @@ export const SelectTool: Tool = {
         originalY: selection.startY,
       });
     } else if (selection.isSelecting) {
+      console.log("🔲 Finishing new selection");
       // Finish new selection
       const bounds = getSelectionBounds(selection);
+      console.log("🔲 Final selection bounds:", bounds);
       const selectedLayer = layers.find(
         (layer) => layer.id === selectedLayerId,
       );
-      if (!selectedLayer?.imageData) return;
+      if (!selectedLayer?.imageData) {
+        console.warn("🔲 No selected layer or image data");
+        return;
+      }
 
       // Create a temporary canvas to hold the selection
       const tempCanvas = document.createElement("canvas");
       tempCanvas.width = bounds.width;
       tempCanvas.height = bounds.height;
       const tempCtx = tempCanvas.getContext("2d");
-      if (!tempCtx) return;
+      if (!tempCtx) {
+        console.error("🔲 Failed to get temp canvas context");
+        return;
+      }
 
       // Copy the selected area
       tempCtx.putImageData(
@@ -124,15 +144,23 @@ export const SelectTool: Tool = {
         bounds.height,
       );
 
+      const selectedImageData = tempCtx.getImageData(
+        0,
+        0,
+        bounds.width,
+        bounds.height,
+      );
+      console.log(
+        "🔲 Created selection image data:",
+        selectedImageData.width,
+        "x",
+        selectedImageData.height,
+      );
+
       setSelection({
         ...selection,
         isSelecting: false,
-        selectedImageData: tempCtx.getImageData(
-          0,
-          0,
-          bounds.width,
-          bounds.height,
-        ),
+        selectedImageData,
         originalX: bounds.minX,
         originalY: bounds.minY,
       });

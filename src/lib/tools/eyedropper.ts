@@ -11,13 +11,19 @@ export const EyedropperTool: Tool = {
   cursor: "crosshair",
 
   onMouseDown: (e: React.MouseEvent, context: ToolContext) => {
+    console.log("👁️ Eyedropper onMouseDown");
     const { canvas, viewport, layers } = context;
     const coords = getCanvasCoordinates(e, canvas, viewport);
+    console.log("👁️ Coordinates:", coords);
 
     const color = getPixelColor(coords.x, coords.y, layers);
+    console.log("👁️ Picked color:", color);
+
     if (color) {
-      // Pass true for right click to set secondary color
+      console.log("👁️ Setting color, isRightClick:", e.button === 2);
       context.onColorPick?.(color, e.button === 2);
+    } else {
+      console.log("👁️ No color found at coordinates");
     }
   },
 };

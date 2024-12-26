@@ -655,6 +655,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Remove tool-specific logic from handleMouseDown
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
+      console.log("🔍 MouseDown - Tool:", selectedTool, "Button:", e.button);
       setIsMouseDown(true);
       const isRightClick = e.button === 2;
 
@@ -666,17 +667,25 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       if (e.button === 0 || e.button === 2) {
         const displayCanvas = displayCanvasRef.current;
         const drawingCanvas = drawingCanvasRef.current;
-        if (!displayCanvas || !drawingCanvas) return;
+        if (!displayCanvas || !drawingCanvas) {
+          console.error("❌ Canvas refs not available");
+          return;
+        }
 
         const coords = getCanvasCoordinates(e, displayCanvas, viewport);
+        console.log("📍 Canvas coordinates:", coords);
         setHoverPosition(coords);
 
         const selectedLayer = layers.find(
           (layer) => layer.id === selectedLayerId,
         );
-        if (!selectedLayer || !selectedLayer.visible) return;
+        if (!selectedLayer || !selectedLayer.visible) {
+          console.warn("⚠️ No selected layer or layer not visible");
+          return;
+        }
 
         const tool = getToolById(selectedTool);
+        console.log("🛠️ Selected tool:", tool);
         const toolContext = {
           canvas: drawingCanvas,
           ctx: drawingCanvas.getContext("2d", { willReadFrequently: true })!,
@@ -684,7 +693,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             x: 0,
             y: 0,
             scale: 1,
-          }, // Drawing canvas doesn't need viewport transform
+          },
           primaryColor,
           secondaryColor,
           brushSize,
@@ -697,6 +706,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         };
 
         // Pass the coordinates directly to the tool
+        console.log("🎯 Calling tool.onMouseDown with coords:", coords);
         tool.onMouseDown?.(
           {
             ...e,
@@ -750,9 +760,14 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const selectedLayer = layers.find(
         (layer) => layer.id === selectedLayerId,
       );
-      if (!selectedLayer || !selectedLayer.visible) return;
+      if (!selectedLayer || !selectedLayer.visible) {
+        console.warn("⚠️ MouseMove - No selected layer or layer not visible");
+        return;
+      }
 
       const tool = getToolById(selectedTool);
+      console.log("🔄 MouseMove - Tool:", selectedTool, "Coords:", coords);
+
       const toolContext = {
         canvas: drawingCanvas,
         ctx: drawingCanvas.getContext("2d", { willReadFrequently: true })!,
@@ -760,7 +775,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           x: 0,
           y: 0,
           scale: 1,
-        }, // Drawing canvas doesn't need viewport transform
+        },
         primaryColor,
         secondaryColor,
         brushSize,
@@ -772,7 +787,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setSelection,
       };
 
-      // Pass the coordinates directly to the tool
       tool.onMouseMove?.(
         {
           ...e,
@@ -810,6 +824,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Update handleMouseUp to use tool architecture
   const handleMouseUp = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
+      console.log("👆 MouseUp - Tool:", selectedTool);
       setIsMouseDown(false);
 
       if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
@@ -819,14 +834,21 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
       const displayCanvas = displayCanvasRef.current;
       const drawingCanvas = drawingCanvasRef.current;
-      if (!displayCanvas || !drawingCanvas) return;
+      if (!displayCanvas || !drawingCanvas) {
+        console.error("❌ MouseUp - Canvas refs not available");
+        return;
+      }
 
       const coords = getCanvasCoordinates(e, displayCanvas, viewport);
+      console.log("📍 MouseUp coordinates:", coords);
 
       const selectedLayer = layers.find(
         (layer) => layer.id === selectedLayerId,
       );
-      if (!selectedLayer || !selectedLayer.visible) return;
+      if (!selectedLayer || !selectedLayer.visible) {
+        console.warn("⚠️ MouseUp - No selected layer or layer not visible");
+        return;
+      }
 
       const tool = getToolById(selectedTool);
       const toolContext = {
@@ -836,7 +858,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           x: 0,
           y: 0,
           scale: 1,
-        }, // Drawing canvas doesn't need viewport transform
+        },
         primaryColor,
         secondaryColor,
         brushSize,
@@ -848,7 +870,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setSelection,
       };
 
-      // Pass the coordinates directly to the tool
+      console.log("🎯 Calling tool.onMouseUp");
       tool.onMouseUp?.(
         {
           ...e,
@@ -1019,7 +1041,13 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       timestamp: Date.now(),
     };
 
-    render();
+    // Only render once on initialization
+    if (!animationFrameRef.current) {
+      animationFrameRef.current = requestAnimationFrame(() => {
+        render();
+        animationFrameRef.current = undefined;
+      });
+    }
   }, [width, height, layers]);
 
   // Add keyboard shortcuts
@@ -1112,9 +1140,17 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Trigger render when selectedLayerId changes
   useEffect(() => {
-    clearSelection();
-    render();
-  }, [selectedLayerId, clearSelection, render]);
+    // Only clear selection if there is an active selection
+    if (selection.isSelecting || selection.selectedImageData) {
+      clearSelection();
+      if (!animationFrameRef.current) {
+        animationFrameRef.current = requestAnimationFrame(() => {
+          render();
+          animationFrameRef.current = undefined;
+        });
+      }
+    }
+  }, [selectedLayerId, clearSelection, selection]);
 
   return (
     <div
