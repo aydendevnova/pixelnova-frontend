@@ -88,7 +88,7 @@ export const SelectTool: Tool = {
         ...selection,
         endX: coords.x,
         endY: coords.y,
-        isSelecting: true, // Ensure this stays true during selection
+        isSelecting: true,
       });
     }
   },
@@ -112,11 +112,57 @@ export const SelectTool: Tool = {
       isMoving: selection.isMoving,
     });
 
-    // If we were moving, just stop the move
-    if (selection.isMoving) {
+    // If we were moving, apply the selection to the layer and clear it
+    if (selection.isMoving && selection.selectedImageData) {
+      const selectedLayer = layers.find(
+        (layer) => layer.id === selectedLayerId,
+      );
+      if (!selectedLayer?.imageData) return;
+
+      // Create a temporary canvas to apply the moved selection
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = selectedLayer.imageData.width;
+      tempCanvas.height = selectedLayer.imageData.height;
+      const tempCtx = tempCanvas.getContext("2d");
+      if (!tempCtx) return;
+
+      // Draw the current layer
+      tempCtx.putImageData(selectedLayer.imageData, 0, 0);
+
+      // Create another canvas for the selection
+      const selectionCanvas = document.createElement("canvas");
+      selectionCanvas.width = selection.selectedImageData.width;
+      selectionCanvas.height = selection.selectedImageData.height;
+      const selectionCtx = selectionCanvas.getContext("2d");
+      if (!selectionCtx) return;
+
+      // Draw the selection
+      selectionCtx.putImageData(selection.selectedImageData, 0, 0);
+
+      // Draw the selection at its new position
+      tempCtx.drawImage(selectionCanvas, selection.startX, selection.startY);
+
+      // Update the layer with the new image data
+      selectedLayer.imageData = tempCtx.getImageData(
+        0,
+        0,
+        tempCanvas.width,
+        tempCanvas.height,
+      );
+
+      // Clear the selection
       setSelection({
-        ...selection,
+        isSelecting: false,
+        startX: 0,
+        startY: 0,
+        endX: 0,
+        endY: 0,
         isMoving: false,
+        moveStartX: 0,
+        moveStartY: 0,
+        selectedImageData: undefined,
+        originalX: undefined,
+        originalY: undefined,
       });
       return;
     }
