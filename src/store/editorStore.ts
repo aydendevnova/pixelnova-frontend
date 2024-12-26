@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Layer, Tool, ViewportState, HistoryState } from "@/types/editor";
+import { Layer, Tool, ViewportState } from "@/types/editor";
 import { PencilTool } from "@/lib/tools/pencil";
 
 interface EditorState {
@@ -20,10 +20,6 @@ interface EditorState {
   layers: Layer[];
   selectedLayerId: string;
 
-  // History State
-  history: HistoryState[];
-  historyIndex: number;
-
   // Actions
   setCanvasSize: (size: { width: number; height: number }) => void;
   setViewport: (viewport: ViewportState) => void;
@@ -36,9 +32,6 @@ interface EditorState {
   addCustomColor: (color: string) => void;
   setLayers: (layers: Layer[] | ((prev: Layer[]) => Layer[])) => void;
   setSelectedLayerId: (id: string) => void;
-  pushHistory: (state: HistoryState) => void;
-  undo: () => void;
-  redo: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -58,10 +51,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // Initial Layers State
   layers: [],
   selectedLayerId: "",
-
-  // Initial History State
-  history: [],
-  historyIndex: -1,
 
   // Actions
   setCanvasSize: (size) => set({ canvasSize: size }),
@@ -84,37 +73,4 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           : layersOrUpdater,
     })),
   setSelectedLayerId: (id) => set({ selectedLayerId: id }),
-
-  pushHistory: (state) =>
-    set((prev) => {
-      const newHistory = prev.history.slice(0, prev.historyIndex + 1);
-      return {
-        history: [...newHistory, state],
-        historyIndex: prev.historyIndex + 1,
-      };
-    }),
-
-  undo: () =>
-    set((state) => {
-      if (state.historyIndex <= 0) return state;
-      const newIndex = state.historyIndex - 1;
-      const prevState = state.history[newIndex];
-      return {
-        ...prevState,
-        historyIndex: newIndex,
-        history: state.history,
-      };
-    }),
-
-  redo: () =>
-    set((state) => {
-      if (state.historyIndex >= state.history.length - 1) return state;
-      const newIndex = state.historyIndex + 1;
-      const nextState = state.history[newIndex];
-      return {
-        ...nextState,
-        historyIndex: newIndex,
-        history: state.history,
-      };
-    }),
 }));

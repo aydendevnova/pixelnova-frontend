@@ -13,13 +13,6 @@ export interface ViewportState {
   scale: number;
 }
 
-export interface HistoryState {
-  canvasSize: { width: number; height: number };
-  layers: Layer[];
-  selectedLayerId: string;
-  timestamp: number;
-}
-
 export interface SelectionState {
   isSelecting: boolean;
   startX: number;
@@ -60,7 +53,6 @@ export interface ToolContext {
   bucketTolerance: number;
   layers: Layer[];
   selectedLayerId: string;
-  pushHistory: (state: HistoryState) => void;
   onColorPick?: (color: string, isRightClick: boolean) => void;
   selection?: SelectionState;
   setSelection: (selection: SelectionState) => void;

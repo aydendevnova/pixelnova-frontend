@@ -46,7 +46,6 @@ The `Canvas` component is responsible for rendering the drawing area and handlin
 - `bucketTolerance`: The tolerance level for the bucket fill tool.
 - `brushSize`: The size of the brush.
 - `showGrid`: A flag indicating whether the grid is visible on the canvas.
-- `onHistoryChange`: Callback to update the undo and redo state.
 - `onColorPick`: Callback to handle color picking.
 - `onToolSelect`: Callback to handle tool selection.
 - `layers`: An array of layers, each containing an `id`, `name`, `visible` flag, and `imageData`.
@@ -81,7 +80,7 @@ The layer system in the `Editor` component allows for complex image compositions
 
 #### Technical Implementation
 
-In the code, each layer is represented by an object containing an `id`, `name`, `visible` flag, and `imageData`. The `Canvas` component uses these layers to render the drawing area. The `render` function iterates over the layers, drawing each visible layer onto the canvas. The `drawPixel` and `floodFill` functions are updated to modify only the selected layer's `imageData`. The `saveToHistory` function captures the state of all layers, allowing for undo and redo operations. The `undo` and `redo` functions restore the layers' states from the history.
+In the code, each layer is represented by an object containing an `id`, `name`, `visible` flag, and `imageData`. The `Canvas` component uses these layers to render the drawing area. The `render` function iterates over the layers, drawing each visible layer onto the canvas. The `drawPixel` and `floodFill` functions are updated to modify only the selected layer's `imageData`.
 
 ## State Management
 
@@ -99,18 +98,6 @@ The `Editor` component manages various states to handle the functionality of the
 - `showGrid`: A flag indicating whether the grid is visible on the canvas.
 
 ## Methods
-
-### handleHistoryChange
-
-Updates the undo and redo state.
-
-### handleUndo
-
-Triggers the undo action.
-
-### handleRedo
-
-Triggers the redo action.
 
 ### handleClearCanvas
 

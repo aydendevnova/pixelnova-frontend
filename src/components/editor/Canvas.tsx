@@ -20,7 +20,6 @@ interface CanvasProps {
   bucketTolerance: number;
   brushSize: number;
   showGrid: boolean;
-  onHistoryChange?: (canUndo: boolean, canRedo: boolean) => void;
   onColorPick?: (color: string, isRightPressed: boolean) => void;
   onToolSelect: (tool: ToolType) => void;
   layers: Layer[];
@@ -47,20 +46,10 @@ interface SelectionState {
   originalY?: number;
 }
 
-interface HistoryState {
-  layers: Layer[];
-  timestamp: number;
-}
-
 export interface CanvasRef {
   clearCanvas: () => void;
   importImage: (imageData: ImageData) => void;
-  canUndo: boolean;
-  canRedo: boolean;
-  undo: () => void;
-  redo: () => void;
   getLayerImageData: () => ImageData | null;
-  saveToHistory: () => void;
 }
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
@@ -73,7 +62,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     bucketTolerance,
     brushSize,
     showGrid,
-    onHistoryChange,
     onColorPick,
     onToolSelect,
     layers,
@@ -108,40 +96,13 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     moveStartX: 0,
     moveStartY: 0,
   });
-  const [history, setHistory] = useState<HistoryState[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [isHistoryAction, setIsHistoryAction] = useState(false);
+
   const [isPickingColor, setIsPickingColor] = useState(false);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [hoverPosition, setHoverPosition] = useState<{
     x: number;
     y: number;
   } | null>(null);
-
-  // Modify saveToHistory to save all layers
-  const saveToHistory = useCallback(() => {
-    if (isHistoryAction) return;
-
-    setHistory((prev) => {
-      const newHistory = prev.slice(0, historyIndex + 1);
-      const newState = {
-        layers: layers.map((layer) => ({
-          ...layer,
-          imageData: layer.imageData
-            ? new ImageData(
-                new Uint8ClampedArray(layer.imageData.data),
-                layer.imageData.width,
-                layer.imageData.height,
-              )
-            : null,
-        })),
-        timestamp: Date.now(),
-      };
-      return [...newHistory, newState];
-    });
-
-    setHistoryIndex((prev) => prev + 1);
-  }, [historyIndex, isHistoryAction, layers]);
 
   // Create offscreen canvas for checkerboard pattern
   const checkerboardPattern = useMemo(() => {
@@ -396,67 +357,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     ],
   );
 
-  // Add undo/redo functions
-  const undo = useCallback(() => {
-    if (historyIndex <= 0) return;
-
-    setIsHistoryAction(true);
-    const previousState = history[historyIndex - 1];
-    if (previousState) {
-      // Update all layers from the previous state
-      previousState.layers.forEach((historyLayer) => {
-        const layer = layers.find((l) => l.id === historyLayer.id);
-        if (layer && historyLayer.imageData) {
-          layer.imageData = new ImageData(
-            new Uint8ClampedArray(historyLayer.imageData.data),
-            historyLayer.imageData.width,
-            historyLayer.imageData.height,
-          );
-        }
-      });
-
-      setHistoryIndex((prev) => prev - 1);
-      // Trigger render after state update
-      requestAnimationFrame(() => {
-        render();
-      });
-    }
-    setIsHistoryAction(false);
-
-    // Clear selection
-    clearSelection();
-  }, [history, historyIndex, render, layers]);
-
-  const redo = useCallback(() => {
-    if (historyIndex >= history.length - 1) return;
-
-    setIsHistoryAction(true);
-    const nextState = history[historyIndex + 1];
-    if (nextState) {
-      // Update all layers from the next state
-      nextState.layers.forEach((historyLayer) => {
-        const layer = layers.find((l) => l.id === historyLayer.id);
-        if (layer && historyLayer.imageData) {
-          layer.imageData = new ImageData(
-            new Uint8ClampedArray(historyLayer.imageData.data),
-            historyLayer.imageData.width,
-            historyLayer.imageData.height,
-          );
-        }
-      });
-
-      setHistoryIndex((prev) => prev + 1);
-      // Trigger render after state update
-      requestAnimationFrame(() => {
-        render();
-      });
-    }
-    setIsHistoryAction(false);
-
-    // Clear selection
-    clearSelection();
-  }, [history, historyIndex, render, layers]);
-
   // Update floodFill to work with layers
   const floodFill = useCallback(
     (
@@ -606,7 +506,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         if (!selectedLayer) return;
 
         selectedLayer.imageData = new ImageData(width, height);
-        saveToHistory();
+
         render();
       },
       importImage: (imageData: ImageData) => {
@@ -616,7 +516,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         if (!selectedLayer) return;
 
         selectedLayer.imageData = imageData;
-        saveToHistory();
+
         render();
 
         // Center the viewport on the new image
@@ -630,29 +530,15 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           }));
         }, 4);
       },
-      canUndo: historyIndex > 0,
-      canRedo: historyIndex < history.length - 1,
-      undo,
-      redo,
+
       getLayerImageData: () => {
         const selectedLayer = layers.find(
           (layer) => layer.id === selectedLayerId,
         );
         return selectedLayer?.imageData ?? null;
       },
-      saveToHistory,
     }),
-    [
-      saveToHistory,
-      width,
-      height,
-      layers,
-      selectedLayerId,
-      historyIndex,
-      history.length,
-      undo,
-      redo,
-    ],
+    [width, height, layers, selectedLayerId],
   );
 
   // Initialize canvases
@@ -1205,9 +1091,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           const deltaX = coords.x - selection.moveStartX;
           const deltaY = coords.y - selection.moveStartY;
 
-          // Save the current state before moving
-          saveToHistory();
-
           moveSelection(
             (selection.originalX ?? 0) + deltaX,
             (selection.originalY ?? 0) + deltaY,
@@ -1221,7 +1104,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       getSelectionBounds,
       layers,
       selectedLayerId,
-      saveToHistory,
+
       moveSelection,
       getCanvasCoordinates,
     ],
@@ -1262,9 +1145,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         );
         if (!selectedLayer || !selectedLayer.visible) return;
 
-        // Save state before deletion
-        saveToHistory();
-
         // Create a temporary canvas
         const tempCanvas = document.createElement("canvas");
         tempCanvas.width = width;
@@ -1296,14 +1176,14 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         render();
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
-        e.preventDefault();
-        if (e.shiftKey) {
-          redo();
-        } else {
-          undo();
-        }
-      }
+      // if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+      //   e.preventDefault();
+      //   if (e.shiftKey) {
+      //     redo();
+      //   } else {
+      //     undo();
+      //   }
+      // }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -1315,10 +1195,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     width,
     height,
     clearSelection,
-    saveToHistory,
+
     render,
-    undo,
-    redo,
   ]);
 
   // Event listeners with cleanup
@@ -1371,8 +1249,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       })),
       timestamp: Date.now(),
     };
-    setHistory([initialState]);
-    setHistoryIndex(0);
+
     render();
   }, [width, height, layers]);
 
@@ -1397,7 +1274,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           // Clear the selected area
           ctx.clearRect(minX, minY, width, height);
           clearSelection();
-          saveToHistory();
+
           // Trigger a render after clearing
           requestAnimationFrame(() => {
             render();
@@ -1405,26 +1282,19 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         }
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
-        e.preventDefault();
-        if (e.shiftKey) {
-          redo();
-        } else {
-          undo();
-        }
-      }
+      // if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+      //   e.preventDefault();
+      //   if (e.shiftKey) {
+      //     redo();
+      //   } else {
+      //     undo();
+      //   }
+      // }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo, clearSelection, getSelectionBounds, saveToHistory, render]);
-
-  // Inside Canvas component, add effect to notify parent of history state changes
-  useEffect(() => {
-    if (onHistoryChange) {
-      onHistoryChange(historyIndex > 0, historyIndex < history.length - 1);
-    }
-  }, [historyIndex, history.length, onHistoryChange]);
+  }, [clearSelection, getSelectionBounds, render]);
 
   // Add useEffect to watch for tool changes
   useEffect(() => {

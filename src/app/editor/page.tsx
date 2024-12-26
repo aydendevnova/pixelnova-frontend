@@ -9,7 +9,6 @@ import TopMenuBar from "@/components/editor/TopMenuBar";
 import { ErrorBoundary } from "@/components/error-boundary";
 import ErrorView from "@/components/error-view";
 import { useEditorStore } from "@/store/editorStore";
-import { commandManager } from "@/lib/commands";
 import { getAllTools } from "@/lib/tools";
 import { createImageData } from "@/lib/utils/canvas";
 import { Layer, Tool, ToolType } from "@/types/editor";
@@ -67,7 +66,6 @@ export default function Editor() {
     };
     setLayers([blankLayer]);
     setSelectedLayerId(blankLayer.id);
-    commandManager.clear();
   };
 
   const handleImageImport = (imageData: ImageData) => {
@@ -123,10 +121,6 @@ export default function Editor() {
                   const tool = getAllTools().find((t) => t.id === toolId);
                   if (tool) setSelectedTool(tool);
                 }}
-                canUndo={commandManager.canUndo()}
-                canRedo={commandManager.canRedo()}
-                onUndo={() => commandManager.undo()}
-                onRedo={() => commandManager.redo()}
               />
             </ErrorBoundary>
           </div>
