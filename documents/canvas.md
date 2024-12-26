@@ -24,7 +24,6 @@ The `Editor` component is the main container for the pixel art editor. It manage
 
 #### Methods
 
-- `handleHistoryChange`: Updates the undo and redo state.
 - `handleUndo`: Triggers the undo action.
 - `handleRedo`: Triggers the redo action.
 - `handleClearCanvas`: Clears the canvas and resets its size.
@@ -44,7 +43,6 @@ The `Canvas` component is responsible for rendering the drawing area and handlin
 - `bucketTolerance`: The tolerance level for the bucket fill tool.
 - `brushSize`: The size of the brush.
 - `showGrid`: A flag indicating whether the grid is visible on the canvas.
-- `onHistoryChange`: Callback to update the undo and redo state.
 - `onColorPick`: Callback to handle color picking.
 - `onToolSelect`: Callback to handle tool selection.
 

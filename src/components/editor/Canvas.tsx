@@ -9,64 +9,35 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-
-interface Layer {
-  id: string;
-  name: string;
-  visible: boolean;
-  imageData: ImageData | null;
-}
+import {
+  Layer,
+  ToolType,
+  ViewportState,
+  SelectionState,
+  Tool,
+} from "@/types/editor";
+import { getToolById } from "@/lib/tools";
+import { getCanvasCoordinates } from "@/lib/utils/coordinates";
 
 interface CanvasProps {
   width: number;
   height: number;
   primaryColor: string;
   secondaryColor: string;
-  selectedTool: string;
+  selectedTool: ToolType;
   bucketTolerance: number;
   brushSize: number;
   showGrid: boolean;
-  onHistoryChange?: (canUndo: boolean, canRedo: boolean) => void;
   onColorPick?: (color: string, isRightPressed: boolean) => void;
-  onToolSelect: (tool: string) => void;
+  onToolSelect: (tool: ToolType) => void;
   layers: Layer[];
   selectedLayerId: string;
-}
-
-type ViewportState = {
-  x: number;
-  y: number;
-  scale: number;
-};
-
-interface SelectionState {
-  isSelecting: boolean;
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-  isMoving: boolean;
-  moveStartX: number;
-  moveStartY: number;
-  selectedImageData?: ImageData;
-  originalX?: number;
-  originalY?: number;
-}
-
-interface HistoryState {
-  layers: Layer[];
-  timestamp: number;
 }
 
 export interface CanvasRef {
   clearCanvas: () => void;
   importImage: (imageData: ImageData) => void;
-  canUndo: boolean;
-  canRedo: boolean;
-  undo: () => void;
-  redo: () => void;
   getLayerImageData: () => ImageData | null;
-  saveToHistory: () => void;
 }
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
@@ -79,7 +50,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     bucketTolerance,
     brushSize,
     showGrid,
-    onHistoryChange,
     onColorPick,
     onToolSelect,
     layers,
@@ -113,41 +83,17 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     isMoving: false,
     moveStartX: 0,
     moveStartY: 0,
+    selectedImageData: undefined,
+    originalX: undefined,
+    originalY: undefined,
   });
-  const [history, setHistory] = useState<HistoryState[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [isHistoryAction, setIsHistoryAction] = useState(false);
+
   const [isPickingColor, setIsPickingColor] = useState(false);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [hoverPosition, setHoverPosition] = useState<{
     x: number;
     y: number;
   } | null>(null);
-
-  // Modify saveToHistory to save all layers
-  const saveToHistory = useCallback(() => {
-    if (isHistoryAction) return;
-
-    setHistory((prev) => {
-      const newHistory = prev.slice(0, historyIndex + 1);
-      const newState = {
-        layers: layers.map((layer) => ({
-          ...layer,
-          imageData: layer.imageData
-            ? new ImageData(
-                new Uint8ClampedArray(layer.imageData.data),
-                layer.imageData.width,
-                layer.imageData.height,
-              )
-            : null,
-        })),
-        timestamp: Date.now(),
-      };
-      return [...newHistory, newState];
-    });
-
-    setHistoryIndex((prev) => prev + 1);
-  }, [historyIndex, isHistoryAction, layers]);
 
   // Create offscreen canvas for checkerboard pattern
   const checkerboardPattern = useMemo(() => {
@@ -171,7 +117,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     return patternCanvas;
   }, []); // No dependencies since size is fixed
 
-  // Update render function to handle multiple layers
+  // Add render function
   const render = useCallback(() => {
     const displayCanvas = displayCanvasRef.current;
     const drawingCanvas = drawingCanvasRef.current;
@@ -225,31 +171,63 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     });
 
     // Draw selection if it exists
-    if (
-      (selection.isSelecting || selection.selectedImageData) &&
-      !selection.isMoving
-    ) {
+    if (selection.isSelecting || selection.selectedImageData) {
+      // Save the current context state
+      ctx.save();
+
+      // Create selection overlay
+      ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+
+      // Draw the overlay in four parts around the selection
+      const x = selection.startX;
+      const y = selection.startY;
+      const width = selection.endX - selection.startX;
+      const height = selection.endY - selection.startY;
+
+      // Top
+      ctx.fillRect(0, 0, drawingCanvas.width, y);
+      // Bottom
+      ctx.fillRect(
+        0,
+        y + height,
+        drawingCanvas.width,
+        drawingCanvas.height - (y + height),
+      );
+      // Left
+      ctx.fillRect(0, y, x, height);
+      // Right
+      ctx.fillRect(x + width, y, drawingCanvas.width - (x + width), height);
+
+      // Draw selection outline
       ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 1 / viewport.scale;
-      ctx.setLineDash([2 / viewport.scale, 2 / viewport.scale]);
-
-      const x = Math.min(selection.startX, selection.endX);
-      const y = Math.min(selection.startY, selection.endY);
-      const width = Math.abs(selection.endX - selection.startX);
-      const height = Math.abs(selection.endY - selection.startY);
-
+      ctx.lineWidth = 2 / viewport.scale;
+      ctx.setLineDash([6 / viewport.scale, 4 / viewport.scale]);
+      ctx.lineDashOffset = 0;
       ctx.strokeRect(x, y, width, height);
 
       // Draw inverted color outline
       ctx.strokeStyle = "#000000";
-      ctx.setLineDash([2 / viewport.scale, 2 / viewport.scale]);
-      ctx.lineDashOffset = 2 / viewport.scale;
+      ctx.lineDashOffset = 6 / viewport.scale;
       ctx.strokeRect(x, y, width, height);
-    }
 
-    // Draw selection overlay when moving
-    if (selection.isMoving) {
-      ctx.drawImage(selectionCanvas, 0, 0);
+      // If we have selected image data and we're moving it, draw it at the current position
+      if (selection.selectedImageData && selection.isMoving) {
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = selection.selectedImageData.width;
+        tempCanvas.height = selection.selectedImageData.height;
+        const tempCtx = tempCanvas.getContext("2d", {
+          willReadFrequently: true,
+        });
+        if (tempCtx) {
+          tempCtx.putImageData(selection.selectedImageData, 0, 0);
+          ctx.globalAlpha = 0.8; // Make it slightly transparent while moving
+          ctx.drawImage(tempCanvas, x, y);
+          ctx.globalAlpha = 1.0;
+        }
+      }
+
+      // Restore the context state
+      ctx.restore();
     }
 
     // Draw grid if enabled
@@ -284,8 +262,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const size = brushSize;
       const halfSize = Math.floor(size / 2);
 
-      const x = hoverPosition.x - halfSize;
-      const y = hoverPosition.y - halfSize;
+      const x = Math.floor(hoverPosition.x - halfSize);
+      const y = Math.floor(hoverPosition.y - halfSize);
 
       ctx.globalAlpha = 0.5;
       if (selectedTool === "eraser") {
@@ -322,6 +300,16 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     height,
     selectedLayerId,
   ]);
+
+  // Start render loop
+  useEffect(() => {
+    render();
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [render]);
 
   // Update drawPixel to draw on the selected layer
   const drawPixel = useCallback(
@@ -401,67 +389,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       selectedLayerId,
     ],
   );
-
-  // Add undo/redo functions
-  const undo = useCallback(() => {
-    if (historyIndex <= 0) return;
-
-    setIsHistoryAction(true);
-    const previousState = history[historyIndex - 1];
-    if (previousState) {
-      // Update all layers from the previous state
-      previousState.layers.forEach((historyLayer) => {
-        const layer = layers.find((l) => l.id === historyLayer.id);
-        if (layer && historyLayer.imageData) {
-          layer.imageData = new ImageData(
-            new Uint8ClampedArray(historyLayer.imageData.data),
-            historyLayer.imageData.width,
-            historyLayer.imageData.height,
-          );
-        }
-      });
-
-      setHistoryIndex((prev) => prev - 1);
-      // Trigger render after state update
-      requestAnimationFrame(() => {
-        render();
-      });
-    }
-    setIsHistoryAction(false);
-
-    // Clear selection
-    clearSelection();
-  }, [history, historyIndex, render, layers]);
-
-  const redo = useCallback(() => {
-    if (historyIndex >= history.length - 1) return;
-
-    setIsHistoryAction(true);
-    const nextState = history[historyIndex + 1];
-    if (nextState) {
-      // Update all layers from the next state
-      nextState.layers.forEach((historyLayer) => {
-        const layer = layers.find((l) => l.id === historyLayer.id);
-        if (layer && historyLayer.imageData) {
-          layer.imageData = new ImageData(
-            new Uint8ClampedArray(historyLayer.imageData.data),
-            historyLayer.imageData.width,
-            historyLayer.imageData.height,
-          );
-        }
-      });
-
-      setHistoryIndex((prev) => prev + 1);
-      // Trigger render after state update
-      requestAnimationFrame(() => {
-        render();
-      });
-    }
-    setIsHistoryAction(false);
-
-    // Clear selection
-    clearSelection();
-  }, [history, historyIndex, render, layers]);
 
   // Update floodFill to work with layers
   const floodFill = useCallback(
@@ -612,7 +539,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         if (!selectedLayer) return;
 
         selectedLayer.imageData = new ImageData(width, height);
-        saveToHistory();
+
         render();
       },
       importImage: (imageData: ImageData) => {
@@ -622,7 +549,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         if (!selectedLayer) return;
 
         selectedLayer.imageData = imageData;
-        saveToHistory();
+
         render();
 
         // Center the viewport on the new image
@@ -636,29 +563,15 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           }));
         }, 4);
       },
-      canUndo: historyIndex > 0,
-      canRedo: historyIndex < history.length - 1,
-      undo,
-      redo,
+
       getLayerImageData: () => {
         const selectedLayer = layers.find(
           (layer) => layer.id === selectedLayerId,
         );
         return selectedLayer?.imageData ?? null;
       },
-      saveToHistory,
     }),
-    [
-      saveToHistory,
-      width,
-      height,
-      layers,
-      selectedLayerId,
-      historyIndex,
-      history.length,
-      undo,
-      redo,
-    ],
+    [width, height, layers, selectedLayerId],
   );
 
   // Initialize canvases
@@ -696,35 +609,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     };
   }, [width, height]);
 
-  // Start render loop
-  useEffect(() => {
-    render();
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [render]);
-
-  // Optimized pixel coordinate calculation
-  const getPixelCoords = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      const canvas = displayCanvasRef.current;
-      if (!canvas) return { x: -1, y: -1 };
-
-      const rect = canvas.getBoundingClientRect();
-      const x = Math.floor(
-        (e.clientX - rect.left - viewport.x) / viewport.scale,
-      );
-      const y = Math.floor(
-        (e.clientY - rect.top - viewport.y) / viewport.scale,
-      );
-      return { x, y };
-    },
-    [viewport.x, viewport.y, viewport.scale],
-  );
-
-  // Throttled pan handler
+  // Helper functions
   const handlePan = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (!isPanning) return;
@@ -738,289 +623,22 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     [isPanning],
   );
 
-  // Selection helpers
-  const getSelectionBounds = useCallback(() => {
-    const minX = Math.min(selection.startX, selection.endX);
-    const maxX = Math.max(selection.startX, selection.endX);
-    const minY = Math.min(selection.startY, selection.endY);
-    const maxY = Math.max(selection.startY, selection.endY);
-    return { minX, maxX, minY, maxY };
-  }, [selection]);
+  const clearSelection = useCallback(() => {
+    setSelection({
+      isSelecting: false,
+      startX: 0,
+      startY: 0,
+      endX: 0,
+      endY: 0,
+      isMoving: false,
+      moveStartX: 0,
+      moveStartY: 0,
+      selectedImageData: undefined,
+      originalX: undefined,
+      originalY: undefined,
+    });
+  }, []);
 
-  // Add color picking function
-  const pickColor = useCallback(
-    (x: number, y: number, isRightClick: boolean) => {
-      const canvas = drawingCanvasRef.current;
-      if (!canvas) return;
-
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (!ctx) return;
-
-      // Get pixel data at the clicked position
-      const pixel = ctx.getImageData(x, y, 1, 1);
-      const [r, g, b, a] = pixel.data;
-
-      // If pixel is fully transparent
-      if (a === 0) {
-        onColorPick?.("transparent", isRightClick);
-        return;
-      }
-
-      // Convert to hex color
-      const color = `#${((1 << 24) + (r ?? 0 << 16) + (g ?? 0 << 8) + (b ?? 0))
-        .toString(16)
-        .slice(1)
-        .toUpperCase()}`;
-      onColorPick?.(color, isRightClick);
-    },
-    [onColorPick],
-  );
-
-  // Mouse event handlers with debounced state updates
-  // Handle mouse events for selection
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      setIsMouseDown(true);
-      const isRightClick = e.button === 2;
-
-      const color = isRightClick ? secondaryColor : primaryColor;
-
-      if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
-        setIsPanning(true);
-        return;
-      }
-
-      if (e.button === 0 || e.button === 2) {
-        const { x, y } = getPixelCoords(e);
-
-        // Add immediate painting for pencil and eraser tools
-        if (
-          (selectedTool === "pencil" || selectedTool === "eraser") &&
-          !selection.isSelecting
-        ) {
-          const coords = getCanvasCoordinates(e);
-          drawPixel(coords.x, coords.y, isRightClick);
-        }
-
-        if (selectedTool === "bucket") {
-          const canvas = drawingCanvasRef.current;
-          if (!canvas) return;
-
-          const ctx = canvas.getContext("2d", { willReadFrequently: true });
-          if (!ctx) return;
-
-          const imageData = ctx.getImageData(x, y, 1, 1);
-          const [r, g, b, a] = imageData.data;
-
-          let targetColor = "transparent";
-          if (a === 255) {
-            targetColor = `#${[r, g, b]
-              .map((x) => x?.toString(16).padStart(2, "0"))
-              .join("")
-              .toUpperCase()}`;
-          }
-
-          floodFill(x, y, targetColor, color);
-          return;
-        }
-
-        if (selectedTool === "eyedropper") {
-          const canvas = drawingCanvasRef.current;
-          if (!canvas) return;
-
-          const ctx = canvas.getContext("2d", { willReadFrequently: true });
-          if (!ctx) return;
-
-          // Get pixel data at the clicked position
-          const pixel = ctx.getImageData(x, y, 1, 1);
-          const [r, g, b, a] = pixel.data;
-
-          // If pixel is fully transparent
-          if (a === 0) {
-            onColorPick?.("transparent", isRightClick);
-            return;
-          }
-
-          // For partially transparent pixels, include alpha in color
-          if (a && a < 255) {
-            const rgba = `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(2)})`;
-            onColorPick?.(rgba, isRightClick);
-            return;
-          }
-
-          // For fully opaque pixels, use hex
-          const hex =
-            "#" +
-            [r, g, b]
-              .map((x) => x?.toString(16).padStart(2, "0"))
-              .join("")
-              .toUpperCase();
-
-          onColorPick?.(hex, isRightClick);
-          return;
-        }
-        const coords = getCanvasCoordinates(e);
-        if (selectedTool === "select") {
-          // Check if clicking inside existing selection
-          if (selection.selectedImageData) {
-            const { minX, maxX, minY, maxY } = getSelectionBounds();
-            if (
-              coords.x >= minX &&
-              coords.x <= maxX &&
-              coords.y >= minY &&
-              coords.y <= maxY
-            ) {
-              // Start moving existing selection
-              setSelection((prev) => ({
-                ...prev,
-                isMoving: true,
-                moveStartX: coords.x,
-                moveStartY: coords.y,
-              }));
-              return;
-            }
-          }
-
-          // Start new selection
-          setSelection({
-            isSelecting: true,
-            startX: coords.x,
-            startY: coords.y,
-            endX: coords.x,
-            endY: coords.y,
-            isMoving: false,
-            moveStartX: coords.x,
-            moveStartY: coords.y,
-            selectedImageData: undefined,
-            originalX: undefined,
-            originalY: undefined,
-          });
-        }
-      }
-    },
-    [
-      isSpacePressed,
-      selectedTool,
-      primaryColor,
-      secondaryColor,
-      getPixelCoords,
-      floodFill,
-      selection,
-      getSelectionBounds,
-      drawPixel,
-      onColorPick,
-    ],
-  );
-
-  const getCanvasCoordinates = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>): { x: number; y: number } => {
-      const canvas = displayCanvasRef.current;
-      if (!canvas) return { x: 0, y: 0 };
-
-      const rect = canvas.getBoundingClientRect();
-
-      // Get mouse position relative to canvas
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      // Reverse the viewport transformation
-      const x = Math.floor((mouseX - viewport.x) / viewport.scale);
-      const y = Math.floor((mouseY - viewport.y) / viewport.scale);
-
-      return { x, y };
-    },
-    [viewport],
-  );
-
-  // Update handleMouseMove to handle continuous painting
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      // Check for right click using e.buttons
-      // e.buttons is a bitmask: 1 = left, 2 = right
-      const isRightClick = (e.buttons & 2) === 2;
-
-      const coords = getCanvasCoordinates(e);
-      setHoverPosition(coords);
-
-      if (!isMouseDown) return;
-
-      if (isPanning) {
-        handlePan(e);
-        return;
-      }
-
-      if (isPickingColor) {
-        pickColor(coords.x, coords.y, isRightClick);
-        return;
-      }
-
-      if (selection.isSelecting) {
-        setSelection((prev) => ({
-          ...prev,
-          endX: coords.x,
-          endY: coords.y,
-        }));
-        // Draw preview of moved selection
-        const selectionCanvas = selectionCanvasRef.current;
-        if (selectionCanvas && selection.selectedImageData) {
-          const ctx = selectionCanvas.getContext("2d");
-          if (ctx) {
-            ctx.clearRect(0, 0, selectionCanvas.width, selectionCanvas.height);
-            ctx.putImageData(
-              selection.selectedImageData,
-              (selection.originalX ?? 0) + coords.x,
-              (selection.originalY ?? 0) + coords.y,
-            );
-          }
-        }
-        render();
-        return;
-      }
-
-      if (selection.isMoving && selection.selectedImageData) {
-        const deltaX = coords.x - selection.moveStartX;
-        const deltaY = coords.y - selection.moveStartY;
-
-        const selectionCanvas = selectionCanvasRef.current;
-        if (selectionCanvas) {
-          const ctx = selectionCanvas.getContext("2d");
-          if (ctx) {
-            ctx.clearRect(0, 0, selectionCanvas.width, selectionCanvas.height);
-            ctx.putImageData(
-              selection.selectedImageData,
-              (selection.originalX ?? 0) + deltaX,
-              (selection.originalY ?? 0) + deltaY,
-            );
-          }
-        }
-        render();
-        return;
-      }
-
-      // Handle continuous painting for brush and eraser
-      if (
-        (selectedTool === "pencil" || selectedTool === "eraser") &&
-        !selection.isSelecting
-      ) {
-        drawPixel(coords.x, coords.y, isRightClick);
-      }
-    },
-    [
-      isMouseDown,
-      isPanning,
-      isPickingColor,
-      // activeButton,
-      selectedTool,
-      selection,
-      handlePan,
-      pickColor,
-      drawPixel,
-      render,
-      getCanvasCoordinates,
-    ],
-  );
-
-  // Optimized wheel handler with debouncing
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
     const { deltaY } = e;
@@ -1061,177 +679,258 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     });
   }, []);
 
-  const clearSelection = useCallback(() => {
-    setSelection({
-      isSelecting: false,
-      startX: 0,
-      startY: 0,
-      endX: 0,
-      endY: 0,
-      isMoving: false,
-      moveStartX: 0,
-      moveStartY: 0,
-      selectedImageData: undefined,
-      originalX: undefined,
-      originalY: undefined,
-    });
-  }, []);
-
-  // Trigger render when selectedLayerId changes
-  useEffect(() => {
-    clearSelection();
-    render();
-  }, [selectedLayerId]);
-
-  // Handle selection movement
-  const moveSelection = useCallback(
-    (newX: number, newY: number) => {
-      if (!selection.selectedImageData) return;
-
-      const selectedLayer = layers.find(
-        (layer) => layer.id === selectedLayerId,
-      );
-      if (!selectedLayer || !selectedLayer.visible) return;
-
-      // Create a temporary canvas for the layer if it doesn't exist
-      if (!selectedLayer.imageData) {
-        selectedLayer.imageData = new ImageData(width, height);
-      }
-
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = width;
-      tempCanvas.height = height;
-      const tempCtx = tempCanvas.getContext("2d", { willReadFrequently: true });
-      if (!tempCtx) return;
-
-      // Draw existing layer data
-      tempCtx.putImageData(selectedLayer.imageData, 0, 0);
-
-      // Clear the original selection area if it exists
-      if (
-        selection.originalX !== undefined &&
-        selection.originalY !== undefined
-      ) {
-        tempCtx.clearRect(
-          selection.originalX,
-          selection.originalY,
-          selection.selectedImageData.width,
-          selection.selectedImageData.height,
-        );
-      }
-
-      // Create another temporary canvas for the selection
-      const selectionCanvas = document.createElement("canvas");
-      selectionCanvas.width = selection.selectedImageData.width;
-      selectionCanvas.height = selection.selectedImageData.height;
-      const selectionCtx = selectionCanvas.getContext("2d", {
-        willReadFrequently: true,
-      });
-      if (!selectionCtx) return;
-
-      // Draw the selection data
-      selectionCtx.putImageData(selection.selectedImageData, 0, 0);
-
-      // Draw the selection at the new position
-      tempCtx.drawImage(selectionCanvas, newX, newY);
-
-      // Update the layer's imageData
-      selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
-
-      // Update selection state with new bounds
-      setSelection((prev) => ({
-        ...prev,
-        startX: newX,
-        startY: newY,
-        endX: newX + prev.selectedImageData!.width,
-        endY: newY + prev.selectedImageData!.height,
-        originalX: newX,
-        originalY: newY,
-        isMoving: false,
-      }));
-
-      // Clear selection canvas
-      const selectionCtx2 = selectionCanvasRef.current?.getContext("2d");
-      if (selectionCtx2) {
-        selectionCtx2.clearRect(0, 0, width, height);
-      }
-
-      // Trigger a render
-      render();
-    },
-    [selection, layers, selectedLayerId, width, height, render],
-  );
-
-  // Update handleMouseUp to properly capture the selection
-  const handleMouseUp = useCallback(
+  // Remove tool-specific logic from handleMouseDown
+  const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      setIsMouseDown(false);
-
-      const coords = getCanvasCoordinates(e);
+      setIsMouseDown(true);
+      const isRightClick = e.button === 2;
 
       if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
-        setIsPanning(false);
-      } else if (e.button === 0 || e.button === 2) {
-        if (selection.isSelecting) {
-          // Finish new selection
-          const { minX, maxX, minY, maxY } = getSelectionBounds();
-          const width = maxX - minX + 1;
-          const height = maxY - minY + 1;
+        setIsPanning(true);
+        return;
+      }
 
-          if (width > 0 && height > 0) {
-            const selectedLayer = layers.find(
-              (layer) => layer.id === selectedLayerId,
-            );
-            if (!selectedLayer || !selectedLayer.imageData) return;
-
-            // Create a temporary canvas for the selection
-            const tempCanvas = document.createElement("canvas");
-            tempCanvas.width = width;
-            tempCanvas.height = height;
-            const tempCtx = tempCanvas.getContext("2d", {
-              willReadFrequently: true,
-            });
-            if (!tempCtx) return;
-
-            // Draw the full layer first
-            tempCtx.putImageData(selectedLayer.imageData, -minX, -minY);
-
-            // Get the selection area
-            const imageData = tempCtx.getImageData(0, 0, width, height);
-
-            setSelection((prev) => ({
-              ...prev,
-              isSelecting: false,
-              selectedImageData: imageData,
-              originalX: minX,
-              originalY: minY,
-            }));
-          }
-        } else if (selection.isMoving && selection.selectedImageData) {
-          const deltaX = coords.x - selection.moveStartX;
-          const deltaY = coords.y - selection.moveStartY;
-
-          // Save the current state before moving
-          saveToHistory();
-
-          moveSelection(
-            (selection.originalX ?? 0) + deltaX,
-            (selection.originalY ?? 0) + deltaY,
-          );
+      if (e.button === 0 || e.button === 2) {
+        const displayCanvas = displayCanvasRef.current;
+        const drawingCanvas = drawingCanvasRef.current;
+        if (!displayCanvas || !drawingCanvas) {
+          console.error("❌ Canvas refs not available");
+          return;
         }
+
+        const coords = getCanvasCoordinates(e, displayCanvas, viewport);
+
+        setHoverPosition(coords);
+
+        const selectedLayer = layers.find(
+          (layer) => layer.id === selectedLayerId,
+        );
+        if (!selectedLayer || !selectedLayer.visible) {
+          console.warn("⚠️ No selected layer or layer not visible");
+          return;
+        }
+
+        const tool = getToolById(selectedTool);
+
+        const toolContext = {
+          canvas: drawingCanvas,
+          ctx: drawingCanvas.getContext("2d", { willReadFrequently: true })!,
+          viewport: {
+            x: 0,
+            y: 0,
+            scale: 1,
+          },
+          primaryColor,
+          secondaryColor,
+          brushSize,
+          bucketTolerance,
+          layers,
+          selectedLayerId,
+          onColorPick,
+          selection,
+          setSelection,
+        };
+
+        // Pass the coordinates directly to the tool
+
+        tool.onMouseDown?.(
+          {
+            ...e,
+            clientX: coords.x,
+            clientY: coords.y,
+            nativeEvent: {
+              ...e.nativeEvent,
+              clientX: coords.x,
+              clientY: coords.y,
+            },
+          },
+          toolContext,
+        );
+        render();
       }
     },
     [
       isSpacePressed,
-      selection,
-      getSelectionBounds,
+      selectedTool,
+      viewport,
+      primaryColor,
+      secondaryColor,
+      brushSize,
+      bucketTolerance,
       layers,
       selectedLayerId,
-      saveToHistory,
-      moveSelection,
-      getCanvasCoordinates,
+      onColorPick,
+      selection,
+      setSelection,
+      render,
     ],
   );
+
+  // Update handleMouseMove to use tool architecture
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const displayCanvas = displayCanvasRef.current;
+      const drawingCanvas = drawingCanvasRef.current;
+      if (!displayCanvas || !drawingCanvas) return;
+
+      const coords = getCanvasCoordinates(e, displayCanvas, viewport);
+      setHoverPosition(coords);
+
+      if (!isMouseDown) return;
+
+      if (isPanning) {
+        handlePan(e);
+        return;
+      }
+
+      const selectedLayer = layers.find(
+        (layer) => layer.id === selectedLayerId,
+      );
+      if (!selectedLayer || !selectedLayer.visible) {
+        console.warn("⚠️ MouseMove - No selected layer or layer not visible");
+        return;
+      }
+
+      const tool = getToolById(selectedTool);
+
+      const toolContext = {
+        canvas: drawingCanvas,
+        ctx: drawingCanvas.getContext("2d", { willReadFrequently: true })!,
+        viewport: {
+          x: 0,
+          y: 0,
+          scale: 1,
+        },
+        primaryColor,
+        secondaryColor,
+        brushSize,
+        bucketTolerance,
+        layers,
+        selectedLayerId,
+        onColorPick,
+        selection,
+        setSelection,
+      };
+
+      tool.onMouseMove?.(
+        {
+          ...e,
+          clientX: coords.x,
+          clientY: coords.y,
+          nativeEvent: {
+            ...e.nativeEvent,
+            clientX: coords.x,
+            clientY: coords.y,
+          },
+        },
+        toolContext,
+      );
+      render();
+    },
+    [
+      isMouseDown,
+      isPanning,
+      selectedTool,
+      viewport,
+      primaryColor,
+      secondaryColor,
+      brushSize,
+      bucketTolerance,
+      layers,
+      selectedLayerId,
+      onColorPick,
+      selection,
+      setSelection,
+      handlePan,
+      render,
+    ],
+  );
+
+  // Update handleMouseUp to use tool architecture
+  const handleMouseUp = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      setIsMouseDown(false);
+
+      if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
+        setIsPanning(false);
+        return;
+      }
+
+      const displayCanvas = displayCanvasRef.current;
+      const drawingCanvas = drawingCanvasRef.current;
+      if (!displayCanvas || !drawingCanvas) {
+        console.error("❌ MouseUp - Canvas refs not available");
+        return;
+      }
+
+      const coords = getCanvasCoordinates(e, displayCanvas, viewport);
+
+      const selectedLayer = layers.find(
+        (layer) => layer.id === selectedLayerId,
+      );
+      if (!selectedLayer || !selectedLayer.visible) {
+        console.warn("⚠️ MouseUp - No selected layer or layer not visible");
+        return;
+      }
+
+      const tool = getToolById(selectedTool);
+      const toolContext = {
+        canvas: drawingCanvas,
+        ctx: drawingCanvas.getContext("2d", { willReadFrequently: true })!,
+        viewport: {
+          x: 0,
+          y: 0,
+          scale: 1,
+        },
+        primaryColor,
+        secondaryColor,
+        brushSize,
+        bucketTolerance,
+        layers,
+        selectedLayerId,
+        onColorPick,
+        selection,
+        setSelection,
+      };
+
+      tool.onMouseUp?.(
+        {
+          ...e,
+          clientX: coords.x,
+          clientY: coords.y,
+          nativeEvent: {
+            ...e.nativeEvent,
+            clientX: coords.x,
+            clientY: coords.y,
+          },
+        },
+        toolContext,
+      );
+      render();
+    },
+    [
+      isSpacePressed,
+      selectedTool,
+      viewport,
+      primaryColor,
+      secondaryColor,
+      brushSize,
+      bucketTolerance,
+      layers,
+      selectedLayerId,
+      onColorPick,
+      selection,
+      setSelection,
+      render,
+    ],
+  );
+
+  // Update cursor style based on tool
+  const getCursorStyle = useCallback(() => {
+    if (isPanning) return "cursor-grab";
+    const tool = getToolById(selectedTool);
+    return tool.cursor ? `cursor-${tool.cursor}` : "cursor-crosshair";
+  }, [isPanning, selectedTool]);
 
   // Update keyboard event handler for proper deletion
   useEffect(() => {
@@ -1268,9 +967,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         );
         if (!selectedLayer || !selectedLayer.visible) return;
 
-        // Save state before deletion
-        saveToHistory();
-
         // Create a temporary canvas
         const tempCanvas = document.createElement("canvas");
         tempCanvas.width = width;
@@ -1301,15 +997,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         // Trigger render
         render();
       }
-
-      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
-        e.preventDefault();
-        if (e.shiftKey) {
-          redo();
-        } else {
-          undo();
-        }
-      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -1321,10 +1008,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     width,
     height,
     clearSelection,
-    saveToHistory,
+    onToolSelect,
     render,
-    undo,
-    redo,
   ]);
 
   // Event listeners with cleanup
@@ -1377,9 +1062,14 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       })),
       timestamp: Date.now(),
     };
-    setHistory([initialState]);
-    setHistoryIndex(0);
-    render();
+
+    // Only render once on initialization
+    if (!animationFrameRef.current) {
+      animationFrameRef.current = requestAnimationFrame(() => {
+        render();
+        animationFrameRef.current = undefined;
+      });
+    }
   }, [width, height, layers]);
 
   // Add keyboard shortcuts
@@ -1391,52 +1081,74 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         clearSelection();
       } else if (e.code === "Delete" || e.code === "Backspace") {
         if (selection.selectedImageData) {
-          const ctx = drawingCanvasRef.current?.getContext("2d", {
-            willReadFrequently: true,
-          });
-          if (!ctx) return;
+          const selectedLayer = layers.find(
+            (layer) => layer.id === selectedLayerId,
+          );
+          if (!selectedLayer || !selectedLayer.visible) return;
 
-          const { minX, maxX, minY, maxY } = getSelectionBounds();
-          const width = maxX - minX + 1;
-          const height = maxY - minY + 1;
+          // Create a temporary canvas
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = width;
+          tempCanvas.height = height;
+          const tempCtx = tempCanvas.getContext("2d");
+          if (!tempCtx) return;
+
+          // Draw existing layer data
+          if (selectedLayer.imageData) {
+            tempCtx.putImageData(selectedLayer.imageData, 0, 0);
+          }
+
+          // Calculate deletion coordinates
+          const deleteX = selection.originalX ?? 0;
+          const deleteY = selection.originalY ?? 0;
+          const deleteWidth = selection.selectedImageData.width;
+          const deleteHeight = selection.selectedImageData.height;
 
           // Clear the selected area
-          ctx.clearRect(minX, minY, width, height);
-          clearSelection();
-          saveToHistory();
-          // Trigger a render after clearing
-          requestAnimationFrame(() => {
-            render();
-          });
-        }
-      }
+          tempCtx.clearRect(deleteX, deleteY, deleteWidth, deleteHeight);
 
-      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
-        e.preventDefault();
-        if (e.shiftKey) {
-          redo();
-        } else {
-          undo();
+          // Update layer's imageData
+          selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
+
+          // Clear the selection state
+          clearSelection();
+
+          // Trigger render
+          render();
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo, clearSelection, getSelectionBounds, saveToHistory, render]);
-
-  // Inside Canvas component, add effect to notify parent of history state changes
-  useEffect(() => {
-    if (onHistoryChange) {
-      onHistoryChange(historyIndex > 0, historyIndex < history.length - 1);
-    }
-  }, [historyIndex, history.length, onHistoryChange]);
+  }, [
+    selection,
+    layers,
+    selectedLayerId,
+    width,
+    height,
+    clearSelection,
+    render,
+  ]);
 
   // Add useEffect to watch for tool changes
   useEffect(() => {
-    // Clear selection when tool changes
-    clearSelection();
+    // Only clear selection when switching away from select tool
+    if (selectedTool !== "select") {
+      clearSelection();
+    }
   }, [selectedTool, clearSelection]);
+
+  // Trigger render when selectedLayerId changes
+  useEffect(() => {
+    // Only render on layer change, don't clear selection
+    if (!animationFrameRef.current) {
+      animationFrameRef.current = requestAnimationFrame(() => {
+        render();
+        animationFrameRef.current = undefined;
+      });
+    }
+  }, [selectedLayerId, render]);
 
   // Add onMouseLeave handler
   const handleMouseLeave = useCallback(() => {
@@ -1444,10 +1156,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     setIsMouseDown(false);
     setIsDrawing(false);
     setIsPanning(false);
+    // Only clear selection if we're in the middle of selecting
     if (selection.isSelecting) {
       clearSelection();
     }
-  }, [clearSelection]);
+  }, [clearSelection, selection.isSelecting]);
 
   // Add window mouse up listener to catch mouse releases outside canvas
   useEffect(() => {
@@ -1455,6 +1168,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setIsMouseDown(false);
       setIsDrawing(false);
       setIsPanning(false);
+      // Don't clear selection here
     };
 
     window.addEventListener("mouseup", handleWindowMouseUp);
@@ -1468,17 +1182,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     >
       <canvas
         ref={displayCanvasRef}
-        className={`absolute left-0 top-0 ${
-          isPanning
-            ? "cursor-grab"
-            : selectedTool === "eyedropper"
-              ? "cursor-crosshair"
-              : selection.isMoving
-                ? "cursor-move"
-                : selectedTool === "select"
-                  ? "cursor-crosshair"
-                  : "cursor-crosshair"
-        }`}
+        className={`absolute left-0 top-0 ${getCursorStyle()}`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
