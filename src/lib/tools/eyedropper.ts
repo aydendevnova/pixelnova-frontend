@@ -16,6 +16,6 @@ export const EyedropperTool: Tool = {
 
     const color = getPixelColor(coords.x, coords.y, layers);
 
-    context.onColorPick?.(color || "transparent", e.button === 2);
+    context.onColorPick?.(color ?? "transparent", e.button === 2);
   },
 };
