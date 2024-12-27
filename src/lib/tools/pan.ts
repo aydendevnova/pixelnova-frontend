@@ -1,7 +1,7 @@
 import { HandIcon } from "lucide-react";
 import { Tool, ToolContext } from "@/types/editor";
 
-export const panTool: Tool = {
+export const PanTool: Tool = {
   id: "pan",
   name: "Pan",
   icon: HandIcon,

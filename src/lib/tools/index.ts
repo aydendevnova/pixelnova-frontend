@@ -4,7 +4,7 @@ import { EraserTool } from "@/lib/tools/eraser";
 import { BucketTool } from "@/lib/tools/bucket";
 import { SelectTool } from "@/lib/tools/select";
 import { EyedropperTool } from "@/lib/tools/eyedropper";
-import { panTool } from "@/lib/tools/pan";
+import { PanTool } from "@/lib/tools/pan";
 
 const tools: Record<ToolType, Tool> = {
   pencil: PencilTool,
@@ -12,7 +12,7 @@ const tools: Record<ToolType, Tool> = {
   bucket: BucketTool,
   select: SelectTool,
   eyedropper: EyedropperTool,
-  pan: panTool,
+  pan: PanTool,
 };
 
 export const getToolById = (id: ToolType): Tool => {
