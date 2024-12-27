@@ -11,7 +11,8 @@ export type ToolType =
   | "bucket"
   | "select"
   | "eyedropper"
-  | "pan";
+  | "pan"
+  | "line";
 
 export interface ViewportState {
   x: number;
