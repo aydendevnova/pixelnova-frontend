@@ -5,7 +5,13 @@ export interface Layer {
   imageData: ImageData | null;
 }
 
-export type ToolType = "pencil" | "eraser" | "bucket" | "select" | "eyedropper";
+export type ToolType =
+  | "pencil"
+  | "eraser"
+  | "bucket"
+  | "select"
+  | "eyedropper"
+  | "pan";
 
 export interface ViewportState {
   x: number;

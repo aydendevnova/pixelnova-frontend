@@ -390,144 +390,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     ],
   );
 
-  // Update floodFill to work with layers
-  const floodFill = useCallback(
-    (
-      startX: number,
-      startY: number,
-      targetColor: string,
-      replacementColor: string,
-    ) => {
-      const selectedLayer = layers.find(
-        (layer) => layer.id === selectedLayerId,
-      );
-      if (!selectedLayer || !selectedLayer.visible) return;
-
-      // Create a new canvas for the layer if it doesn't exist
-      if (!selectedLayer.imageData) {
-        const newImageData = new ImageData(width, height);
-        selectedLayer.imageData = newImageData;
-      }
-
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = width;
-      tempCanvas.height = height;
-      const tempCtx = tempCanvas.getContext("2d");
-      if (!tempCtx) return;
-
-      // Draw existing layer data
-      tempCtx.putImageData(selectedLayer.imageData, 0, 0);
-
-      const imageData = tempCtx.getImageData(0, 0, width, height);
-      const pixels = imageData.data;
-
-      const visited = new Set<string>();
-      const MAX_PIXELS = width * height;
-      let processedPixels = 0;
-
-      const getColorArray = (color: string): number[] => {
-        if (color === "transparent") return [0, 0, 0, 0];
-
-        if (color.startsWith("#")) {
-          const r = parseInt(color.slice(1, 3), 16);
-          const g = parseInt(color.slice(3, 5), 16);
-          const b = parseInt(color.slice(5, 7), 16);
-          return [r, g, b, 255];
-        }
-
-        return [0, 0, 0, 255];
-      };
-
-      const targetRGBA = getColorArray(targetColor);
-      const replacementRGBA = getColorArray(replacementColor);
-
-      if (targetRGBA.every((val, i) => val === replacementRGBA[i])) {
-        return;
-      }
-
-      const getPixel = (x: number, y: number): number[] => {
-        const i = (y * width + x) * 4;
-        return [
-          pixels[i] ?? 0,
-          pixels[i + 1] ?? 0,
-          pixels[i + 2] ?? 0,
-          pixels[i + 3] ?? 0,
-        ];
-      };
-
-      const setPixel = (x: number, y: number, color: number[]) => {
-        const i = (y * width + x) * 4;
-        pixels[i] = color[0] ?? 0;
-        pixels[i + 1] = color[1] ?? 0;
-        pixels[i + 2] = color[2] ?? 0;
-        pixels[i + 3] = color[3] ?? 0;
-      };
-
-      const colorsMatch = (a: number[], b: number[]): boolean => {
-        const tolerance = (bucketTolerance ?? 1) / 20;
-
-        if (b[3] === 0 && a[3] === 0) return true;
-        if (b[3] === 0 || a[3] === 0) return false;
-
-        const rDiff = Math.abs((a[0] ?? 0) - (b[0] ?? 0)) / 255;
-        const gDiff = Math.abs((a[1] ?? 0) - (b[1] ?? 0)) / 255;
-        const bDiff = Math.abs((a[2] ?? 0) - (b[2] ?? 0)) / 255;
-
-        const maxDiff = Math.max(rDiff, gDiff, bDiff);
-
-        return maxDiff <= tolerance;
-      };
-
-      const queue: [number, number][] = [[startX, startY]];
-      const targetPixel = getPixel(startX, startY);
-
-      while (queue.length > 0 && processedPixels < MAX_PIXELS) {
-        const [x, y] = queue.shift()!;
-        const pixelKey = `${x},${y}`;
-
-        if (visited.has(pixelKey)) continue;
-        visited.add(pixelKey);
-
-        if (x < 0 || x >= width || y < 0 || y >= height) {
-          continue;
-        }
-
-        const currentPixel = getPixel(x, y);
-        if (!colorsMatch(currentPixel, targetPixel)) {
-          continue;
-        }
-
-        setPixel(x, y, replacementRGBA);
-        processedPixels++;
-
-        const neighbors = [
-          [x + 1, y],
-          [x - 1, y],
-          [x, y + 1],
-          [x, y - 1],
-        ];
-
-        for (const [nx, ny] of neighbors) {
-          const neighborKey = `${nx},${ny}`;
-          if (!visited.has(neighborKey)) {
-            queue.push([nx ?? 0, ny ?? 0]);
-          }
-        }
-      }
-
-      tempCtx.putImageData(imageData, 0, 0);
-      selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
-
-      if (!animationFrameRef.current) {
-        animationFrameRef.current = requestAnimationFrame(() => {
-          render();
-          animationFrameRef.current = undefined;
-        });
-      }
-    },
-    [layers, selectedLayerId, width, height, render, bucketTolerance],
-  );
-
   // Update clearCanvas to clear the selected layer
   useImperativeHandle(
     ref,
@@ -1173,6 +1035,28 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     window.addEventListener("mouseup", handleWindowMouseUp);
     return () => window.removeEventListener("mouseup", handleWindowMouseUp);
+  }, []);
+
+  // Add event listeners for pan tool
+  useEffect(() => {
+    const displayCanvas = displayCanvasRef.current;
+    if (!displayCanvas) return;
+
+    const handleStartPanning = () => {
+      setIsPanning(true);
+    };
+
+    const handleEndPanning = () => {
+      setIsPanning(false);
+    };
+
+    displayCanvas.addEventListener("startPanning", handleStartPanning);
+    displayCanvas.addEventListener("endPanning", handleEndPanning);
+
+    return () => {
+      displayCanvas.removeEventListener("startPanning", handleStartPanning);
+      displayCanvas.removeEventListener("endPanning", handleEndPanning);
+    };
   }, []);
 
   return (
