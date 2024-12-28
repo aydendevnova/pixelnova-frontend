@@ -255,7 +255,9 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     // Draw brush preview
     if (
       hoverPosition &&
-      (selectedTool === "pencil" || selectedTool === "eraser") &&
+      (selectedTool === "pencil" ||
+        selectedTool === "eraser" ||
+        selectedTool === "line") &&
       !isDrawing &&
       !isPanning
     ) {
@@ -267,7 +269,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
       ctx.globalAlpha = 0.5;
       if (selectedTool === "eraser") {
-        ctx.clearRect(x, y, size, size);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(x, y, size, size);
       } else {
         ctx.fillStyle = primaryColor;
         ctx.fillRect(x, y, size, size);
@@ -279,8 +282,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       ctx.setLineDash([]);
       ctx.strokeRect(x, y, size, size);
 
-      ctx.strokeStyle = "#000000";
-      ctx.strokeRect(x, y, size, size);
+      // ctx.strokeStyle = "#000000";
+      // ctx.strokeRect(x, y, size, size);
     }
 
     ctx.restore();
