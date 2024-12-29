@@ -1,6 +1,14 @@
 import { Tool, ToolContext, SelectionState } from "@/types/editor";
 import { TextSelect } from "lucide-react";
 
+// Add helper function for clamping coordinates
+function clampCoordinates(x: number, y: number, width: number, height: number) {
+  return {
+    x: Math.max(0, Math.min(x, width)),
+    y: Math.max(0, Math.min(y, height)),
+  };
+}
+
 export const SelectTool: Tool = {
   id: "select",
   name: "Select",
@@ -39,17 +47,24 @@ export const SelectTool: Tool = {
       }
     }
 
-    // Start a new selection
+    // Clamp coordinates only for initial selection
+    const clampedCoords = clampCoordinates(
+      coords.x,
+      coords.y,
+      canvas.width,
+      canvas.height,
+    );
 
+    // Start a new selection with clamped coordinates
     setSelection({
       isSelecting: true,
-      startX: coords.x,
-      startY: coords.y,
-      endX: coords.x,
-      endY: coords.y,
+      startX: clampedCoords.x,
+      startY: clampedCoords.y,
+      endX: clampedCoords.x,
+      endY: clampedCoords.y,
       isMoving: false,
-      moveStartX: coords.x,
-      moveStartY: coords.y,
+      moveStartX: clampedCoords.x,
+      moveStartY: clampedCoords.y,
       selectedImageData: undefined,
       originalX: undefined,
       originalY: undefined,
@@ -76,10 +91,17 @@ export const SelectTool: Tool = {
         endY: newStartY + selection.selectedImageData.height,
       });
     } else if (selection.isSelecting) {
+      // Clamp only the selection end coordinates to prevent capturing outside pixels
+      const clampedEnd = clampCoordinates(
+        coords.x,
+        coords.y,
+        canvas.width,
+        canvas.height,
+      );
       setSelection({
         ...selection,
-        endX: coords.x,
-        endY: coords.y,
+        endX: clampedEnd.x,
+        endY: clampedEnd.y,
         isSelecting: true,
       });
     }
@@ -125,7 +147,7 @@ export const SelectTool: Tool = {
       // Draw the selection
       selectionCtx.putImageData(selection.selectedImageData, 0, 0);
 
-      // Draw the selection at its new position
+      // Simply draw at current position - canvas will handle clipping
       tempCtx.drawImage(selectionCanvas, selection.startX, selection.startY);
 
       // Update the layer with the new image data
@@ -155,11 +177,18 @@ export const SelectTool: Tool = {
 
     // If we were selecting, finalize the selection
     if (selection.isSelecting) {
+      // For the final selection, ensure we only capture pixels within the canvas
       const bounds = {
-        minX: Math.min(selection.startX, selection.endX),
-        maxX: Math.max(selection.startX, selection.endX),
-        minY: Math.min(selection.startY, selection.endY),
-        maxY: Math.max(selection.startY, selection.endY),
+        minX: Math.max(0, Math.min(selection.startX, selection.endX)),
+        maxX: Math.min(
+          canvas.width,
+          Math.max(selection.startX, selection.endX),
+        ),
+        minY: Math.max(0, Math.min(selection.startY, selection.endY)),
+        maxY: Math.min(
+          canvas.height,
+          Math.max(selection.startY, selection.endY),
+        ),
       };
 
       const width = bounds.maxX - bounds.minX;
