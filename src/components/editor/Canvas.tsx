@@ -184,37 +184,48 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       // Create selection overlay
       ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
 
-      // Draw the overlay in four parts around the selection
-      const x = selection.startX;
-      const y = selection.startY;
-      const width = selection.endX - selection.startX;
-      const height = selection.endY - selection.startY;
+      // Normalize coordinates for the selection area
+      const selectionBounds = {
+        x: Math.min(selection.startX, selection.endX),
+        y: Math.min(selection.startY, selection.endY),
+        width: Math.abs(selection.endX - selection.startX),
+        height: Math.abs(selection.endY - selection.startY),
+      };
 
-      // Top
-      ctx.fillRect(0, 0, drawingCanvas.width, y);
-      // Bottom
-      ctx.fillRect(
-        0,
-        y + height,
-        drawingCanvas.width,
-        drawingCanvas.height - (y + height),
+      // Draw the overlay as a single path with a cutout
+      ctx.beginPath();
+      // Outer rectangle (full canvas)
+      ctx.rect(0, 0, drawingCanvas.width, drawingCanvas.height);
+      // Inner rectangle (selection area) - will be cut out
+      ctx.rect(
+        selectionBounds.x + selectionBounds.width,
+        selectionBounds.y + selectionBounds.height,
+        -selectionBounds.width,
+        -selectionBounds.height,
       );
-      // Left
-      ctx.fillRect(0, y, x, height);
-      // Right
-      ctx.fillRect(x + width, y, drawingCanvas.width - (x + width), height);
+      ctx.fill("evenodd"); // Use even-odd fill rule to create cutout
 
       // Draw selection outline
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 2 / viewport.scale;
       ctx.setLineDash([6 / viewport.scale, 4 / viewport.scale]);
       ctx.lineDashOffset = 0;
-      ctx.strokeRect(x, y, width, height);
+      ctx.strokeRect(
+        selectionBounds.x,
+        selectionBounds.y,
+        selectionBounds.width,
+        selectionBounds.height,
+      );
 
       // Draw inverted color outline
       ctx.strokeStyle = "#000000";
       ctx.lineDashOffset = 6 / viewport.scale;
-      ctx.strokeRect(x, y, width, height);
+      ctx.strokeRect(
+        selectionBounds.x,
+        selectionBounds.y,
+        selectionBounds.width,
+        selectionBounds.height,
+      );
 
       // If we have selected image data and we're moving it, draw it at the current position
       if (selection.selectedImageData && selection.isMoving) {
@@ -227,7 +238,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         if (tempCtx) {
           tempCtx.putImageData(selection.selectedImageData, 0, 0);
           ctx.globalAlpha = 0.8; // Make it slightly transparent while moving
-          ctx.drawImage(tempCanvas, x, y);
+          ctx.drawImage(tempCanvas, selectionBounds.x, selectionBounds.y);
           ctx.globalAlpha = 1.0;
         }
       }
