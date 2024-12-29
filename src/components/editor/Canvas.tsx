@@ -15,10 +15,10 @@ import {
   ViewportState,
   SelectionState,
   Tool,
+  PreviewableTool,
 } from "@/types/editor";
 import { getToolById } from "@/lib/tools";
 import { getCanvasCoordinates } from "@/lib/utils/coordinates";
-import { PreviewTool } from "@/lib/utils/baseTool";
 
 interface CanvasProps {
   width: number;
@@ -40,6 +40,11 @@ export interface CanvasRef {
   importImage: (imageData: ImageData) => void;
   getLayerImageData: () => ImageData | null;
 }
+
+// Add type guard as a standalone function
+const isPreviewableTool = (tool: Tool): tool is PreviewableTool => {
+  return "lastPreviewPoints" in tool;
+};
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
@@ -275,12 +280,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       } else {
         ctx.fillStyle = primaryColor;
         if (selectedTool === "line" && isMouseDown) {
-          // Get the line tool instance
           const tool = getToolById(selectedTool);
-          if ("lastPreviewPoints" in tool) {
+          if (isPreviewableTool(tool)) {
             // Draw line preview
-            const points = (tool as any).lastPreviewPoints;
-            points.forEach((point: { x: number; y: number }) => {
+            const points = tool.lastPreviewPoints;
+            points.forEach((point) => {
               ctx.fillRect(point.x - halfSize, point.y - halfSize, size, size);
             });
           }

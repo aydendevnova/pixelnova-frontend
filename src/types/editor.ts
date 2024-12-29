@@ -64,3 +64,7 @@ export interface ToolContext {
   selection?: SelectionState;
   setSelection: (selection: SelectionState) => void;
 }
+
+export interface PreviewableTool extends Tool {
+  lastPreviewPoints: { x: number; y: number }[];
+}

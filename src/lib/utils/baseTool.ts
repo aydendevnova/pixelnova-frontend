@@ -1,4 +1,4 @@
-import { Tool, ToolContext, ToolType } from "@/types/editor";
+import { Tool, ToolContext, ToolType, PreviewableTool } from "@/types/editor";
 import { getCanvasCoordinates } from "./coordinates";
 import { drawPixel } from "./drawing";
 import { getDrawingColor } from "./toolState";
@@ -85,10 +85,10 @@ export abstract class DrawingTool extends BaseTool {
   ): void;
 }
 
-export abstract class PreviewTool extends BaseTool {
+export abstract class PreviewTool extends BaseTool implements PreviewableTool {
   cursor = "crosshair";
   protected startPoint: { x: number; y: number } | null = null;
-  protected lastPreviewPoints: { x: number; y: number }[] = [];
+  lastPreviewPoints: { x: number; y: number }[] = [];
 
   onMouseDown(e: React.MouseEvent, context: ToolContext) {
     if (e.button !== 0 && e.button !== 2) return;
