@@ -18,6 +18,7 @@ import {
 } from "@/types/editor";
 import { getToolById } from "@/lib/tools";
 import { getCanvasCoordinates } from "@/lib/utils/coordinates";
+import { PreviewTool } from "@/lib/utils/baseTool";
 
 interface CanvasProps {
   width: number;
@@ -273,7 +274,19 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         ctx.fillRect(x, y, size, size);
       } else {
         ctx.fillStyle = primaryColor;
-        ctx.fillRect(x, y, size, size);
+        if (selectedTool === "line" && isMouseDown) {
+          // Get the line tool instance
+          const tool = getToolById(selectedTool);
+          if ("lastPreviewPoints" in tool) {
+            // Draw line preview
+            const points = (tool as any).lastPreviewPoints;
+            points.forEach((point: { x: number; y: number }) => {
+              ctx.fillRect(point.x - halfSize, point.y - halfSize, size, size);
+            });
+          }
+        } else {
+          ctx.fillRect(x, y, size, size);
+        }
       }
       ctx.globalAlpha = 1.0;
 
@@ -281,9 +294,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       ctx.lineWidth = 1 / viewport.scale;
       ctx.setLineDash([]);
       ctx.strokeRect(x, y, size, size);
-
-      // ctx.strokeStyle = "#000000";
-      // ctx.strokeRect(x, y, size, size);
     }
 
     ctx.restore();

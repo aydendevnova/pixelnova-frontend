@@ -1,21 +1,24 @@
-import { Tool, ToolContext } from "@/types/editor";
+import { ToolContext } from "@/types/editor";
 import { Pipette } from "lucide-react";
-import { getCanvasCoordinates } from "@/lib/utils/coordinates";
-import { getPixelColor } from "@/lib/utils/canvas";
+import { BaseTool } from "@/lib/utils/baseTool";
+import { getPixelColor } from "@/lib/utils/drawing";
 
-export const EyedropperTool: Tool = {
-  id: "eyedropper",
-  name: "Color Picker",
-  icon: Pipette,
-  shortcut: "I",
-  cursor: "crosshair",
+class EyedropperToolImpl extends BaseTool {
+  id = "eyedropper" as const;
+  name = "Color Picker";
+  icon = Pipette;
+  shortcut = "I";
+  cursor = "crosshair";
 
-  onMouseDown: (e: React.MouseEvent, context: ToolContext) => {
-    const { canvas, viewport, layers } = context;
-    const coords = getCanvasCoordinates(e, canvas, viewport);
-
+  onMouseDown(e: React.MouseEvent, context: ToolContext): void {
+    const { canvas, viewport, layers, onColorPick } = context;
+    const coords = this.getCoordinates(e, context);
     const color = getPixelColor(coords.x, coords.y, layers);
 
-    context.onColorPick?.(color ?? "transparent", e.button === 2);
-  },
-};
+    if (color && onColorPick) {
+      onColorPick(color, e.button === 2);
+    }
+  }
+}
+
+export const EyedropperTool = new EyedropperToolImpl();
