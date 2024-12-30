@@ -256,7 +256,7 @@ export default function TopMenuBar({
   }, [alertOpen]);
 
   return (
-    <div className="z-10 flex flex-col border-b border-gray-700 bg-gray-800">
+    <div className="z-10 flex flex-col border-b border-gray-700 bg-gray-900/50">
       {/* Top row with main controls */}
       <div className="flex h-[64px] items-center gap-4 px-4 py-2">
         {/* File Menu Dropdown */}

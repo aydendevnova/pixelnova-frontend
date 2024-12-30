@@ -16,7 +16,6 @@ import { useState } from "react";
 
 interface ToolbarProps {
   selectedTool: ToolType;
-  selectedToolShortcut: string;
   onToolSelect: (tool: ToolType) => void;
   canUndo?: boolean;
   canRedo?: boolean;
@@ -26,7 +25,6 @@ interface ToolbarProps {
 
 export default function Toolbar({
   selectedTool,
-  selectedToolShortcut,
   onToolSelect,
   canUndo = false,
   canRedo = false,
@@ -40,36 +38,37 @@ export default function Toolbar({
   return (
     <div className="absolute bottom-0 left-0 top-4 z-20">
       <TooltipProvider>
-        <div className="flex flex-col gap-3 rounded-lg bg-gray-900 p-3 shadow-lg backdrop-blur">
-          {/* History controls */}
-          <div className="flex flex-col gap-2">
+        <div className="flex max-h-[calc(100vh-10rem)] flex-col gap-3 rounded-lg bg-gray-900 p-3 shadow-lg backdrop-blur">
+          {/* Toggle and History controls - these should stay fixed */}
+          <div className="flex flex-shrink-0 flex-col gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
                   className={cn(
-                    "h-12 w-12 rounded-lg  text-gray-900  hover:bg-gray-700",
+                    "h-12 w-12 rounded-lg text-gray-900 hover:bg-gray-700",
                   )}
                   onClick={() => setShowTools(!showTools)}
                 >
                   {showTools ? (
                     <ChevronUp
-                      className="text-white "
+                      className="text-white"
                       style={{ width: "24px", height: "24px" }}
                     />
                   ) : (
                     <ChevronDown
-                      className="text-white "
+                      className="text-white"
                       style={{ width: "24px", height: "24px" }}
                     />
                   )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right" className="bg-white text-gray-900">
-                <p>Undo (Ctrl+Z)</p>
+                <p>Toggle Tools</p>
               </TooltipContent>
             </Tooltip>
+
             {showTools && (
               <>
                 <Separator className="bg-gray-700" />
@@ -132,49 +131,51 @@ export default function Toolbar({
 
           {showTools && (
             <>
-              <Separator className="bg-gray-700" />
+              <Separator className="flex-shrink-0 bg-gray-700" />
 
-              {/* Drawing tools */}
-              <div className="flex flex-col gap-2">
-                {tools.map((tool) => {
-                  const Icon = tool.icon;
-                  return (
-                    <Tooltip key={tool.id}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={
-                            selectedTool === tool.id ? "default" : "ghost"
-                          }
-                          size="icon"
-                          className={cn(
-                            "flex h-12 w-12 items-center justify-center rounded-lg",
-                            selectedTool === tool.id
-                              ? "bg-white text-gray-900 hover:bg-gray-200"
-                              : "text-white hover:bg-gray-700/50 hover:text-gray-200",
-                          )}
-                          onClick={() => onToolSelect(tool.id)}
-                        >
-                          <Icon
-                            style={{ width: "24px", height: "24px" }}
+              {/* Drawing tools - this section becomes scrollable */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="flex flex-col gap-2">
+                  {tools.map((tool) => {
+                    const Icon = tool.icon;
+                    return (
+                      <Tooltip key={tool.id}>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant={
+                              selectedTool === tool.id ? "default" : "ghost"
+                            }
+                            size="icon"
                             className={cn(
+                              "flex h-12 w-12 items-center justify-center rounded-lg",
                               selectedTool === tool.id
-                                ? "text-gray-900"
-                                : "text-white",
+                                ? "bg-white text-gray-900 hover:bg-gray-200"
+                                : "text-white hover:bg-gray-700/50 hover:text-gray-200",
                             )}
-                          />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="right"
-                        className="bg-white text-gray-900"
-                      >
-                        <p>
-                          {tool.name} ({tool.shortcut})
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
+                            onClick={() => onToolSelect(tool.id)}
+                          >
+                            <Icon
+                              style={{ width: "24px", height: "24px" }}
+                              className={cn(
+                                selectedTool === tool.id
+                                  ? "text-gray-900"
+                                  : "text-white",
+                              )}
+                            />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="right"
+                          className="bg-white text-gray-900"
+                        >
+                          <p>
+                            {tool.name} ({tool.shortcut})
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
               </div>
             </>
           )}

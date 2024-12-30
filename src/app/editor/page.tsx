@@ -108,10 +108,7 @@ export default function Editor() {
           onToggleGrid={() => setShowGrid(!showGrid)}
           layers={layers}
         />
-
-        <div className="relative flex flex-1">
-          {/* Left Toolbar */}
-
+        <div className="relative z-20 ">
           <ErrorBoundary
             fallback={({ error, reset }) => (
               <ErrorView error={error} reset={reset} />
@@ -119,7 +116,6 @@ export default function Editor() {
           >
             <Toolbar
               selectedTool={selectedTool.id}
-              selectedToolShortcut={selectedTool.shortcut}
               onToolSelect={(toolId: ToolType) => {
                 const tool = getAllTools().find((t) => t.id === toolId);
                 if (tool) setSelectedTool(tool);
@@ -127,6 +123,29 @@ export default function Editor() {
             />
           </ErrorBoundary>
 
+          <ErrorBoundary
+            fallback={({ error, reset }) => (
+              <ErrorView error={error} reset={reset} />
+            )}
+          >
+            <ColorPicker
+              primaryColor={primaryColor}
+              secondaryColor={secondaryColor}
+              onPrimaryColorSelect={(color: string) => {
+                setPrimaryColor(color);
+              }}
+              onSecondaryColorSelect={(color: string) => {
+                setSecondaryColor(color);
+              }}
+              customColors={customColors}
+              onAddCustomColor={(color: string) => {
+                addCustomColor(color);
+              }}
+            />
+          </ErrorBoundary>
+        </div>
+
+        <div className="relative flex flex-1">
           {/* Main Canvas Area */}
           <div className="relative flex-1">
             <ErrorBoundary
@@ -159,89 +178,65 @@ export default function Editor() {
               />
             </ErrorBoundary>
           </div>
-
-          {/* Right Panel */}
-          <div className="z-10 flex w-64 flex-col gap-4 bg-gray-700 p-4">
-            <ErrorBoundary
-              fallback={({ error, reset }) => (
-                <ErrorView error={error} reset={reset} />
-              )}
-            >
-              <ColorPicker
-                primaryColor={primaryColor}
-                secondaryColor={secondaryColor}
-                onPrimaryColorSelect={(color: string) => {
-                  setPrimaryColor(color);
-                }}
-                onSecondaryColorSelect={(color: string) => {
-                  setSecondaryColor(color);
-                }}
-                customColors={customColors}
-                onAddCustomColor={(color: string) => {
-                  addCustomColor(color);
-                }}
-              />
-              <LayersPanel
-                layers={layers}
-                selectedLayerId={selectedLayerId}
-                onLayerSelect={setSelectedLayerId}
-                onLayerVisibilityToggle={(layerId: string) => {
-                  setLayers((prev) =>
-                    prev.map((layer) =>
-                      layer.id === layerId
-                        ? { ...layer, visible: !layer.visible }
-                        : layer,
-                    ),
-                  );
-                }}
-                onAddLayer={() => {
-                  const newLayer: Layer = {
-                    id: `layer_${Date.now()}`,
-                    name: `Layer ${layers.length + 1}`,
-                    visible: true,
-                    imageData: createImageData(
-                      canvasSize.width,
-                      canvasSize.height,
-                    ),
-                  };
-                  setLayers((prev) => [...prev, newLayer]);
-                  setSelectedLayerId(newLayer.id);
-                }}
-                onDeleteLayer={(layerId: string) => {
-                  if (layers.length <= 1) return;
-                  setLayers((prev) => {
-                    const filtered = prev.filter(
-                      (layer) => layer.id !== layerId,
-                    );
-                    if (filtered.length === 0) return prev;
-                    return filtered.map((layer, index) => ({
+          <ErrorBoundary>
+            <LayersPanel
+              layers={layers}
+              selectedLayerId={selectedLayerId}
+              onLayerSelect={setSelectedLayerId}
+              onLayerVisibilityToggle={(layerId: string) => {
+                setLayers((prev) =>
+                  prev.map((layer) =>
+                    layer.id === layerId
+                      ? { ...layer, visible: !layer.visible }
+                      : layer,
+                  ),
+                );
+              }}
+              onAddLayer={() => {
+                const newLayer: Layer = {
+                  id: `layer_${Date.now()}`,
+                  name: `Layer ${layers.length + 1}`,
+                  visible: true,
+                  imageData: createImageData(
+                    canvasSize.width,
+                    canvasSize.height,
+                  ),
+                };
+                setLayers((prev) => [...prev, newLayer]);
+                setSelectedLayerId(newLayer.id);
+              }}
+              onDeleteLayer={(layerId: string) => {
+                if (layers.length <= 1) return;
+                setLayers((prev) => {
+                  const filtered = prev.filter((layer) => layer.id !== layerId);
+                  if (filtered.length === 0) return prev;
+                  return filtered.map((layer, index) => ({
+                    ...layer,
+                    id: `layer_${index}`,
+                    name: `Layer ${index + 1}`,
+                  }));
+                });
+                if (selectedLayerId === layerId) {
+                  setSelectedLayerId("layer_0");
+                }
+              }}
+              onLayerReorder={(fromIndex: number, toIndex: number) => {
+                setLayers((prev: Layer[]) => {
+                  const newLayers = [...prev];
+                  const [movedLayer] = newLayers.splice(fromIndex, 1);
+                  if (movedLayer) {
+                    newLayers.splice(toIndex, 0, movedLayer);
+                    return newLayers.map((layer, index) => ({
                       ...layer,
                       id: `layer_${index}`,
                       name: `Layer ${index + 1}`,
                     }));
-                  });
-                  if (selectedLayerId === layerId) {
-                    setSelectedLayerId("layer_0");
                   }
-                }}
-                onLayerReorder={(fromIndex: number, toIndex: number) => {
-                  setLayers((prev: Layer[]) => {
-                    const newLayers = [...prev];
-                    const [movedLayer] = newLayers.splice(fromIndex, 1);
-                    if (movedLayer) {
-                      newLayers.splice(toIndex, 0, movedLayer);
-                      return newLayers.map((layer, index) => ({
-                        ...layer,
-                        id: `layer_${index}`,
-                        name: `Layer ${index + 1}`,
-                      }));
-                    }
-                    return prev;
-                  });
-                }}
-              />
-            </ErrorBoundary>
-          </div>
+                  return prev;
+                });
+              }}
+            />
+          </ErrorBoundary>
         </div>
       </ErrorBoundary>
     </div>
