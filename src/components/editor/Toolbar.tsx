@@ -1,11 +1,22 @@
 "use client";
 
-import { Undo2, Redo2 } from "lucide-react";
+import { Undo2, Redo2, ChevronUp, ChevronDown } from "lucide-react";
 import { getAllTools } from "@/lib/tools";
 import { ToolType } from "@/types/editor";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface ToolbarProps {
   selectedTool: ToolType;
+  selectedToolShortcut: string;
   onToolSelect: (tool: ToolType) => void;
   canUndo?: boolean;
   canRedo?: boolean;
@@ -15,6 +26,7 @@ interface ToolbarProps {
 
 export default function Toolbar({
   selectedTool,
+  selectedToolShortcut,
   onToolSelect,
   canUndo = false,
   canRedo = false,
@@ -23,50 +35,151 @@ export default function Toolbar({
 }: ToolbarProps) {
   const tools = getAllTools();
 
-  return (
-    <div className="flex flex-col gap-2 p-2">
-      {/* History controls */}
-      <div className="mb-2 flex flex-col gap-2">
-        <button
-          className={`rounded-lg p-2 transition-colors ${
-            canUndo ? "text-gray-400 hover:bg-gray-700" : "text-gray-600"
-          }`}
-          onClick={onUndo}
-          disabled={!canUndo}
-          title="Undo (Ctrl+Z)"
-        >
-          <Undo2 className="mx-auto h-6 w-6" />
-        </button>
-        <button
-          className={`rounded-lg p-2 transition-colors ${
-            canRedo ? "text-gray-400 hover:bg-gray-700" : "text-gray-600"
-          }`}
-          onClick={onRedo}
-          disabled={!canRedo}
-          title="Redo (Ctrl+Shift+Z)"
-        >
-          <Redo2 className="mx-auto h-6 w-6" />
-        </button>
-      </div>
+  const [showTools, setShowTools] = useState(true);
 
-      {/* Drawing tools */}
-      {tools.map((tool) => {
-        const Icon = tool.icon;
-        return (
-          <button
-            key={tool.id}
-            className={`rounded-lg p-2 transition-colors ${
-              selectedTool === tool.id
-                ? "bg-blue-500 text-white"
-                : "text-gray-400 hover:bg-gray-700"
-            }`}
-            onClick={() => onToolSelect(tool.id)}
-            title={`${tool.name} (${tool.shortcut})`}
-          >
-            <Icon className="mx-auto h-6 w-6" />
-          </button>
-        );
-      })}
+  return (
+    <div className="absolute bottom-0 left-0 top-4 z-20">
+      <TooltipProvider>
+        <div className="flex flex-col gap-3 rounded-lg bg-gray-900 p-3 shadow-lg backdrop-blur">
+          {/* History controls */}
+          <div className="flex flex-col gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-12 w-12 rounded-lg  text-gray-900  hover:bg-gray-700",
+                  )}
+                  onClick={() => setShowTools(!showTools)}
+                >
+                  {showTools ? (
+                    <ChevronUp
+                      className="text-white "
+                      style={{ width: "24px", height: "24px" }}
+                    />
+                  ) : (
+                    <ChevronDown
+                      className="text-white "
+                      style={{ width: "24px", height: "24px" }}
+                    />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-white text-gray-900">
+                <p>Undo (Ctrl+Z)</p>
+              </TooltipContent>
+            </Tooltip>
+            {showTools && (
+              <>
+                <Separator className="bg-gray-700" />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "h-12 w-12 rounded-lg text-white",
+                        !canUndo && "opacity-50",
+                        canUndo && "hover:bg-gray-700/50 hover:text-gray-200",
+                      )}
+                      onClick={onUndo}
+                      disabled={!canUndo}
+                    >
+                      <Undo2
+                        className="text-white"
+                        style={{ width: "24px", height: "24px" }}
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="bg-white text-gray-900"
+                  >
+                    <p>Undo (Ctrl+Z)</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "h-12 w-12 rounded-lg text-white",
+                        !canRedo && "opacity-50",
+                        canRedo && "hover:bg-gray-700/50 hover:text-gray-200",
+                      )}
+                      onClick={onRedo}
+                      disabled={!canRedo}
+                    >
+                      <Redo2
+                        className="text-white"
+                        style={{ width: "24px", height: "24px" }}
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="bg-white text-gray-900"
+                  >
+                    <p>Redo (Ctrl+Shift+Z)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </>
+            )}
+          </div>
+
+          {showTools && (
+            <>
+              <Separator className="bg-gray-700" />
+
+              {/* Drawing tools */}
+              <div className="flex flex-col gap-2">
+                {tools.map((tool) => {
+                  const Icon = tool.icon;
+                  return (
+                    <Tooltip key={tool.id}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={
+                            selectedTool === tool.id ? "default" : "ghost"
+                          }
+                          size="icon"
+                          className={cn(
+                            "flex h-12 w-12 items-center justify-center rounded-lg",
+                            selectedTool === tool.id
+                              ? "bg-white text-gray-900 hover:bg-gray-200"
+                              : "text-white hover:bg-gray-700/50 hover:text-gray-200",
+                          )}
+                          onClick={() => onToolSelect(tool.id)}
+                        >
+                          <Icon
+                            style={{ width: "24px", height: "24px" }}
+                            className={cn(
+                              selectedTool === tool.id
+                                ? "text-gray-900"
+                                : "text-white",
+                            )}
+                          />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="right"
+                        className="bg-white text-gray-900"
+                      >
+                        <p>
+                          {tool.name} ({tool.shortcut})
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      </TooltipProvider>
     </div>
   );
 }

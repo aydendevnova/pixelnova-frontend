@@ -43,7 +43,10 @@ export interface Command {
 export interface Tool {
   id: ToolType;
   name: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{
+    className?: string;
+    style?: React.CSSProperties;
+  }>;
   shortcut: string;
   cursor?: string;
   onMouseDown?: (e: React.MouseEvent, context: ToolContext) => void;

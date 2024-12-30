@@ -625,7 +625,8 @@ export default function AiPixelArtModal({
       {error && <Alert variant="destructive">{error}</Alert>}
       <DialogTrigger asChild>
         <Button variant="default">
-          Generate Pixel Art <Sparkle />
+          <span className="hidden sm:block"> Generate Pixel Art </span>
+          <Sparkle />
         </Button>
       </DialogTrigger>
       <DialogContent className="h-[90vh] w-[90vw] max-w-none overflow-y-auto">

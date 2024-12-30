@@ -99,6 +99,7 @@ export default function Editor() {
             colors.forEach(addCustomColor);
           }}
           selectedTool={selectedTool.id}
+          SelectedToolIcon={selectedTool.icon}
           bucketTolerance={bucketTolerance}
           onBucketToleranceChange={setBucketTolerance}
           brushSize={brushSize}
@@ -108,23 +109,23 @@ export default function Editor() {
           layers={layers}
         />
 
-        <div className="flex flex-1">
+        <div className="relative flex flex-1">
           {/* Left Toolbar */}
-          <div className="w-20 bg-gray-700 p-2">
-            <ErrorBoundary
-              fallback={({ error, reset }) => (
-                <ErrorView error={error} reset={reset} />
-              )}
-            >
-              <Toolbar
-                selectedTool={selectedTool.id}
-                onToolSelect={(toolId: ToolType) => {
-                  const tool = getAllTools().find((t) => t.id === toolId);
-                  if (tool) setSelectedTool(tool);
-                }}
-              />
-            </ErrorBoundary>
-          </div>
+
+          <ErrorBoundary
+            fallback={({ error, reset }) => (
+              <ErrorView error={error} reset={reset} />
+            )}
+          >
+            <Toolbar
+              selectedTool={selectedTool.id}
+              selectedToolShortcut={selectedTool.shortcut}
+              onToolSelect={(toolId: ToolType) => {
+                const tool = getAllTools().find((t) => t.id === toolId);
+                if (tool) setSelectedTool(tool);
+              }}
+            />
+          </ErrorBoundary>
 
           {/* Main Canvas Area */}
           <div className="relative flex-1">
