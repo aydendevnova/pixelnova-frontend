@@ -19,6 +19,7 @@ import {
 } from "@/types/editor";
 import { getToolById } from "@/lib/tools";
 import { getCanvasCoordinates } from "@/lib/utils/coordinates";
+import { useEditorStore } from "@/store/editorStore";
 
 interface CanvasProps {
   width: number;
@@ -63,6 +64,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   },
   ref,
 ) {
+  const { shouldClearOriginal } = useEditorStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const displayCanvasRef = useRef<HTMLCanvasElement>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -619,6 +621,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           onColorPick,
           selection,
           setSelection,
+          shouldClearOriginal,
         };
 
         // Pass the coordinates directly to the tool
@@ -652,6 +655,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       onColorPick,
       selection,
       setSelection,
+      shouldClearOriginal,
       render,
     ],
   );
@@ -700,6 +704,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         onColorPick,
         selection,
         setSelection,
+        shouldClearOriginal,
       };
 
       tool.onMouseMove?.(
@@ -731,6 +736,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       onColorPick,
       selection,
       setSelection,
+      shouldClearOriginal,
       handlePan,
       render,
     ],
@@ -781,6 +787,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         onColorPick,
         selection,
         setSelection,
+        shouldClearOriginal,
       };
 
       tool.onMouseUp?.(
@@ -811,6 +818,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       onColorPick,
       selection,
       setSelection,
+      shouldClearOriginal,
       render,
     ],
   );

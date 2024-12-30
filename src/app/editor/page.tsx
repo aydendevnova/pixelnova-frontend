@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Canvas from "@/components/editor/Canvas";
 import Toolbar from "@/components/editor/Toolbar";
 import ColorPicker from "@/components/editor/ColorPicker";
@@ -12,6 +12,7 @@ import { useEditorStore } from "@/store/editorStore";
 import { getAllTools } from "@/lib/tools";
 import { createImageData } from "@/lib/utils/canvas";
 import { Layer, Tool, ToolType } from "@/types/editor";
+import { set } from "zod";
 
 export default function Editor() {
   const {

@@ -14,6 +14,9 @@ import AiPixelArtModal from "../modals/ai-pixel-art";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { Layer, ToolType } from "@/types/editor";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useEditorStore } from "@/store/editorStore";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
@@ -42,6 +45,8 @@ export default function TopMenuBar({
   onToggleGrid,
   layers,
 }: TopMenuBarProps) {
+  const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
+
   const handleToleranceChange = (value: string) => {
     const numValue = Math.max(1, Math.min(10, Number(value) || 1));
     onBucketToleranceChange(numValue);
@@ -262,45 +267,61 @@ export default function TopMenuBar({
         Generate Palette
       </button> */}
 
-      {/* Show brush size input for pencil and eraser */}
-      {(selectedTool === "pencil" || selectedTool === "eraser") && (
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-gray-400">Size:</label>
-          <Input
-            type="number"
-            min={1}
-            max={32}
-            value={brushSize}
-            onChange={(e) => handleBrushSizeChange(e.target.value)}
-            className="w-20 bg-gray-700 text-white"
-          />
-        </div>
-      )}
+      {/* Tool-specific options */}
+      <div className="ml-4 flex items-center gap-4">
+        {selectedTool === "bucket" && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-300">Tolerance:</label>
+            <Input
+              type="number"
+              min={1}
+              max={10}
+              value={bucketTolerance}
+              onChange={(e) => handleToleranceChange(e.target.value)}
+              className="w-16 bg-gray-700 text-white"
+            />
+          </div>
+        )}
 
-      {/* Show tolerance input only when bucket tool is selected */}
-      {selectedTool === "bucket" && (
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-gray-400">Tolerance:</label>
-          <Input
-            type="number"
-            min={1}
-            max={10}
-            value={bucketTolerance}
-            onChange={(e) => handleToleranceChange(e.target.value)}
-            className="w-20 bg-gray-700 text-white"
-          />
-        </div>
-      )}
+        {(selectedTool === "pencil" ||
+          selectedTool === "eraser" ||
+          selectedTool === "line") && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-300">Size:</label>
+            <Input
+              type="number"
+              min={1}
+              max={32}
+              value={brushSize}
+              onChange={(e) => handleBrushSizeChange(e.target.value)}
+              className="w-16 bg-gray-700 text-white"
+            />
+          </div>
+        )}
 
-      {/* Add grid toggle button */}
+        {selectedTool === "select" && (
+          <div className="flex items-center gap-2">
+            <Switch
+              id="clear-original"
+              checked={shouldClearOriginal}
+              onCheckedChange={setShouldClearOriginal}
+            />
+            <Label htmlFor="clear-original" className="text-sm text-gray-300">
+              Move (instead of copy)
+            </Label>
+          </div>
+        )}
+      </div>
+
+      {/* Grid toggle */}
       <button
         onClick={onToggleGrid}
-        className={`flex items-center gap-1 rounded px-2 py-1 text-sm ${
-          showGrid ? "bg-blue-500 text-white" : "text-gray-400 hover:text-white"
-        }`}
-        title="Toggle Grid"
+        className={`ml-auto flex items-center gap-2 rounded px-2 py-1 text-sm ${
+          showGrid ? "bg-blue-500 text-white" : "bg-gray-700 text-gray-300"
+        } hover:bg-blue-600`}
       >
         <Grid2X2 className="h-4 w-4" />
+        Grid
       </button>
       <AiPixelArtModal
         onFinish={(img) => {

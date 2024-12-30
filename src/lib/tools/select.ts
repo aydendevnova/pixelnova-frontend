@@ -115,6 +115,7 @@ export const SelectTool: Tool = {
       setSelection,
       layers,
       selectedLayerId,
+      shouldClearOriginal,
     } = context;
     if (!selection) return;
 
@@ -136,6 +137,20 @@ export const SelectTool: Tool = {
 
       // Draw the current layer
       tempCtx.putImageData(selectedLayer.imageData, 0, 0);
+
+      // If shouldClearOriginal is true, clear the original selection area
+      if (
+        shouldClearOriginal &&
+        selection.originalX !== undefined &&
+        selection.originalY !== undefined
+      ) {
+        tempCtx.clearRect(
+          selection.originalX,
+          selection.originalY,
+          selection.selectedImageData.width,
+          selection.selectedImageData.height,
+        );
+      }
 
       // Create another canvas for the selection
       const selectionCanvas = document.createElement("canvas");
