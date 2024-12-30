@@ -18,7 +18,10 @@ import {
   PreviewableTool,
 } from "@/types/editor";
 import { getToolById } from "@/lib/tools";
-import { getCanvasCoordinates } from "@/lib/utils/coordinates";
+import {
+  getCanvasCoordinates,
+  getTouchCoordinates,
+} from "@/lib/utils/coordinates";
 import { useEditorStore } from "@/store/editorStore";
 
 interface CanvasProps {
@@ -46,6 +49,15 @@ export interface CanvasRef {
 const isPreviewableTool = (tool: Tool): tool is PreviewableTool => {
   return "lastPreviewPoints" in tool;
 };
+
+interface TouchState {
+  touchStartX: number;
+  touchStartY: number;
+  initialPinchDistance: number | null;
+  initialScale: number | null;
+  lastTouchX: number | null;
+  lastTouchY: number | null;
+}
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
@@ -103,6 +115,15 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     y: number;
   } | null>(null);
 
+  const [touchState, setTouchState] = useState<TouchState>({
+    touchStartX: 0,
+    touchStartY: 0,
+    initialPinchDistance: null,
+    initialScale: null,
+    lastTouchX: null,
+    lastTouchY: null,
+  });
+
   // Create offscreen canvas for checkerboard pattern
   const checkerboardPattern = useMemo(() => {
     if (typeof document === "undefined") return null;
@@ -140,11 +161,13 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     // Enable nearest-neighbor interpolation
     ctx.imageSmoothingEnabled = false;
 
-    // Clear canvas
+    // Clear canvas with pixel ratio consideration
+    const pixelRatio = window.devicePixelRatio || 1;
     ctx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
 
-    // Apply viewport transform
+    // Apply viewport transform with pixel ratio consideration
     ctx.save();
+    ctx.scale(pixelRatio, pixelRatio);
     ctx.translate(viewport.x, viewport.y);
     ctx.scale(viewport.scale, viewport.scale);
 
@@ -483,21 +506,52 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     // Set up display canvas (viewport size)
     const container = containerRef.current;
     if (!container) return;
-    displayCanvas.width = container.clientWidth;
-    displayCanvas.height = container.clientHeight;
 
-    // Center the viewport
-    setViewport((prev) => ({
-      ...prev,
-      x: (displayCanvas.width - width * prev.scale) / 2,
-      y: (displayCanvas.height - height * prev.scale) / 2,
-    }));
+    // Handle mobile viewport scaling
+    const updateCanvasSize = () => {
+      const pixelRatio = window.devicePixelRatio || 1;
+      const containerWidth = container.clientWidth * pixelRatio;
+      const containerHeight = container.clientHeight * pixelRatio;
 
-    // Cleanup previous animation frame
+      // Set display canvas size accounting for pixel ratio
+      displayCanvas.width = containerWidth;
+      displayCanvas.height = containerHeight;
+      displayCanvas.style.width = `${container.clientWidth}px`;
+      displayCanvas.style.height = `${container.clientHeight}px`;
+
+      // Calculate initial scale to fit the canvas
+      const scaleX = containerWidth / width;
+      const scaleY = containerHeight / height;
+      const initialScale = Math.min(
+        Math.max(1, Math.min(scaleX, scaleY) * 0.8),
+        32,
+      );
+
+      // Center the viewport
+      setViewport((prev) => ({
+        ...prev,
+        x: (containerWidth / pixelRatio - width * initialScale) / 2,
+        y: (containerHeight / pixelRatio - height * initialScale) / 2,
+        scale: initialScale,
+      }));
+    };
+
+    // Initial update
+    updateCanvasSize();
+
+    // Handle resize events
+    const handleResize = () => {
+      updateCanvasSize();
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup previous animation frame and event listener
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      window.removeEventListener("resize", handleResize);
     };
   }, [width, height]);
 
@@ -1095,19 +1149,358 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     };
   }, []);
 
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      const displayCanvas = displayCanvasRef.current;
+      const drawingCanvas = drawingCanvasRef.current;
+      if (!displayCanvas || !drawingCanvas || !e.touches[0]) return;
+
+      const touch = e.touches[0];
+      const coords = getTouchCoordinates(touch, displayCanvas, viewport);
+      setHoverPosition(coords); // Important for line preview
+
+      setTouchState((prev) => ({
+        ...prev,
+        touchStartX: touch.clientX,
+        touchStartY: touch.clientY,
+        lastTouchX: touch.clientX,
+        lastTouchY: touch.clientY,
+        initialPinchDistance:
+          e.touches.length === 2 && e.touches[1]
+            ? Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY,
+              )
+            : null,
+        initialScale: e.touches.length === 2 ? viewport.scale : null,
+      }));
+
+      if (e.touches.length === 1) {
+        setIsMouseDown(true);
+        const tool = getToolById(selectedTool);
+        const ctx = drawingCanvas.getContext("2d", {
+          willReadFrequently: true,
+        });
+        if (!ctx) return;
+
+        const toolContext = {
+          canvas: drawingCanvas,
+          ctx,
+          viewport: { x: 0, y: 0, scale: 1 },
+          primaryColor,
+          secondaryColor,
+          brushSize,
+          bucketTolerance,
+          layers,
+          selectedLayerId,
+          onColorPick,
+          selection,
+          setSelection,
+          shouldClearOriginal,
+        };
+
+        tool.onMouseDown?.(
+          {
+            ...e,
+            clientX: coords.x,
+            clientY: coords.y,
+            button: 0,
+            nativeEvent: {
+              ...e.nativeEvent,
+              clientX: coords.x,
+              clientY: coords.y,
+            },
+          } as any,
+          toolContext,
+        );
+
+        // Render immediately after tool start
+        requestAnimationFrame(() => {
+          render();
+        });
+      }
+    },
+    [
+      viewport,
+      selectedTool,
+      primaryColor,
+      secondaryColor,
+      brushSize,
+      bucketTolerance,
+      layers,
+      selectedLayerId,
+      onColorPick,
+      selection,
+      setSelection,
+      shouldClearOriginal,
+      render,
+    ],
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      const displayCanvas = displayCanvasRef.current;
+      const drawingCanvas = drawingCanvasRef.current;
+      if (!displayCanvas || !drawingCanvas || !e.touches[0]) return;
+
+      if (e.touches.length === 2 && e.touches[1]) {
+        // Pinch to zoom
+        const currentDistance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY,
+        );
+
+        if (touchState.initialPinchDistance && touchState.initialScale) {
+          const scale =
+            (currentDistance / touchState.initialPinchDistance) *
+            touchState.initialScale;
+          const newScale = Math.max(1, Math.min(32, scale));
+
+          const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+          const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (!rect) return;
+
+          const worldX = (centerX - viewport.x) / viewport.scale;
+          const worldY = (centerY - viewport.y) / viewport.scale;
+
+          const newX = centerX - worldX * newScale;
+          const newY = centerY - worldY * newScale;
+
+          setViewport({
+            x: newX,
+            y: newY,
+            scale: newScale,
+          });
+        }
+      } else if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const coords = getTouchCoordinates(touch, displayCanvas, viewport);
+        setHoverPosition(coords); // Important for line preview
+
+        if (isMouseDown) {
+          // Drawing
+          const tool = getToolById(selectedTool);
+          const ctx = drawingCanvas.getContext("2d", {
+            willReadFrequently: true,
+          });
+          if (!ctx) return;
+
+          const toolContext = {
+            canvas: drawingCanvas,
+            ctx,
+            viewport: { x: 0, y: 0, scale: 1 },
+            primaryColor,
+            secondaryColor,
+            brushSize,
+            bucketTolerance,
+            layers,
+            selectedLayerId,
+            onColorPick,
+            selection,
+            setSelection,
+            shouldClearOriginal,
+          };
+
+          // Call tool's move handler
+          tool.onMouseMove?.(
+            {
+              ...e,
+              clientX: coords.x,
+              clientY: coords.y,
+              button: 0,
+              nativeEvent: {
+                ...e.nativeEvent,
+                clientX: coords.x,
+                clientY: coords.y,
+              },
+            } as any,
+            toolContext,
+          );
+
+          // Always render after any tool interaction
+          requestAnimationFrame(() => {
+            render();
+          });
+        } else if (
+          touchState.lastTouchX !== null &&
+          touchState.lastTouchY !== null
+        ) {
+          // Panning
+          const deltaX = touch.clientX - touchState.lastTouchX;
+          const deltaY = touch.clientY - touchState.lastTouchY;
+
+          setViewport((prev) => ({
+            ...prev,
+            x: prev.x + deltaX,
+            y: prev.y + deltaY,
+          }));
+        }
+
+        setTouchState((prev) => ({
+          ...prev,
+          lastTouchX: touch.clientX,
+          lastTouchY: touch.clientY,
+        }));
+      }
+    },
+    [
+      viewport,
+      isMouseDown,
+      selectedTool,
+      primaryColor,
+      secondaryColor,
+      brushSize,
+      bucketTolerance,
+      layers,
+      selectedLayerId,
+      onColorPick,
+      selection,
+      setSelection,
+      shouldClearOriginal,
+      touchState,
+      render,
+    ],
+  );
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      const displayCanvas = displayCanvasRef.current;
+      const drawingCanvas = drawingCanvasRef.current;
+      if (!displayCanvas || !drawingCanvas || !e.changedTouches[0]) return;
+
+      if (e.touches.length === 0) {
+        setIsMouseDown(false);
+        setHoverPosition(null); // Clear hover position when touch ends
+
+        if (isMouseDown) {
+          const coords = getTouchCoordinates(
+            e.changedTouches[0],
+            displayCanvas,
+            viewport,
+          );
+          const tool = getToolById(selectedTool);
+          const ctx = drawingCanvas.getContext("2d", {
+            willReadFrequently: true,
+          });
+          if (!ctx) return;
+
+          const toolContext = {
+            canvas: drawingCanvas,
+            ctx,
+            viewport: { x: 0, y: 0, scale: 1 },
+            primaryColor,
+            secondaryColor,
+            brushSize,
+            bucketTolerance,
+            layers,
+            selectedLayerId,
+            onColorPick,
+            selection,
+            setSelection,
+            shouldClearOriginal,
+          };
+
+          tool.onMouseUp?.(
+            {
+              ...e,
+              clientX: coords.x,
+              clientY: coords.y,
+              button: 0,
+              nativeEvent: {
+                ...e.nativeEvent,
+                clientX: coords.x,
+                clientY: coords.y,
+              },
+            } as any,
+            toolContext,
+          );
+
+          // Final render after tool end
+          requestAnimationFrame(() => {
+            render();
+          });
+        }
+
+        setTouchState((prev) => ({
+          ...prev,
+          initialPinchDistance: null,
+          initialScale: null,
+          lastTouchX: null,
+          lastTouchY: null,
+        }));
+      }
+    },
+    [
+      viewport,
+      isMouseDown,
+      selectedTool,
+      primaryColor,
+      secondaryColor,
+      brushSize,
+      bucketTolerance,
+      layers,
+      selectedLayerId,
+      onColorPick,
+      selection,
+      setSelection,
+      shouldClearOriginal,
+      render,
+    ],
+  );
+
+  // Add meta viewport tag for proper mobile rendering
+  useEffect(() => {
+    // Find or create viewport meta tag
+    let viewportMeta = document.querySelector(
+      'meta[name="viewport"]',
+    ) as HTMLMetaElement | null;
+    if (!viewportMeta) {
+      viewportMeta = document.createElement("meta");
+      viewportMeta.name = "viewport";
+      document.head.appendChild(viewportMeta);
+    }
+
+    // Set viewport properties for proper mobile rendering
+    viewportMeta.content =
+      "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+
+    return () => {
+      // Reset viewport on cleanup
+      if (viewportMeta && viewportMeta.parentNode) {
+        viewportMeta.content = "width=device-width, initial-scale=1.0";
+      }
+    };
+  }, []);
+
   return (
     <div
       ref={containerRef}
-      className="h-full w-full overflow-hidden bg-gray-800"
+      className="h-full w-full touch-none overflow-hidden bg-gray-800"
     >
       <canvas
         ref={displayCanvasRef}
-        className={`absolute left-0 top-0 ${getCursorStyle()}`}
+        className={`absolute left-0 top-0 touch-none ${getCursorStyle()}`}
+        style={
+          {
+            touchAction: "none",
+            WebkitTouchCallout: "none",
+            WebkitUserSelect: "none",
+            WebkitTapHighlightColor: "transparent",
+          } as React.CSSProperties
+        }
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
         onContextMenu={(e) => e.preventDefault()}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       />
       <canvas ref={drawingCanvasRef} className="hidden" data-canvas="drawing" />
       <canvas
