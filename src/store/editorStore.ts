@@ -15,7 +15,7 @@ interface EditorState {
   brushSize: number;
   shouldClearOriginal: boolean;
   bucketTolerance: number;
-  customColors: string[];
+  importedColors: string[];
 
   // Layers State
   layers: Layer[];
@@ -49,7 +49,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   brushSize: 1,
   shouldClearOriginal: true,
   bucketTolerance: 1,
-  customColors: [],
+  importedColors: [],
 
   // Initial Layers State
   layers: [],
@@ -67,7 +67,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setBucketTolerance: (tolerance) => set({ bucketTolerance: tolerance }),
   addCustomColor: (color) =>
     set((state) => ({
-      customColors: [...state.customColors, color],
+      importedColors: [...state.importedColors, color],
     })),
   setLayers: (layersOrUpdater) =>
     set((state) => ({

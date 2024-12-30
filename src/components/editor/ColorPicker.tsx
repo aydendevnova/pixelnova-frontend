@@ -1,6 +1,10 @@
 "use client";
 
-import { PlusIcon } from "@heroicons/react/24/outline";
+import {
+  PlusIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from "@heroicons/react/24/outline";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -9,29 +13,24 @@ import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { PALETTE_INFO } from "@/lib/utils/colorPalletes";
+import { Pin, PinOff } from "lucide-react";
 
 interface ColorPickerProps {
   primaryColor: string;
   secondaryColor: string;
   onPrimaryColorSelect: (color: string) => void;
   onSecondaryColorSelect: (color: string) => void;
-  customColors?: string[];
+  importedColors?: string[];
   onAddCustomColor?: (color: string) => void;
 }
-
-const presetColors = [
-  "transparent",
-  "#000000", // Black
-  "#FFFFFF", // White
-  "#FF0000", // Red
-  "#00FF00", // Green
-  "#0000FF", // Blue
-  "#FFFF00", // Yellow
-  "#FF00FF", // Magenta
-  "#00FFFF", // Cyan
-  "#FFA500", // Orange
-  "#800080", // Purple
-];
 
 const ColorButton = ({
   color,
@@ -76,14 +75,20 @@ export default function ColorPicker({
   secondaryColor,
   onPrimaryColorSelect,
   onSecondaryColorSelect,
-  customColors = [],
+  importedColors = [],
   onAddCustomColor,
 }: ColorPickerProps) {
   const [open, setOpen] = useState(false);
   const [keepOpen, setKeepOpen] = useState(false);
+  const [selectedPalette, setSelectedPalette] =
+    useState<keyof typeof PALETTE_INFO>("PRESET_PALETTE");
+  const [presetsExpanded, setPresetsExpanded] = useState(true);
 
   const isColorInPalette = (color: string) => {
-    return presetColors.includes(color) || customColors.includes(color);
+    return (
+      PALETTE_INFO[selectedPalette]?.colors.includes(color) ||
+      importedColors.includes(color)
+    );
   };
 
   const handleColorSelect = (color: string, isRightClick: boolean) => {
@@ -103,7 +108,7 @@ export default function ColorPicker({
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <div className="absolute right-4 top-4 z-50">
+        <div className="absolute -top-16 right-4 z-50">
           <div className="flex cursor-pointer items-center gap-2 rounded-lg bg-gray-900/90 p-2 shadow-lg backdrop-blur">
             <div className="relative">
               <div
@@ -137,16 +142,23 @@ export default function ColorPicker({
         </div>
       </PopoverTrigger>
 
-      <PopoverContent className="w-[280px] border-gray-700 bg-gray-900/90 backdrop-blur sm:w-[320px]">
+      <PopoverContent className="w-[240px] border-gray-700 bg-gray-900/90 backdrop-blur sm:w-[240px]">
         <div className="flex flex-col gap-3">
           {/* Keep open toggle */}
           <div className="flex items-center justify-between">
-            <Label className="text-sm text-white">Keep Open</Label>
-            <Switch
-              checked={keepOpen}
-              onCheckedChange={setKeepOpen}
-              className="data-[state=checked]:bg-blue-500"
-            />
+            <Label className="text-sm text-white">Colors</Label>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto h-8 w-8 p-0 text-gray-400 hover:bg-gray-800 hover:text-white"
+              onClick={() => setKeepOpen(!keepOpen)}
+            >
+              {keepOpen ? (
+                <Pin className="h-4 w-4 rotate-45 text-red-500" />
+              ) : (
+                <PinOff className="h-4 w-4 rotate-45" />
+              )}
+            </Button>
           </div>
 
           {/* Color inputs */}
@@ -159,7 +171,7 @@ export default function ColorPicker({
                   primaryColor === "transparent" ? "#FFFFFF" : primaryColor
                 }
                 onChange={(e) => onPrimaryColorSelect(e.target.value)}
-                className="h-8 w-full cursor-pointer rounded bg-gray-700"
+                className="m-0 h-8 w-full cursor-pointer rounded bg-gray-700 p-0"
               />
             </div>
             <div className="flex-1">
@@ -170,47 +182,18 @@ export default function ColorPicker({
                   secondaryColor === "transparent" ? "#FFFFFF" : secondaryColor
                 }
                 onChange={(e) => onSecondaryColorSelect(e.target.value)}
-                className="h-8 w-full cursor-pointer rounded bg-gray-700"
+                className="m-0 h-8 w-full cursor-pointer rounded bg-gray-700 p-0"
               />
             </div>
           </div>
 
-          {/* Preset colors */}
-          <div>
-            <Label className="text-sm text-white">Presets</Label>
-            <div className="mt-1 grid grid-cols-6 gap-1">
-              {presetColors.map((color) => (
-                <div
-                  key={color}
-                  className="relative cursor-pointer"
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    handleColorSelect(color, true);
-                  }}
-                  onClick={() => handleColorSelect(color, false)}
-                >
-                  <ColorButton
-                    color={color}
-                    isSelected={
-                      primaryColor === color || secondaryColor === color
-                    }
-                    onClick={() => handleColorSelect(color, false)}
-                    title={`${color}`}
-                    isPrimary={primaryColor === color}
-                    size="small"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Custom colors */}
-          {customColors.length > 0 && (
+          {/* Imported colors */}
+          {importedColors.length > 0 && (
             <div>
-              <Label className="text-sm text-white">Custom</Label>
-              <ScrollArea className="h-24">
-                <div className="mt-1 grid grid-cols-6 gap-1">
-                  {customColors.map((color) => (
+              <Label className="text-sm text-white">Imported</Label>
+              <ScrollArea className="h-48">
+                <div className="mt-1 grid grid-cols-5 gap-1">
+                  {importedColors.map((color) => (
                     <div
                       key={color}
                       className="relative cursor-pointer"
@@ -228,7 +211,7 @@ export default function ColorPicker({
                         onClick={() => handleColorSelect(color, false)}
                         title={color}
                         isPrimary={primaryColor === color}
-                        size="small"
+                        size="normal"
                       />
                     </div>
                   ))}
@@ -236,6 +219,68 @@ export default function ColorPicker({
               </ScrollArea>
             </div>
           )}
+
+          {/* Preset colors */}
+          <div>
+            <div className="my-2 flex items-center justify-between">
+              <Label className="text-sm text-white">Presets</Label>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={selectedPalette}
+                  onValueChange={(value) =>
+                    setSelectedPalette(value as keyof typeof PALETTE_INFO)
+                  }
+                >
+                  <SelectTrigger className="h-7 w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PALETTE_INFO).map(([key, info]) => (
+                      <SelectItem key={key} value={key}>
+                        {info.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <button
+                  onClick={() => setPresetsExpanded(!presetsExpanded)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  {presetsExpanded ? (
+                    <ChevronUpIcon className="h-4 w-4" />
+                  ) : (
+                    <ChevronDownIcon className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+            {presetsExpanded && (
+              <div className="mt-1 grid grid-cols-5 gap-1">
+                {PALETTE_INFO[selectedPalette]?.colors.map((color) => (
+                  <div
+                    key={color}
+                    className="relative cursor-pointer"
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      handleColorSelect(color, true);
+                    }}
+                    onClick={() => handleColorSelect(color, false)}
+                  >
+                    <ColorButton
+                      color={color}
+                      isSelected={
+                        primaryColor === color || secondaryColor === color
+                      }
+                      onClick={() => handleColorSelect(color, false)}
+                      title={`${color}`}
+                      isPrimary={primaryColor === color}
+                      size="normal"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Add to palette buttons */}
           {onAddCustomColor && (

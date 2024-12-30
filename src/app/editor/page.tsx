@@ -25,7 +25,7 @@ export default function Editor() {
     showGrid,
     layers,
     selectedLayerId,
-    customColors,
+    importedColors: importedColors,
     setCanvasSize,
     setSelectedTool,
     setPrimaryColor,
@@ -137,7 +137,7 @@ export default function Editor() {
               onSecondaryColorSelect={(color: string) => {
                 setSecondaryColor(color);
               }}
-              customColors={customColors}
+              importedColors={importedColors}
               onAddCustomColor={(color: string) => {
                 addCustomColor(color);
               }}

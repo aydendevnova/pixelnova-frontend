@@ -16,7 +16,7 @@ The `Editor` component is the main container for the pixel art editor. It manage
 - `primaryColor`: The primary color used for drawing.
 - `secondaryColor`: The secondary color used for drawing.
 - `canvasSize`: The dimensions of the canvas.
-- `customColors`: A list of custom colors added by the user.
+- `importedColors`: A list of colors imported from the image or added by user
 - `canUndo` and `canRedo`: Flags indicating whether undo and redo actions are available.
 - `bucketTolerance`: The tolerance level for the bucket fill tool.
 - `brushSize`: The size of the brush.

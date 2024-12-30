@@ -58,60 +58,61 @@ export default function LayersPanel({
   };
 
   const LayersList = () => (
-    <ScrollArea className="h-[300px] pr-4 text-white">
-      <div className="flex flex-col gap-2">
-        {layers.map((layer, index) => (
-          <div
-            key={layer.id}
-            className={cn(
-              "group flex items-center gap-2 rounded-lg border p-2 transition-colors",
-              selectedLayerId === layer.id
-                ? "border-blue-500 bg-blue-500/10"
-                : "border-gray-800 bg-gray-900/50 hover:border-gray-700",
-            )}
-            onClick={() => onLayerSelect(layer.id)}
-          >
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 p-0 text-white hover:bg-gray-700 hover:text-white"
-              onClick={(e) => {
-                e.stopPropagation();
-                onLayerVisibilityToggle(layer.id);
-              }}
-            >
-              {layer.visible ? (
-                <EyeIcon className="h-4 w-4" />
-              ) : (
-                <EyeSlashIcon className="h-4 w-4" />
+    <div className="overflow-y-auto">
+      <div className="h-full max-h-[300px] pr-4 text-white">
+        <div className="flex flex-col gap-2">
+          {layers.map((layer, index) => (
+            <div
+              key={layer.id}
+              className={cn(
+                "group flex items-center gap-2 rounded-lg border p-2 transition-colors",
+                selectedLayerId === layer.id
+                  ? "border-blue-500 bg-blue-500/10"
+                  : "border-gray-800 bg-gray-900/50 hover:border-gray-700",
               )}
-            </Button>
-
-            {editingLayerId === layer.id ? (
-              <Input
-                type="text"
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                onBlur={handleLayerNameSave}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleLayerNameSave();
-                  }
+              onClick={() => onLayerSelect(layer.id)}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 p-0 text-white hover:bg-gray-700 hover:text-white"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLayerVisibilityToggle(layer.id);
                 }}
-                className="flex-1 bg-gray-800 text-white"
-                autoFocus
-              />
-            ) : (
-              <span
-                className="flex-1 cursor-pointer text-sm text-white"
-                onDoubleClick={() => handleLayerNameEdit(layer)}
               >
-                {layer.name}
-              </span>
-            )}
+                {layer.visible ? (
+                  <EyeIcon className="h-4 w-4" />
+                ) : (
+                  <EyeSlashIcon className="h-4 w-4" />
+                )}
+              </Button>
 
-            <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-              {/* <Button
+              {editingLayerId === layer.id ? (
+                <Input
+                  type="text"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onBlur={handleLayerNameSave}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleLayerNameSave();
+                    }
+                  }}
+                  className="flex-1 bg-gray-800 text-white"
+                  autoFocus
+                />
+              ) : (
+                <span
+                  className="flex-1 cursor-pointer text-sm text-white"
+                  onDoubleClick={() => handleLayerNameEdit(layer)}
+                >
+                  {layer.name}
+                </span>
+              )}
+
+              <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                {/* <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 p-0 text-white"
@@ -139,24 +140,25 @@ export default function LayersPanel({
               >
                 <ChevronDownIcon className="h-4 w-4" />
               </Button> */}
-              {layers.length > 1 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 p-0 text-white hover:text-red-500"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteLayer(layer.id);
-                  }}
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </Button>
-              )}
+                {layers.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 p-0 text-white hover:text-red-500"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteLayer(layer.id);
+                    }}
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </ScrollArea>
+    </div>
   );
 
   const content = (
