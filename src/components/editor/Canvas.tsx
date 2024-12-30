@@ -15,9 +15,11 @@ import {
   ViewportState,
   SelectionState,
   Tool,
+  PreviewableTool,
 } from "@/types/editor";
 import { getToolById } from "@/lib/tools";
 import { getCanvasCoordinates } from "@/lib/utils/coordinates";
+import { useEditorStore } from "@/store/editorStore";
 
 interface CanvasProps {
   width: number;
@@ -40,6 +42,11 @@ export interface CanvasRef {
   getLayerImageData: () => ImageData | null;
 }
 
+// Add type guard as a standalone function
+const isPreviewableTool = (tool: Tool): tool is PreviewableTool => {
+  return "lastPreviewPoints" in tool;
+};
+
 const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
     width,
@@ -57,6 +64,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   },
   ref,
 ) {
+  const { shouldClearOriginal } = useEditorStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const displayCanvasRef = useRef<HTMLCanvasElement>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -178,37 +186,48 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       // Create selection overlay
       ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
 
-      // Draw the overlay in four parts around the selection
-      const x = selection.startX;
-      const y = selection.startY;
-      const width = selection.endX - selection.startX;
-      const height = selection.endY - selection.startY;
+      // Normalize coordinates for the selection area
+      const selectionBounds = {
+        x: Math.min(selection.startX, selection.endX),
+        y: Math.min(selection.startY, selection.endY),
+        width: Math.abs(selection.endX - selection.startX),
+        height: Math.abs(selection.endY - selection.startY),
+      };
 
-      // Top
-      ctx.fillRect(0, 0, drawingCanvas.width, y);
-      // Bottom
-      ctx.fillRect(
-        0,
-        y + height,
-        drawingCanvas.width,
-        drawingCanvas.height - (y + height),
+      // Draw the overlay as a single path with a cutout
+      ctx.beginPath();
+      // Outer rectangle (full canvas)
+      ctx.rect(0, 0, drawingCanvas.width, drawingCanvas.height);
+      // Inner rectangle (selection area) - will be cut out
+      ctx.rect(
+        selectionBounds.x + selectionBounds.width,
+        selectionBounds.y + selectionBounds.height,
+        -selectionBounds.width,
+        -selectionBounds.height,
       );
-      // Left
-      ctx.fillRect(0, y, x, height);
-      // Right
-      ctx.fillRect(x + width, y, drawingCanvas.width - (x + width), height);
+      ctx.fill("evenodd"); // Use even-odd fill rule to create cutout
 
       // Draw selection outline
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 2 / viewport.scale;
       ctx.setLineDash([6 / viewport.scale, 4 / viewport.scale]);
       ctx.lineDashOffset = 0;
-      ctx.strokeRect(x, y, width, height);
+      ctx.strokeRect(
+        selectionBounds.x,
+        selectionBounds.y,
+        selectionBounds.width,
+        selectionBounds.height,
+      );
 
       // Draw inverted color outline
       ctx.strokeStyle = "#000000";
       ctx.lineDashOffset = 6 / viewport.scale;
-      ctx.strokeRect(x, y, width, height);
+      ctx.strokeRect(
+        selectionBounds.x,
+        selectionBounds.y,
+        selectionBounds.width,
+        selectionBounds.height,
+      );
 
       // If we have selected image data and we're moving it, draw it at the current position
       if (selection.selectedImageData && selection.isMoving) {
@@ -221,7 +240,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         if (tempCtx) {
           tempCtx.putImageData(selection.selectedImageData, 0, 0);
           ctx.globalAlpha = 0.8; // Make it slightly transparent while moving
-          ctx.drawImage(tempCanvas, x, y);
+          ctx.drawImage(tempCanvas, selectionBounds.x, selectionBounds.y);
           ctx.globalAlpha = 1.0;
         }
       }
@@ -255,7 +274,9 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     // Draw brush preview
     if (
       hoverPosition &&
-      (selectedTool === "pencil" || selectedTool === "eraser") &&
+      (selectedTool === "pencil" ||
+        selectedTool === "eraser" ||
+        selectedTool === "line") &&
       !isDrawing &&
       !isPanning
     ) {
@@ -267,19 +288,28 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
       ctx.globalAlpha = 0.5;
       if (selectedTool === "eraser") {
-        ctx.clearRect(x, y, size, size);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(x, y, size, size);
       } else {
         ctx.fillStyle = primaryColor;
-        ctx.fillRect(x, y, size, size);
+        if (selectedTool === "line" && isMouseDown) {
+          const tool = getToolById(selectedTool);
+          if (isPreviewableTool(tool)) {
+            // Draw line preview
+            const points = tool.lastPreviewPoints;
+            points.forEach((point) => {
+              ctx.fillRect(point.x - halfSize, point.y - halfSize, size, size);
+            });
+          }
+        } else {
+          ctx.fillRect(x, y, size, size);
+        }
       }
       ctx.globalAlpha = 1.0;
 
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 1 / viewport.scale;
       ctx.setLineDash([]);
-      ctx.strokeRect(x, y, size, size);
-
-      ctx.strokeStyle = "#000000";
       ctx.strokeRect(x, y, size, size);
     }
 
@@ -388,144 +418,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       height,
       selectedLayerId,
     ],
-  );
-
-  // Update floodFill to work with layers
-  const floodFill = useCallback(
-    (
-      startX: number,
-      startY: number,
-      targetColor: string,
-      replacementColor: string,
-    ) => {
-      const selectedLayer = layers.find(
-        (layer) => layer.id === selectedLayerId,
-      );
-      if (!selectedLayer || !selectedLayer.visible) return;
-
-      // Create a new canvas for the layer if it doesn't exist
-      if (!selectedLayer.imageData) {
-        const newImageData = new ImageData(width, height);
-        selectedLayer.imageData = newImageData;
-      }
-
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = width;
-      tempCanvas.height = height;
-      const tempCtx = tempCanvas.getContext("2d");
-      if (!tempCtx) return;
-
-      // Draw existing layer data
-      tempCtx.putImageData(selectedLayer.imageData, 0, 0);
-
-      const imageData = tempCtx.getImageData(0, 0, width, height);
-      const pixels = imageData.data;
-
-      const visited = new Set<string>();
-      const MAX_PIXELS = width * height;
-      let processedPixels = 0;
-
-      const getColorArray = (color: string): number[] => {
-        if (color === "transparent") return [0, 0, 0, 0];
-
-        if (color.startsWith("#")) {
-          const r = parseInt(color.slice(1, 3), 16);
-          const g = parseInt(color.slice(3, 5), 16);
-          const b = parseInt(color.slice(5, 7), 16);
-          return [r, g, b, 255];
-        }
-
-        return [0, 0, 0, 255];
-      };
-
-      const targetRGBA = getColorArray(targetColor);
-      const replacementRGBA = getColorArray(replacementColor);
-
-      if (targetRGBA.every((val, i) => val === replacementRGBA[i])) {
-        return;
-      }
-
-      const getPixel = (x: number, y: number): number[] => {
-        const i = (y * width + x) * 4;
-        return [
-          pixels[i] ?? 0,
-          pixels[i + 1] ?? 0,
-          pixels[i + 2] ?? 0,
-          pixels[i + 3] ?? 0,
-        ];
-      };
-
-      const setPixel = (x: number, y: number, color: number[]) => {
-        const i = (y * width + x) * 4;
-        pixels[i] = color[0] ?? 0;
-        pixels[i + 1] = color[1] ?? 0;
-        pixels[i + 2] = color[2] ?? 0;
-        pixels[i + 3] = color[3] ?? 0;
-      };
-
-      const colorsMatch = (a: number[], b: number[]): boolean => {
-        const tolerance = (bucketTolerance ?? 1) / 20;
-
-        if (b[3] === 0 && a[3] === 0) return true;
-        if (b[3] === 0 || a[3] === 0) return false;
-
-        const rDiff = Math.abs((a[0] ?? 0) - (b[0] ?? 0)) / 255;
-        const gDiff = Math.abs((a[1] ?? 0) - (b[1] ?? 0)) / 255;
-        const bDiff = Math.abs((a[2] ?? 0) - (b[2] ?? 0)) / 255;
-
-        const maxDiff = Math.max(rDiff, gDiff, bDiff);
-
-        return maxDiff <= tolerance;
-      };
-
-      const queue: [number, number][] = [[startX, startY]];
-      const targetPixel = getPixel(startX, startY);
-
-      while (queue.length > 0 && processedPixels < MAX_PIXELS) {
-        const [x, y] = queue.shift()!;
-        const pixelKey = `${x},${y}`;
-
-        if (visited.has(pixelKey)) continue;
-        visited.add(pixelKey);
-
-        if (x < 0 || x >= width || y < 0 || y >= height) {
-          continue;
-        }
-
-        const currentPixel = getPixel(x, y);
-        if (!colorsMatch(currentPixel, targetPixel)) {
-          continue;
-        }
-
-        setPixel(x, y, replacementRGBA);
-        processedPixels++;
-
-        const neighbors = [
-          [x + 1, y],
-          [x - 1, y],
-          [x, y + 1],
-          [x, y - 1],
-        ];
-
-        for (const [nx, ny] of neighbors) {
-          const neighborKey = `${nx},${ny}`;
-          if (!visited.has(neighborKey)) {
-            queue.push([nx ?? 0, ny ?? 0]);
-          }
-        }
-      }
-
-      tempCtx.putImageData(imageData, 0, 0);
-      selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
-
-      if (!animationFrameRef.current) {
-        animationFrameRef.current = requestAnimationFrame(() => {
-          render();
-          animationFrameRef.current = undefined;
-        });
-      }
-    },
-    [layers, selectedLayerId, width, height, render, bucketTolerance],
   );
 
   // Update clearCanvas to clear the selected layer
@@ -729,6 +621,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           onColorPick,
           selection,
           setSelection,
+          shouldClearOriginal,
         };
 
         // Pass the coordinates directly to the tool
@@ -762,6 +655,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       onColorPick,
       selection,
       setSelection,
+      shouldClearOriginal,
       render,
     ],
   );
@@ -810,6 +704,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         onColorPick,
         selection,
         setSelection,
+        shouldClearOriginal,
       };
 
       tool.onMouseMove?.(
@@ -841,6 +736,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       onColorPick,
       selection,
       setSelection,
+      shouldClearOriginal,
       handlePan,
       render,
     ],
@@ -891,6 +787,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         onColorPick,
         selection,
         setSelection,
+        shouldClearOriginal,
       };
 
       tool.onMouseUp?.(
@@ -921,6 +818,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       onColorPick,
       selection,
       setSelection,
+      shouldClearOriginal,
       render,
     ],
   );
@@ -1173,6 +1071,28 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     window.addEventListener("mouseup", handleWindowMouseUp);
     return () => window.removeEventListener("mouseup", handleWindowMouseUp);
+  }, []);
+
+  // Add event listeners for pan tool
+  useEffect(() => {
+    const displayCanvas = displayCanvasRef.current;
+    if (!displayCanvas) return;
+
+    const handleStartPanning = () => {
+      setIsPanning(true);
+    };
+
+    const handleEndPanning = () => {
+      setIsPanning(false);
+    };
+
+    displayCanvas.addEventListener("startPanning", handleStartPanning);
+    displayCanvas.addEventListener("endPanning", handleEndPanning);
+
+    return () => {
+      displayCanvas.removeEventListener("startPanning", handleStartPanning);
+      displayCanvas.removeEventListener("endPanning", handleEndPanning);
+    };
   }, []);
 
   return (

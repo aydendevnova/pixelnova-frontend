@@ -1,44 +1,34 @@
-import { Tool, ToolContext } from "@/types/editor";
+import { ToolContext } from "@/types/editor";
 import { EraserIcon } from "lucide-react";
-import { drawPixel } from "@/lib/utils/canvas";
-import { getCanvasCoordinates } from "@/lib/utils/coordinates";
+import { DrawingTool } from "@/lib/utils/baseTool";
+import { getLinePoints } from "@/lib/utils/coordinates";
 
-export const EraserTool: Tool = {
-  id: "eraser",
-  name: "Eraser",
-  icon: EraserIcon,
-  shortcut: "E",
-  cursor: "crosshair",
+class EraserToolImpl extends DrawingTool {
+  id = "eraser" as const;
+  name = "Eraser";
+  icon = EraserIcon;
+  shortcut = "E";
 
-  onMouseDown: (e: React.MouseEvent, context: ToolContext) => {
-    const { canvas, viewport, brushSize, layers, selectedLayerId } = context;
-    const coords = getCanvasCoordinates(e, canvas, viewport);
+  protected handleDrawing(
+    from: { x: number; y: number },
+    to: { x: number; y: number },
+    e: React.MouseEvent,
+    context: ToolContext,
+  ): void {
+    const points = getLinePoints(from.x, from.y, to.x, to.y);
 
-    drawPixel({
-      x: coords.x,
-      y: coords.y,
-      color: "transparent",
-      size: brushSize,
-      layers,
-      selectedLayerId,
-      canvas,
+    points.forEach((point) => {
+      this.drawAtPoint(point.x, point.y, "transparent", context);
     });
-  },
+  }
 
-  onMouseMove: (e: React.MouseEvent, context: ToolContext) => {
-    if (e.buttons === 0) return; // Not erasing
+  onMouseDown(e: React.MouseEvent, context: ToolContext): void {
+    if (e.button !== 0 && e.button !== 2) return;
 
-    const { canvas, viewport, brushSize, layers, selectedLayerId } = context;
-    const coords = getCanvasCoordinates(e, canvas, viewport);
+    const coords = this.getCoordinates(e, context);
+    this.lastPoint = coords;
+    this.drawAtPoint(coords.x, coords.y, "transparent", context);
+  }
+}
 
-    drawPixel({
-      x: coords.x,
-      y: coords.y,
-      color: "transparent",
-      size: brushSize,
-      layers,
-      selectedLayerId,
-      canvas,
-    });
-  },
-};
+export const EraserTool = new EraserToolImpl();

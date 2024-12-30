@@ -5,7 +5,14 @@ export interface Layer {
   imageData: ImageData | null;
 }
 
-export type ToolType = "pencil" | "eraser" | "bucket" | "select" | "eyedropper";
+export type ToolType =
+  | "pencil"
+  | "eraser"
+  | "bucket"
+  | "select"
+  | "eyedropper"
+  | "pan"
+  | "line";
 
 export interface ViewportState {
   x: number;
@@ -25,6 +32,7 @@ export interface SelectionState {
   selectedImageData?: ImageData;
   originalX?: number;
   originalY?: number;
+  shouldClearOriginal?: boolean;
 }
 
 export interface Command {
@@ -56,4 +64,9 @@ export interface ToolContext {
   onColorPick?: (color: string, isRightClick: boolean) => void;
   selection?: SelectionState;
   setSelection: (selection: SelectionState) => void;
+  shouldClearOriginal: boolean;
+}
+
+export interface PreviewableTool extends Tool {
+  lastPreviewPoints: { x: number; y: number }[];
 }
