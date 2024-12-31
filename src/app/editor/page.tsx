@@ -101,12 +101,6 @@ export default function Editor() {
   const [isValidSelection, setIsValidSelection] = useState(false);
   const canvasRef = useRef<CanvasRef>(null);
 
-  const onDeleteSelection = () => {
-    if (canvasRef.current?.deleteSelection) {
-      canvasRef.current.deleteSelection();
-    }
-  };
-
   // Initialize canvas with a blank layer
   useEffect(() => {
     if (layers.length === 0) {
@@ -133,13 +127,85 @@ export default function Editor() {
   };
 
   const handleImageImport = (imageData: ImageData) => {
-    setCanvasSize({ width: imageData.width, height: imageData.height });
+    // First determine the target canvas size
+    const targetWidth = Math.max(canvasSize.width, imageData.width);
+    const targetHeight = Math.max(canvasSize.height, imageData.height);
+
+    // If we need to resize the canvas
+    if (
+      targetWidth !== canvasSize.width ||
+      targetHeight !== canvasSize.height
+    ) {
+      // Resize all existing layers to match new dimensions
+      const resizedLayers = layers.map((layer) => {
+        if (!layer.imageData) {
+          return {
+            ...layer,
+            imageData: new ImageData(targetWidth, targetHeight),
+          };
+        }
+
+        // Create a temporary canvas for resizing
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = targetWidth;
+        tempCanvas.height = targetHeight;
+        const tempCtx = tempCanvas.getContext("2d");
+        if (!tempCtx) return layer;
+
+        // Create a source canvas with current layer data
+        const sourceCanvas = document.createElement("canvas");
+        sourceCanvas.width = layer.imageData.width;
+        sourceCanvas.height = layer.imageData.height;
+        const sourceCtx = sourceCanvas.getContext("2d");
+        if (!sourceCtx) return layer;
+
+        // Draw current layer data
+        sourceCtx.putImageData(layer.imageData, 0, 0);
+
+        // Center the existing content in the new canvas
+        const x = Math.floor((targetWidth - layer.imageData.width) / 2);
+        const y = Math.floor((targetHeight - layer.imageData.height) / 2);
+        tempCtx.drawImage(sourceCanvas, x, y);
+
+        return {
+          ...layer,
+          imageData: tempCtx.getImageData(0, 0, targetWidth, targetHeight),
+        };
+      });
+
+      setLayers(resizedLayers);
+      setCanvasSize({ width: targetWidth, height: targetHeight });
+    }
+
+    // Now create the new layer with the imported image
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = targetWidth;
+    tempCanvas.height = targetHeight;
+    const tempCtx = tempCanvas.getContext("2d");
+    if (!tempCtx) return;
+
+    // Create a source canvas for the imported image
+    const sourceCanvas = document.createElement("canvas");
+    sourceCanvas.width = imageData.width;
+    sourceCanvas.height = imageData.height;
+    const sourceCtx = sourceCanvas.getContext("2d");
+    if (!sourceCtx) return;
+
+    // Draw the imported image
+    sourceCtx.putImageData(imageData, 0, 0);
+
+    // Center the imported image in the new layer
+    const x = Math.floor((targetWidth - imageData.width) / 2);
+    const y = Math.floor((targetHeight - imageData.height) / 2);
+    tempCtx.drawImage(sourceCanvas, x, y);
+
     const newLayer: Layer = {
       id: `layer_${Date.now()}`,
       name: `Layer ${layers.length + 1}`,
       visible: true,
-      imageData,
+      imageData: tempCtx.getImageData(0, 0, targetWidth, targetHeight),
     };
+
     setLayers((prev) => [...prev, newLayer]);
     setSelectedLayerId(newLayer.id);
   };
@@ -173,6 +239,52 @@ export default function Editor() {
     });
   };
 
+  const onDeleteSelection = () => {
+    if (canvasRef.current?.deleteSelection) {
+      canvasRef.current.deleteSelection();
+    }
+  };
+
+  const handleCanvasResize = (newWidth: number, newHeight: number) => {
+    // Resize all layers to match new dimensions
+    const resizedLayers = layers.map((layer) => {
+      if (!layer.imageData) {
+        return {
+          ...layer,
+          imageData: new ImageData(newWidth, newHeight),
+        };
+      }
+
+      // Create a temporary canvas for resizing
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = newWidth;
+      tempCanvas.height = newHeight;
+      const tempCtx = tempCanvas.getContext("2d");
+      if (!tempCtx) return layer;
+
+      // Create a source canvas with current layer data
+      const sourceCanvas = document.createElement("canvas");
+      sourceCanvas.width = layer.imageData.width;
+      sourceCanvas.height = layer.imageData.height;
+      const sourceCtx = sourceCanvas.getContext("2d");
+      if (!sourceCtx) return layer;
+
+      // Draw current layer data
+      sourceCtx.putImageData(layer.imageData, 0, 0);
+
+      // Draw onto new size canvas (preserving content)
+      tempCtx.drawImage(sourceCanvas, 0, 0);
+
+      return {
+        ...layer,
+        imageData: tempCtx.getImageData(0, 0, newWidth, newHeight),
+      };
+    });
+
+    setLayers(resizedLayers);
+    setCanvasSize({ width: newWidth, height: newHeight });
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-gray-900">
       <ErrorBoundary
@@ -197,6 +309,10 @@ export default function Editor() {
           layers={layers}
           isValidSelection={isValidSelection}
           onDeleteSelection={onDeleteSelection}
+          canvasRef={canvasRef}
+          width={canvasSize.width}
+          height={canvasSize.height}
+          onCanvasResize={handleCanvasResize}
         />
         <div className="relative flex flex-1">
           <div className="absolute left-0 top-0 z-20">
