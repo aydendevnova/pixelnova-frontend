@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 import { CanvasRef } from "../editor/Canvas";
 
 interface ResizeCanvasModalProps {
@@ -42,6 +44,17 @@ export function ResizeCanvasModal({
     "center" | "up" | "down" | "left" | "right"
   >("center");
 
+  // Reset values when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setWidth(currentWidth);
+      setHeight(currentHeight);
+      setPadDirection("center");
+    }
+  }, [isOpen, currentWidth, currentHeight]);
+
+  const willLosePixels = width < currentWidth || height < currentHeight;
+
   const handleResize = () => {
     if (!canvasRef.current) return;
 
@@ -64,6 +77,15 @@ export function ResizeCanvasModal({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          {willLosePixels && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Warning: Reducing canvas size will crop pixels outside the new
+                dimensions.
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="width">Width</Label>

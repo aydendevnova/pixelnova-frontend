@@ -121,6 +121,9 @@ export default function TopMenuBar({
           // Reset and generate new color palette from the image
           const colors = extractColors(imageData);
           onGeneratePalette(colors);
+
+          // Clear the input value to allow the same file to be selected again
+          e.target.value = "";
         };
         img.src = event.target?.result as string;
       };
