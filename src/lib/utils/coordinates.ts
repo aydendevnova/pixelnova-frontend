@@ -1,13 +1,29 @@
 import { ViewportState } from "@/types/editor";
+import { Touch } from "react";
 
 export function getCanvasCoordinates(
-  e: React.MouseEvent,
+  e: React.MouseEvent<HTMLCanvasElement>,
   canvas: HTMLCanvasElement,
   viewport: ViewportState,
 ): { x: number; y: number } {
   const rect = canvas.getBoundingClientRect();
   const x = Math.floor((e.clientX - rect.left - viewport.x) / viewport.scale);
   const y = Math.floor((e.clientY - rect.top - viewport.y) / viewport.scale);
+  return { x, y };
+}
+
+export function getTouchCoordinates(
+  touch: Touch,
+  canvas: HTMLCanvasElement,
+  viewport: ViewportState,
+): { x: number; y: number } {
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.floor(
+    (touch.clientX - rect.left - viewport.x) / viewport.scale,
+  );
+  const y = Math.floor(
+    (touch.clientY - rect.top - viewport.y) / viewport.scale,
+  );
   return { x, y };
 }
 

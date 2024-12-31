@@ -1,15 +1,13 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   FolderOpenIcon,
   ArrowDownTrayIcon,
   TrashIcon,
-  SwatchIcon,
 } from "@heroicons/react/24/outline";
 import { Input } from "@/components/ui/input";
-import { Grid2X2 } from "lucide-react";
-import ApiTestDialog from "../modals/api-modal";
+import { Grid2X2, Menu } from "lucide-react";
 import AiPixelArtModal from "../modals/ai-pixel-art";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -17,12 +15,38 @@ import { Layer, ToolType } from "@/types/editor";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useEditorStore } from "@/store/editorStore";
+import { SignInModal } from "@/components/modals/signin-modal";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
   onImportImage: (imageData: ImageData) => void;
   onGeneratePalette: (colors: string[]) => void;
   selectedTool: ToolType;
+  SelectedToolIcon: React.ComponentType<{
+    className?: string;
+    style?: React.CSSProperties;
+  }>;
   bucketTolerance: number;
   onBucketToleranceChange: (value: number) => void;
   brushSize: number;
@@ -30,6 +54,8 @@ interface TopMenuBarProps {
   showGrid: boolean;
   onToggleGrid: () => void;
   layers: Layer[];
+  isValidSelection: boolean;
+  onDeleteSelection: () => void;
 }
 
 export default function TopMenuBar({
@@ -37,15 +63,19 @@ export default function TopMenuBar({
   onImportImage,
   onGeneratePalette,
   selectedTool,
+  SelectedToolIcon,
   bucketTolerance,
   onBucketToleranceChange,
   brushSize,
   onBrushSizeChange,
   showGrid,
   onToggleGrid,
+  isValidSelection,
+  onDeleteSelection,
   layers,
 }: TopMenuBarProps) {
   const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
+  const [showSignInModal, setShowSignInModal] = useState(false);
 
   const handleToleranceChange = (value: string) => {
     const numValue = Math.max(1, Math.min(10, Number(value) || 1));
@@ -208,148 +238,220 @@ export default function TopMenuBar({
     return Array.from(colorSet);
   }, []);
 
+  const [alertOpen, setAlertOpen] = useState(false);
+
+  // Thanks Radix UI for your garbage cleanup in your Dialogs
+  useEffect(() => {
+    if (!alertOpen) {
+      // Remove the Radix UI class and pointer-events style
+      document.body.classList.remove(
+        "radix-themes-custom-disable-pointer-events",
+      );
+      document.body.style.removeProperty("pointer-events");
+
+      // Force enable pointer events
+      document.body.style.pointerEvents = "auto";
+    }
+
+    // Cleanup function
+    return () => {
+      document.body.style.pointerEvents = "auto";
+    };
+  }, [alertOpen]);
+
   return (
-    <div className="z-10 flex h-[54px] items-center gap-2 border-b border-gray-700 bg-gray-800 px-4 py-2">
-      {/* File Import */}
-      <div className="group relative hover:cursor-pointer">
+    <div className="z-10 flex flex-col border-b border-gray-700 bg-gray-900/50">
+      {/* Top row with main controls */}
+      <div className="flex h-[64px] items-center gap-4 px-4 py-2">
+        {/* File Menu Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="flex items-center gap-2 hover:bg-gray-700"
+            >
+              <Menu className="h-4 w-4 text-white " />
+              <span className="text-white">File</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem
+              className="gap-2 bg-white"
+              onSelect={() => document.getElementById("file-input")?.click()}
+            >
+              <FolderOpenIcon className="h-4 w-4 text-black" />
+              <span className="text-black">Open</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="my-2 gap-2 " onSelect={handleExport}>
+              <ArrowDownTrayIcon className="h-4 w-4 text-black" />
+              <span className="text-black">Export</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="gap-2"
+              onSelect={() => setAlertOpen(true)}
+            >
+              <TrashIcon className="h-4 w-4" />
+              Clear
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="flex items-center gap-2 hover:bg-gray-700"
+            >
+              <Grid2X2 className="h-4 w-4 text-white " />
+              <span className="text-white">Editor</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem className="gap-2" onSelect={onToggleGrid}>
+              <Grid2X2 className="h-4 w-4" />
+              <span className="text-black">Toggle Grid</span>
+              {showGrid && <span className="ml-auto">✓</span>}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Hidden file input */}
         <input
+          id="file-input"
           type="file"
           accept="image/*"
           onChange={handleFileImport}
-          className="absolute inset-0 z-10 cursor-pointer opacity-0"
+          className="hidden"
         />
-        <button className="flex cursor-pointer items-center gap-2 rounded bg-blue-500 px-3 py-1.5 text-sm text-white transition-colors duration-200 group-hover:cursor-pointer group-hover:bg-blue-600">
-          <FolderOpenIcon className="h-4 w-4" />
-          Open
-        </button>
-      </div>
 
-      {/* Export Button */}
-      <button
-        onClick={handleExport}
-        className="flex items-center gap-2 rounded bg-green-500 px-3 py-1.5 text-sm text-white hover:bg-green-600"
-      >
-        <ArrowDownTrayIcon className="h-4 w-4" />
-        Export
-      </button>
+        {/* AI Pixel Art Generator */}
+        <div>
+          <div className="sm:block">
+            <AiPixelArtModal
+              onSignInRequired={() => setShowSignInModal(true)}
+              onFinish={(img) => {
+                const image = new Image();
+                image.onload = () => {
+                  const canvas = document.createElement("canvas");
+                  canvas.width = image.width;
+                  canvas.height = image.height;
+                  const ctx = canvas.getContext("2d");
+                  if (!ctx) return;
 
-      {/* Clear Canvas Button */}
-      <button
-        onClick={onClearCanvas}
-        className="flex items-center gap-2 rounded bg-red-500 px-3 py-1.5 text-sm text-white hover:bg-red-600"
-      >
-        <TrashIcon className="h-4 w-4" />
-        Clear
-      </button>
+                  ctx.drawImage(image, 0, 0);
+                  const imageData = ctx.getImageData(
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height,
+                  );
+                  onImportImage(imageData);
 
-      {/* Generate Palette Button */}
-      {/* Hiding for now as it is done automatically */}
-      {/* <button
-        onClick={() => {
-          const canvas = document.querySelector(
-            "canvas[data-canvas='drawing']",
-          ) as HTMLCanvasElement;
-          if (!canvas) return;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return;
-
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const colors = extractColors(imageData);
-
-          const usedColors = colors.filter(
-            (color) => color !== "#FFFFFF" && color !== "#000000",
-          );
-          onGeneratePalette(usedColors);
-        }}
-        className="flex items-center gap-2 rounded bg-purple-500 px-3 py-1.5 text-sm text-white hover:bg-purple-600"
-      >
-        <SwatchIcon className="h-4 w-4" />
-        Generate Palette
-      </button> */}
-
-      {/* Tool-specific options */}
-      <div className="ml-4 flex items-center gap-4">
-        {selectedTool === "bucket" && (
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-300">Tolerance:</label>
-            <Input
-              type="number"
-              min={1}
-              max={10}
-              value={bucketTolerance}
-              onChange={(e) => handleToleranceChange(e.target.value)}
-              className="w-16 bg-gray-700 text-white"
+                  const colors = extractColors(imageData);
+                  onGeneratePalette(colors);
+                };
+                image.src = img;
+              }}
             />
           </div>
-        )}
+        </div>
+      </div>
 
+      {/* Bottom row with editor-specific controls */}
+      <div className="flex h-[70px] items-center gap-4 border-b border-t border-gray-700 px-8 py-4">
+        <SelectedToolIcon className="h-5 w-5 text-white" />
+        {/* Tool-specific controls */}
         {(selectedTool === "pencil" ||
           selectedTool === "eraser" ||
           selectedTool === "line") && (
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-300">Size:</label>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-400">Brush Size:</span>
             <Input
               type="number"
               min={1}
               max={32}
               value={brushSize}
               onChange={(e) => handleBrushSizeChange(e.target.value)}
-              className="w-16 bg-gray-700 text-white"
+              className="w-16 bg-gray-700 text-white sm:w-20"
+            />
+          </div>
+        )}
+
+        {selectedTool === "bucket" && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-400">Tolerance:</span>
+            <Input
+              type="number"
+              min={1}
+              max={10}
+              value={bucketTolerance}
+              onChange={(e) => handleToleranceChange(e.target.value)}
+              className="w-16 bg-gray-700 text-white sm:w-20"
             />
           </div>
         )}
 
         {selectedTool === "select" && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Switch
               id="clear-original"
               checked={shouldClearOriginal}
               onCheckedChange={setShouldClearOriginal}
             />
             <Label htmlFor="clear-original" className="text-sm text-gray-300">
-              Move (instead of copy)
+              Move <span className="hidden md:inline">(instead of copy)</span>
             </Label>
+          </div>
+        )}
+
+        {(selectedTool === "eyedropper" || selectedTool === "pan") && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-400">No options available</span>
+          </div>
+        )}
+
+        {selectedTool === "select" && isValidSelection && (
+          <div className="flex items-center gap-3">
+            <Button onClick={onDeleteSelection}>Delete</Button>
           </div>
         )}
       </div>
 
-      {/* Grid toggle */}
-      <button
-        onClick={onToggleGrid}
-        className={`ml-auto flex items-center gap-2 rounded px-2 py-1 text-sm ${
-          showGrid ? "bg-blue-500 text-white" : "bg-gray-700 text-gray-300"
-        } hover:bg-blue-600`}
-      >
-        <Grid2X2 className="h-4 w-4" />
-        Grid
-      </button>
-      <AiPixelArtModal
-        onFinish={(img) => {
-          const image = new Image();
-          image.onload = () => {
-            const canvas = document.createElement("canvas");
-            canvas.width = image.width;
-            canvas.height = image.height;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) return;
+      {/* Alert Dialog */}
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Are you sure you want to clear the canvas?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              current artwork.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col items-center gap-4 md:flex-row">
+            <AlertDialogCancel className="bg-gray-500 text-white hover:bg-gray-600">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onClearCanvas();
+                setAlertOpen(false);
+              }}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              Clear Canvas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-            ctx.drawImage(image, 0, 0);
-            const imageData = ctx.getImageData(
-              0,
-              0,
-              canvas.width,
-              canvas.height,
-            );
-            onImportImage(imageData);
-
-            // Generate new color palette from the image
-            const colors = extractColors(imageData);
-            onGeneratePalette(colors);
-          };
-          image.src = img;
-        }}
+      {/* Sign In Modal */}
+      <SignInModal
+        isOpen={showSignInModal}
+        onClose={() => setShowSignInModal(false)}
+        featureName="AI Pixel Art Generator"
       />
-      {/* <ApiTestDialog /> */}
     </div>
   );
 }

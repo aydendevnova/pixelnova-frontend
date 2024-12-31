@@ -379,9 +379,12 @@ const StepThree = ({ results, onFinish, setOpen }: StepThreeProps) => (
 
 export default function AiPixelArtModal({
   onFinish,
+  onSignInRequired,
 }: {
   onFinish: (image: string) => void;
+  onSignInRequired: () => void;
 }) {
+  const { isSignedIn } = useUser();
   const [step, setStep] = useState(1);
   const [open, setOpen] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -611,102 +614,114 @@ export default function AiPixelArtModal({
   const currentStep = steps[step - 1] ?? steps[0]!;
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(open) => {
-        setOpen(open);
-        if (open) {
-          setStep(1);
-          setUploadedImage(null);
-          setError(null);
-        }
-      }}
-    >
-      {error && <Alert variant="destructive">{error}</Alert>}
-      <DialogTrigger asChild>
-        <Button variant="default">
-          Generate Pixel Art <Sparkle />
+    <>
+      {!isSignedIn && (
+        <Button variant="default" onClick={onSignInRequired}>
+          <span className="hidden sm:block"> Generate Pixel Art </span>
+          <Sparkle />
         </Button>
-      </DialogTrigger>
-      <DialogContent className="h-[90vh] w-[90vw] max-w-none overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{currentStep.title}</DialogTitle>
-          <DialogDescription>{currentStep.description}</DialogDescription>
-        </DialogHeader>
-
-        <div className="mb-4 flex w-full gap-2">
-          {steps.map((_, index) => (
-            <div
-              key={index}
-              className={`h-2 flex-1 rounded-sm ${
-                index + 1 === step ? "bg-primary" : "bg-gray-300"
-              }`}
-            />
-          ))}
-        </div>
-
-        {currentStep.content}
-
-        <DialogFooter className="">
-          <div className="mt-auto flex w-full flex-1 justify-between">
-            <Button
-              variant="outline"
-              onClick={() => setStep((step) => step - 1)}
-              disabled={step === 1}
-            >
-              Back
+      )}
+      <Dialog
+        open={open}
+        onOpenChange={(open) => {
+          setOpen(open);
+          if (open) {
+            setStep(1);
+            setUploadedImage(null);
+            setError(null);
+          }
+        }}
+      >
+        {error && <Alert variant="destructive">{error}</Alert>}
+        {isSignedIn && (
+          <DialogTrigger asChild>
+            <Button variant="default">
+              <span className="hidden sm:block"> Generate Pixel Art </span>
+              <Sparkle />
             </Button>
-            {step < 3 ? (
-              <Button
-                disabled={
-                  step === 2 &&
-                  (!originalGridSizeEstimate ||
-                    isDownscaling ||
-                    isDownscalingKey ||
-                    isEstimatingGridSize ||
-                    isEstimatingGridSizeKey)
-                }
-                onClick={() => {
-                  if (step === 2) {
-                    if (!user?.id) {
-                      setError("Please login to use this feature");
-                      return;
-                    }
-                    void handleDownscaleImage(user.id);
-                  } else {
-                    setStep((step) => step + 1);
-                  }
-                }}
-              >
-                {step === 2 ? (
-                  <>
-                    {isDownscalingKey ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Validating Request
-                      </>
-                    ) : isDownscaling ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing Image
-                      </>
-                    ) : (
-                      <>
-                        <Sparkle className="mr-2 h-4 w-4" />
-                        Process Image
-                      </>
-                    )}
-                  </>
-                ) : (
-                  "Next"
-                )}
-              </Button>
-            ) : (
-              <></>
-            )}
+          </DialogTrigger>
+        )}
+
+        <DialogContent className="h-[90vh] w-[90vw] max-w-none overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{currentStep.title}</DialogTitle>
+            <DialogDescription>{currentStep.description}</DialogDescription>
+          </DialogHeader>
+
+          <div className="mb-4 flex w-full gap-2">
+            {steps.map((_, index) => (
+              <div
+                key={index}
+                className={`h-2 flex-1 rounded-sm ${
+                  index + 1 === step ? "bg-primary" : "bg-gray-300"
+                }`}
+              />
+            ))}
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+          {currentStep.content}
+
+          <DialogFooter className="">
+            <div className="mt-auto flex w-full flex-1 justify-between">
+              <Button
+                variant="outline"
+                onClick={() => setStep((step) => step - 1)}
+                disabled={step === 1}
+              >
+                Back
+              </Button>
+              {step < 3 ? (
+                <Button
+                  disabled={
+                    step === 2 &&
+                    (!originalGridSizeEstimate ||
+                      isDownscaling ||
+                      isDownscalingKey ||
+                      isEstimatingGridSize ||
+                      isEstimatingGridSizeKey)
+                  }
+                  onClick={() => {
+                    if (step === 2) {
+                      if (!user?.id) {
+                        setError("Please login to use this feature");
+                        return;
+                      }
+                      void handleDownscaleImage(user.id);
+                    } else {
+                      setStep((step) => step + 1);
+                    }
+                  }}
+                >
+                  {step === 2 ? (
+                    <>
+                      {isDownscalingKey ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Validating Request
+                        </>
+                      ) : isDownscaling ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing Image
+                        </>
+                      ) : (
+                        <>
+                          <Sparkle className="mr-2 h-4 w-4" />
+                          Process Image
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    "Next"
+                  )}
+                </Button>
+              ) : (
+                <></>
+              )}
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

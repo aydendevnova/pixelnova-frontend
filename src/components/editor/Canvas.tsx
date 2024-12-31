@@ -18,8 +18,12 @@ import {
   PreviewableTool,
 } from "@/types/editor";
 import { getToolById } from "@/lib/tools";
-import { getCanvasCoordinates } from "@/lib/utils/coordinates";
+import {
+  getCanvasCoordinates,
+  getTouchCoordinates,
+} from "@/lib/utils/coordinates";
 import { useEditorStore } from "@/store/editorStore";
+import { useUserAgent } from "@/lib/utils/user-agent";
 
 interface CanvasProps {
   width: number;
@@ -34,18 +38,32 @@ interface CanvasProps {
   onToolSelect: (tool: ToolType) => void;
   layers: Layer[];
   selectedLayerId: string;
+  setValidSelection: (isValid: boolean) => void;
+  onDeleteSelection: () => void;
 }
 
 export interface CanvasRef {
   clearCanvas: () => void;
   importImage: (imageData: ImageData) => void;
   getLayerImageData: () => ImageData | null;
+  deleteSelection: () => void;
 }
 
 // Add type guard as a standalone function
 const isPreviewableTool = (tool: Tool): tool is PreviewableTool => {
   return "lastPreviewPoints" in tool;
 };
+
+interface TouchState {
+  touchStartX: number;
+  touchStartY: number;
+  initialPinchDistance: number | null;
+  initialScale: number | null;
+  lastTouchX: number | null;
+  lastTouchY: number | null;
+  touchStartTime: number | null;
+  lastDrawTime: number | null;
+}
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
@@ -61,15 +79,19 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onToolSelect,
     layers,
     selectedLayerId,
+    setValidSelection,
+    onDeleteSelection,
   },
   ref,
 ) {
   const { shouldClearOriginal } = useEditorStore();
+  const { isMobile } = useUserAgent();
   const containerRef = useRef<HTMLDivElement>(null);
   const displayCanvasRef = useRef<HTMLCanvasElement>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
   const selectionCanvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
+  const lastLayerStateRef = useRef<ImageData | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
@@ -102,6 +124,17 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     x: number;
     y: number;
   } | null>(null);
+
+  const [touchState, setTouchState] = useState<TouchState>({
+    touchStartX: 0,
+    touchStartY: 0,
+    initialPinchDistance: null,
+    initialScale: null,
+    lastTouchX: null,
+    lastTouchY: null,
+    touchStartTime: null,
+    lastDrawTime: null,
+  });
 
   // Create offscreen canvas for checkerboard pattern
   const checkerboardPattern = useMemo(() => {
@@ -140,11 +173,13 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     // Enable nearest-neighbor interpolation
     ctx.imageSmoothingEnabled = false;
 
-    // Clear canvas
+    // Clear canvas with pixel ratio consideration
+    const pixelRatio = window.devicePixelRatio || 1;
     ctx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
 
-    // Apply viewport transform
+    // Apply viewport transform with pixel ratio consideration
     ctx.save();
+    ctx.scale(pixelRatio, pixelRatio);
     ctx.translate(viewport.x, viewport.y);
     ctx.scale(viewport.scale, viewport.scale);
 
@@ -154,7 +189,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       if (pattern) {
         const patternTransform = new DOMMatrix()
           .translateSelf(0, 0)
-          .scaleSelf(1 / viewport.scale);
+          .scaleSelf(0.0625);
         pattern.setTransform(patternTransform);
         ctx.fillStyle = pattern;
         ctx.fillRect(0, 0, drawingCanvas.width, drawingCanvas.height);
@@ -283,34 +318,41 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const size = brushSize;
       const halfSize = Math.floor(size / 2);
 
-      const x = Math.floor(hoverPosition.x - halfSize);
-      const y = Math.floor(hoverPosition.y - halfSize);
+      // Only show hover preview on non-mobile devices when not drawing
+      if (!isMobile) {
+        const x = Math.floor(hoverPosition.x - halfSize);
+        const y = Math.floor(hoverPosition.y - halfSize);
 
-      ctx.globalAlpha = 0.5;
-      if (selectedTool === "eraser") {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(x, y, size, size);
-      } else {
-        ctx.fillStyle = primaryColor;
-        if (selectedTool === "line" && isMouseDown) {
-          const tool = getToolById(selectedTool);
-          if (isPreviewableTool(tool)) {
-            // Draw line preview
-            const points = tool.lastPreviewPoints;
-            points.forEach((point) => {
-              ctx.fillRect(point.x - halfSize, point.y - halfSize, size, size);
-            });
-          }
+        ctx.globalAlpha = 0.5;
+        if (selectedTool === "eraser") {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(x, y, size, size);
         } else {
+          ctx.fillStyle = primaryColor;
           ctx.fillRect(x, y, size, size);
         }
-      }
-      ctx.globalAlpha = 1.0;
+        ctx.globalAlpha = 1.0;
 
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 1 / viewport.scale;
-      ctx.setLineDash([]);
-      ctx.strokeRect(x, y, size, size);
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1 / viewport.scale;
+        ctx.setLineDash([]);
+        ctx.strokeRect(x, y, size, size);
+      }
+
+      // Show line preview for both mobile and desktop when drawing a line
+      if (selectedTool === "line" && isMouseDown) {
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = primaryColor;
+        const tool = getToolById(selectedTool);
+        if (isPreviewableTool(tool)) {
+          // Draw line preview
+          const points = tool.lastPreviewPoints;
+          points.forEach((point) => {
+            ctx.fillRect(point.x - halfSize, point.y - halfSize, size, size);
+          });
+        }
+        ctx.globalAlpha = 1.0;
+      }
     }
 
     ctx.restore();
@@ -420,6 +462,36 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     ],
   );
 
+  // Helper functions
+  const handlePan = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (!isPanning) return;
+
+      setViewport((prev) => ({
+        ...prev,
+        x: prev.x + e.movementX,
+        y: prev.y + e.movementY,
+      }));
+    },
+    [isPanning],
+  );
+
+  const clearSelection = useCallback(() => {
+    setSelection({
+      isSelecting: false,
+      startX: 0,
+      startY: 0,
+      endX: 0,
+      endY: 0,
+      isMoving: false,
+      moveStartX: 0,
+      moveStartY: 0,
+      selectedImageData: undefined,
+      originalX: undefined,
+      originalY: undefined,
+    });
+  }, []);
+
   // Update clearCanvas to clear the selected layer
   useImperativeHandle(
     ref,
@@ -462,8 +534,48 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         );
         return selectedLayer?.imageData ?? null;
       },
+
+      deleteSelection: () => {
+        if (!selection.selectedImageData) return;
+
+        // Get the selected layer
+        const selectedLayer = layers.find(
+          (layer) => layer.id === selectedLayerId,
+        );
+        if (!selectedLayer || !selectedLayer.visible) return;
+
+        // Create a temporary canvas
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        const tempCtx = tempCanvas.getContext("2d");
+        if (!tempCtx) return;
+
+        // Draw existing layer data
+        if (selectedLayer.imageData) {
+          tempCtx.putImageData(selectedLayer.imageData, 0, 0);
+        }
+
+        // Calculate deletion coordinates
+        const deleteX = selection.originalX ?? 0;
+        const deleteY = selection.originalY ?? 0;
+        const deleteWidth = selection.selectedImageData.width;
+        const deleteHeight = selection.selectedImageData.height;
+
+        // Clear the selected area
+        tempCtx.clearRect(deleteX, deleteY, deleteWidth, deleteHeight);
+
+        // Update layer's imageData
+        selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
+
+        // Clear the selection state
+        clearSelection();
+
+        // Trigger render
+        render();
+      },
     }),
-    [width, height, layers, selectedLayerId],
+    [width, height, layers, selectedLayerId, selection, clearSelection, render],
   );
 
   // Initialize canvases
@@ -483,53 +595,54 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     // Set up display canvas (viewport size)
     const container = containerRef.current;
     if (!container) return;
-    displayCanvas.width = container.clientWidth;
-    displayCanvas.height = container.clientHeight;
 
-    // Center the viewport
-    setViewport((prev) => ({
-      ...prev,
-      x: (displayCanvas.width - width * prev.scale) / 2,
-      y: (displayCanvas.height - height * prev.scale) / 2,
-    }));
+    // Handle mobile viewport scaling
+    const updateCanvasSize = () => {
+      const pixelRatio = window.devicePixelRatio || 1;
+      const containerWidth = container.clientWidth * pixelRatio;
+      const containerHeight = container.clientHeight * pixelRatio;
 
-    // Cleanup previous animation frame
+      // Set display canvas size accounting for pixel ratio
+      displayCanvas.width = containerWidth;
+      displayCanvas.height = containerHeight;
+      displayCanvas.style.width = `${container.clientWidth}px`;
+      displayCanvas.style.height = `${container.clientHeight}px`;
+
+      // Calculate initial scale to fit the canvas
+      const scaleX = containerWidth / width;
+      const scaleY = containerHeight / height;
+      const initialScale = Math.min(
+        Math.max(1, Math.min(scaleX, scaleY) * 0.8),
+        32,
+      );
+
+      // Center the viewport
+      setViewport((prev) => ({
+        ...prev,
+        x: (containerWidth / pixelRatio - width * initialScale) / 2,
+        y: (containerHeight / pixelRatio - height * initialScale) / 2,
+        scale: initialScale,
+      }));
+    };
+
+    // Initial update
+    updateCanvasSize();
+
+    // Handle resize events
+    const handleResize = () => {
+      updateCanvasSize();
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup previous animation frame and event listener
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      window.removeEventListener("resize", handleResize);
     };
   }, [width, height]);
-
-  // Helper functions
-  const handlePan = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!isPanning) return;
-
-      setViewport((prev) => ({
-        ...prev,
-        x: prev.x + e.movementX,
-        y: prev.y + e.movementY,
-      }));
-    },
-    [isPanning],
-  );
-
-  const clearSelection = useCallback(() => {
-    setSelection({
-      isSelecting: false,
-      startX: 0,
-      startY: 0,
-      endX: 0,
-      endY: 0,
-      isMoving: false,
-      moveStartX: 0,
-      moveStartY: 0,
-      selectedImageData: undefined,
-      originalX: undefined,
-      originalY: undefined,
-    });
-  }, []);
 
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
@@ -859,41 +972,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         (e.code === "Delete" || e.code === "Backspace") &&
         selection.selectedImageData
       ) {
-        // Get the selected layer
-        const selectedLayer = layers.find(
-          (layer) => layer.id === selectedLayerId,
-        );
-        if (!selectedLayer || !selectedLayer.visible) return;
-
-        // Create a temporary canvas
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = width;
-        tempCanvas.height = height;
-        const tempCtx = tempCanvas.getContext("2d");
-        if (!tempCtx) return;
-
-        // Draw existing layer data
-        if (selectedLayer.imageData) {
-          tempCtx.putImageData(selectedLayer.imageData, 0, 0);
-        }
-
-        // Calculate deletion coordinates
-        const deleteX = selection.originalX ?? 0;
-        const deleteY = selection.originalY ?? 0;
-        const deleteWidth = selection.selectedImageData.width;
-        const deleteHeight = selection.selectedImageData.height;
-
-        // Clear the selected area
-        tempCtx.clearRect(deleteX, deleteY, deleteWidth, deleteHeight);
-
-        // Update layer's imageData
-        selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
-
-        // Clear the selection state
-        clearSelection();
-
-        // Trigger render
-        render();
+        deleteSelection();
       }
     };
 
@@ -909,6 +988,42 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onToolSelect,
     render,
   ]);
+
+  const deleteSelection = () => {
+    // Get the selected layer
+    const selectedLayer = layers.find((layer) => layer.id === selectedLayerId);
+    if (!selectedLayer || !selectedLayer.visible) return;
+
+    // Create a temporary canvas
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const tempCtx = tempCanvas.getContext("2d");
+    if (!tempCtx) return;
+
+    // Draw existing layer data
+    if (selectedLayer.imageData) {
+      tempCtx.putImageData(selectedLayer.imageData, 0, 0);
+    }
+
+    // Calculate deletion coordinates
+    const deleteX = selection.originalX ?? 0;
+    const deleteY = selection.originalY ?? 0;
+    const deleteWidth = selection.selectedImageData?.width ?? 0;
+    const deleteHeight = selection.selectedImageData?.height ?? 0;
+
+    // Clear the selected area
+    tempCtx.clearRect(deleteX, deleteY, deleteWidth, deleteHeight);
+
+    // Update layer's imageData
+    selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
+
+    // Clear the selection state
+    clearSelection();
+
+    // Trigger render
+    render();
+  };
 
   // Event listeners with cleanup
   useEffect(() => {
@@ -1095,19 +1210,446 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     };
   }, []);
 
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      const displayCanvas = displayCanvasRef.current;
+      const drawingCanvas = drawingCanvasRef.current;
+      if (!displayCanvas || !drawingCanvas || !e.touches[0]) return;
+
+      const touch = e.touches[0];
+      const coords = getTouchCoordinates(touch, displayCanvas, viewport);
+      setHoverPosition(coords);
+
+      const now = Date.now();
+
+      if (e.touches.length === 2 && e.touches[1]) {
+        // Starting a pinch gesture - disable drawing
+        setIsMouseDown(false);
+        const distance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY,
+        );
+
+        // Check if we recently drew a pixel (within 5ms) and undo it
+        if (touchState.lastDrawTime && now - touchState.lastDrawTime < 50) {
+          // Restore the previous state if it exists
+          const selectedLayer = layers.find(
+            (layer) => layer.id === selectedLayerId,
+          );
+          if (selectedLayer && lastLayerStateRef.current) {
+            selectedLayer.imageData = lastLayerStateRef.current;
+            render();
+          }
+        }
+
+        setTouchState({
+          touchStartX: touch.clientX,
+          touchStartY: touch.clientY,
+          lastTouchX: touch.clientX,
+          lastTouchY: touch.clientY,
+          initialPinchDistance: distance,
+          initialScale: viewport.scale,
+          touchStartTime: now,
+          lastDrawTime: null, // Reset draw time
+        });
+      } else if (e.touches.length === 1 && selectedTool !== "pan") {
+        // Store the current state before drawing
+        const selectedLayer = layers.find(
+          (layer) => layer.id === selectedLayerId,
+        );
+        if (selectedLayer?.imageData) {
+          lastLayerStateRef.current = new ImageData(
+            new Uint8ClampedArray(selectedLayer.imageData.data),
+            selectedLayer.imageData.width,
+            selectedLayer.imageData.height,
+          );
+        }
+
+        // For non-pan tools, start drawing immediately on single touch
+        setIsMouseDown(true);
+        const tool = getToolById(selectedTool);
+        const ctx = drawingCanvas.getContext("2d", {
+          willReadFrequently: true,
+        });
+        if (!ctx) return;
+
+        const toolContext = {
+          canvas: drawingCanvas,
+          ctx,
+          viewport: { x: 0, y: 0, scale: 1 },
+          primaryColor,
+          secondaryColor,
+          brushSize,
+          bucketTolerance,
+          layers,
+          selectedLayerId,
+          onColorPick,
+          selection,
+          setSelection,
+          shouldClearOriginal,
+        };
+
+        tool.onMouseDown?.(
+          {
+            ...e,
+            clientX: coords.x,
+            clientY: coords.y,
+            button: 0,
+            nativeEvent: {
+              ...e.nativeEvent,
+              clientX: coords.x,
+              clientY: coords.y,
+            },
+          } as any,
+          toolContext,
+        );
+
+        // Render immediately for responsiveness
+        render();
+
+        // Update touch state and record draw time
+        setTouchState({
+          touchStartX: touch.clientX,
+          touchStartY: touch.clientY,
+          lastTouchX: touch.clientX,
+          lastTouchY: touch.clientY,
+          initialPinchDistance: null,
+          initialScale: viewport.scale,
+          touchStartTime: now,
+          lastDrawTime: now, // Record when we drew
+        });
+      } else {
+        // Pan tool or other cases
+        setTouchState({
+          touchStartX: touch.clientX,
+          touchStartY: touch.clientY,
+          lastTouchX: touch.clientX,
+          lastTouchY: touch.clientY,
+          initialPinchDistance: null,
+          initialScale: viewport.scale,
+          touchStartTime: now,
+          lastDrawTime: touchState.lastDrawTime, // Preserve last draw time
+        });
+      }
+    },
+    [
+      viewport,
+      selectedTool,
+      primaryColor,
+      secondaryColor,
+      brushSize,
+      bucketTolerance,
+      layers,
+      selectedLayerId,
+      onColorPick,
+      selection,
+      setSelection,
+      shouldClearOriginal,
+      render,
+      touchState.lastDrawTime,
+    ],
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      const displayCanvas = displayCanvasRef.current;
+      const drawingCanvas = drawingCanvasRef.current;
+      if (!displayCanvas || !drawingCanvas || !e.touches[0]) return;
+
+      if (e.touches.length === 2 && e.touches[1]) {
+        // Pinch to zoom - disable drawing
+        setIsMouseDown(false);
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDistance = Math.hypot(
+          touch1.clientX - touch2.clientX,
+          touch1.clientY - touch2.clientY,
+        );
+
+        if (touchState.initialPinchDistance && touchState.initialScale) {
+          const scale =
+            (currentDistance / touchState.initialPinchDistance) *
+            touchState.initialScale;
+          const newScale = Math.max(1, Math.min(32, scale));
+
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (!rect) return;
+
+          // Calculate the center point of the pinch gesture relative to the canvas
+          const centerX = (touch1.clientX + touch2.clientX) / 2 - rect.left;
+          const centerY = (touch1.clientY + touch2.clientY) / 2 - rect.top;
+
+          // Convert the center point to world coordinates before scaling
+          const worldX = (centerX - viewport.x) / viewport.scale;
+          const worldY = (centerY - viewport.y) / viewport.scale;
+
+          // Calculate the new viewport position to keep the center point fixed
+          const newX = centerX - worldX * newScale;
+          const newY = centerY - worldY * newScale;
+
+          setViewport({
+            x: newX,
+            y: newY,
+            scale: newScale,
+          });
+
+          // Update touch state with both touch positions
+          setTouchState((prev) => ({
+            ...prev,
+            lastTouchX: touch1.clientX,
+            lastTouchY: touch1.clientY,
+          }));
+        }
+      } else if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const coords = getTouchCoordinates(touch, displayCanvas, viewport);
+        setHoverPosition(coords);
+
+        if (selectedTool === "pan") {
+          // Handle panning
+          if (
+            touchState.lastTouchX !== null &&
+            touchState.lastTouchY !== null
+          ) {
+            const deltaX = touch.clientX - touchState.lastTouchX;
+            const deltaY = touch.clientY - touchState.lastTouchY;
+
+            setViewport((prev) => ({
+              ...prev,
+              x: prev.x + deltaX,
+              y: prev.y + deltaY,
+            }));
+          }
+        } else if (isMouseDown) {
+          // Continue drawing if already started
+          const tool = getToolById(selectedTool);
+          const ctx = drawingCanvas.getContext("2d", {
+            willReadFrequently: true,
+          });
+          if (!ctx) return;
+
+          const toolContext = {
+            canvas: drawingCanvas,
+            ctx,
+            viewport: { x: 0, y: 0, scale: 1 },
+            primaryColor,
+            secondaryColor,
+            brushSize,
+            bucketTolerance,
+            layers,
+            selectedLayerId,
+            onColorPick,
+            selection,
+            setSelection,
+            shouldClearOriginal,
+          };
+
+          tool.onMouseMove?.(
+            {
+              ...e,
+              clientX: coords.x,
+              clientY: coords.y,
+              button: 0,
+              nativeEvent: {
+                ...e.nativeEvent,
+                clientX: coords.x,
+                clientY: coords.y,
+              },
+            } as any,
+            toolContext,
+          );
+
+          // Render immediately for responsiveness
+          render();
+        }
+
+        // Always update the last touch position for next frame
+        setTouchState((prev) => ({
+          ...prev,
+          lastTouchX: touch.clientX,
+          lastTouchY: touch.clientY,
+        }));
+      }
+    },
+    [
+      viewport,
+      isMouseDown,
+      selectedTool,
+      primaryColor,
+      secondaryColor,
+      brushSize,
+      bucketTolerance,
+      layers,
+      selectedLayerId,
+      onColorPick,
+      selection,
+      setSelection,
+      shouldClearOriginal,
+      touchState,
+      render,
+    ],
+  );
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      const displayCanvas = displayCanvasRef.current;
+      const drawingCanvas = drawingCanvasRef.current;
+      if (!displayCanvas || !drawingCanvas) return;
+
+      // If we still have touches, update the state for the remaining touches
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        if (touch) {
+          setTouchState((prev) => ({
+            ...prev,
+            lastTouchX: touch.clientX,
+            lastTouchY: touch.clientY,
+            initialPinchDistance: null,
+            initialScale: viewport.scale,
+            touchStartTime: prev.touchStartTime,
+          }));
+        }
+      } else if (e.touches.length === 0) {
+        // All touches ended
+        setIsMouseDown(false);
+        setHoverPosition(null);
+
+        const changedTouch = e.changedTouches[0];
+        if (isMouseDown && changedTouch) {
+          const coords = getTouchCoordinates(
+            changedTouch,
+            displayCanvas,
+            viewport,
+          );
+          const tool = getToolById(selectedTool);
+          const ctx = drawingCanvas.getContext("2d", {
+            willReadFrequently: true,
+          });
+          if (!ctx) return;
+
+          const toolContext = {
+            canvas: drawingCanvas,
+            ctx,
+            viewport: { x: 0, y: 0, scale: 1 },
+            primaryColor,
+            secondaryColor,
+            brushSize,
+            bucketTolerance,
+            layers,
+            selectedLayerId,
+            onColorPick,
+            selection,
+            setSelection,
+            shouldClearOriginal,
+          };
+
+          tool.onMouseUp?.(
+            {
+              ...e,
+              clientX: coords.x,
+              clientY: coords.y,
+              button: 0,
+              nativeEvent: {
+                ...e.nativeEvent,
+                clientX: coords.x,
+                clientY: coords.y,
+              },
+            } as any,
+            toolContext,
+          );
+
+          requestAnimationFrame(() => {
+            render();
+          });
+        }
+
+        // Reset touch state while preserving the last scale
+        setTouchState({
+          touchStartX: 0,
+          touchStartY: 0,
+          initialPinchDistance: null,
+          initialScale: viewport.scale,
+          lastTouchX: null,
+          lastTouchY: null,
+          touchStartTime: null,
+          lastDrawTime: null,
+        });
+      }
+    },
+    [
+      viewport,
+      isMouseDown,
+      selectedTool,
+      primaryColor,
+      secondaryColor,
+      brushSize,
+      bucketTolerance,
+      layers,
+      selectedLayerId,
+      onColorPick,
+      selection,
+      setSelection,
+      shouldClearOriginal,
+      render,
+    ],
+  );
+
+  // Add meta viewport tag for proper mobile rendering
+  useEffect(() => {
+    // Find or create viewport meta tag
+    let viewportMeta = document.querySelector(
+      'meta[name="viewport"]',
+    ) as HTMLMetaElement | null;
+    if (!viewportMeta) {
+      viewportMeta = document.createElement("meta");
+      viewportMeta.name = "viewport";
+      document.head.appendChild(viewportMeta);
+    }
+
+    // Set viewport properties for proper mobile rendering
+    viewportMeta.content =
+      "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+
+    return () => {
+      // Reset viewport on cleanup
+      if (viewportMeta && viewportMeta.parentNode) {
+        viewportMeta.content = "width=device-width, initial-scale=1.0";
+      }
+    };
+  }, []);
+
+  // Update isValidSelection when selection state changes
+  useEffect(() => {
+    setValidSelection(!!selection.selectedImageData);
+  }, [selection.selectedImageData, setValidSelection]);
+
   return (
     <div
       ref={containerRef}
-      className="h-full w-full overflow-hidden bg-gray-800"
+      className="h-full w-full touch-none overflow-hidden bg-gray-800"
     >
       <canvas
         ref={displayCanvasRef}
-        className={`absolute left-0 top-0 ${getCursorStyle()}`}
+        className={`absolute left-0 top-0 touch-none ${getCursorStyle()}`}
+        style={
+          {
+            touchAction: "none",
+            WebkitTouchCallout: "none",
+            WebkitUserSelect: "none",
+            WebkitTapHighlightColor: "transparent",
+          } as React.CSSProperties
+        }
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
         onContextMenu={(e) => e.preventDefault()}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       />
       <canvas ref={drawingCanvasRef} className="hidden" data-canvas="drawing" />
       <canvas

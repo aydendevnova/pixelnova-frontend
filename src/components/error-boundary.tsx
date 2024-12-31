@@ -1,4 +1,4 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Component, type ReactNode } from "react";
 
 interface Props {
   children?: ReactNode;
@@ -33,7 +33,7 @@ export class ErrorBoundary extends Component<Props, State> {
             error: this.state.error as Error,
             reset: this.reset,
           })
-        : this.props.fallback ?? <h1>Sorry.. there was an error</h1>;
+        : (this.props.fallback ?? <h1>Sorry.. there was an error</h1>);
     }
 
     return this.props.children;

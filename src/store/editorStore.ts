@@ -15,7 +15,7 @@ interface EditorState {
   brushSize: number;
   shouldClearOriginal: boolean;
   bucketTolerance: number;
-  customColors: string[];
+  importedColors: string[];
 
   // Layers State
   layers: Layer[];
@@ -32,6 +32,7 @@ interface EditorState {
   setShouldClearOriginal: (shouldClearOriginal: boolean) => void;
   setBucketTolerance: (tolerance: number) => void;
   addCustomColor: (color: string) => void;
+  removeCustomColor: (color: string) => void;
   setLayers: (layers: Layer[] | ((prev: Layer[]) => Layer[])) => void;
   setSelectedLayerId: (id: string) => void;
 }
@@ -49,7 +50,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   brushSize: 1,
   shouldClearOriginal: true,
   bucketTolerance: 1,
-  customColors: [],
+  importedColors: [],
 
   // Initial Layers State
   layers: [],
@@ -67,7 +68,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setBucketTolerance: (tolerance) => set({ bucketTolerance: tolerance }),
   addCustomColor: (color) =>
     set((state) => ({
-      customColors: [...state.customColors, color],
+      importedColors: [...state.importedColors, color],
+    })),
+  removeCustomColor: (color) =>
+    set((state) => ({
+      importedColors: state.importedColors.filter((c) => c !== color),
     })),
   setLayers: (layersOrUpdater) =>
     set((state) => ({

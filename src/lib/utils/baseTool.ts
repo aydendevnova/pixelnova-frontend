@@ -11,6 +11,7 @@ export abstract class BaseTool implements Tool {
   cursor?: string;
 
   protected getCoordinates(e: React.MouseEvent, context: ToolContext) {
+    // @ts-expect-error TODO: fix type later
     return getCanvasCoordinates(e, context.canvas, context.viewport);
   }
 
@@ -100,7 +101,7 @@ export abstract class PreviewTool extends BaseTool implements PreviewableTool {
   }
 
   onMouseMove(e: React.MouseEvent, context: ToolContext) {
-    if (!this.startPoint || (e.buttons !== 1 && e.buttons !== 2)) return;
+    if (!this.startPoint) return;
 
     const coords = this.getCoordinates(e, context);
     this.handlePreview(this.startPoint, coords, e, context);
