@@ -37,6 +37,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ResizeCanvasModal } from "../modals/resize-canvas";
+import { CanvasRef } from "./Canvas";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
@@ -56,6 +58,10 @@ interface TopMenuBarProps {
   layers: Layer[];
   isValidSelection: boolean;
   onDeleteSelection: () => void;
+  canvasRef: React.RefObject<CanvasRef>;
+  width: number;
+  height: number;
+  onCanvasResize: (newWidth: number, newHeight: number) => void;
 }
 
 export default function TopMenuBar({
@@ -73,9 +79,14 @@ export default function TopMenuBar({
   isValidSelection,
   onDeleteSelection,
   layers,
+  canvasRef,
+  width,
+  height,
+  onCanvasResize,
 }: TopMenuBarProps) {
   const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
   const [showSignInModal, setShowSignInModal] = useState(false);
+  const [isResizeModalOpen, setIsResizeModalOpen] = useState(false);
 
   const handleToleranceChange = (value: string) => {
     const numValue = Math.max(1, Math.min(10, Number(value) || 1));
@@ -355,6 +366,14 @@ export default function TopMenuBar({
             />
           </div>
         </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsResizeModalOpen(true)}
+        >
+          Resize Canvas
+        </Button>
       </div>
 
       {/* Bottom row with editor-specific controls */}
@@ -451,6 +470,18 @@ export default function TopMenuBar({
         isOpen={showSignInModal}
         onClose={() => setShowSignInModal(false)}
         featureName="AI Pixel Art Generator"
+      />
+
+      <ResizeCanvasModal
+        isOpen={isResizeModalOpen}
+        onClose={() => setIsResizeModalOpen(false)}
+        canvasRef={canvasRef}
+        currentWidth={width}
+        currentHeight={height}
+        onResize={(newWidth, newHeight) => {
+          onCanvasResize(newWidth, newHeight);
+          setIsResizeModalOpen(false);
+        }}
       />
     </div>
   );

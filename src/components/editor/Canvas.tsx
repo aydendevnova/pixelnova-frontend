@@ -47,6 +47,11 @@ export interface CanvasRef {
   importImage: (imageData: ImageData) => void;
   getLayerImageData: () => ImageData | null;
   deleteSelection: () => void;
+  resizeCanvas: (
+    newWidth: number,
+    newHeight: number,
+    padDirection: "center" | "up" | "down" | "left" | "right",
+  ) => void;
 }
 
 // Add type guard as a standalone function
@@ -64,6 +69,93 @@ interface TouchState {
   touchStartTime: number | null;
   lastDrawTime: number | null;
 }
+
+// Add type for pad direction
+type PadDirection = "center" | "up" | "down" | "left" | "right";
+
+// Add utility functions for padding calculations
+const calculatePadding = (
+  currentSize: number,
+  newSize: number,
+  direction: "center" | "start" | "end",
+): { before: number; after: number } => {
+  if (direction === "center") {
+    const padding = Math.max(0, newSize - currentSize);
+    return {
+      before: Math.floor(padding / 2),
+      after: Math.ceil(padding / 2),
+    };
+  } else if (direction === "start") {
+    return {
+      before: Math.max(0, newSize - currentSize),
+      after: 0,
+    };
+  } else {
+    return {
+      before: 0,
+      after: Math.max(0, newSize - currentSize),
+    };
+  }
+};
+
+const resizeLayer = (
+  layer: Layer,
+  newWidth: number,
+  newHeight: number,
+  padDirection: PadDirection,
+): ImageData => {
+  if (!layer.imageData) {
+    return new ImageData(newWidth, newHeight);
+  }
+
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = newWidth;
+  tempCanvas.height = newHeight;
+  const tempCtx = tempCanvas.getContext("2d", { willReadFrequently: true });
+  if (!tempCtx) throw new Error("Failed to get canvas context");
+
+  // Create a temporary canvas for the original image
+  const sourceCanvas = document.createElement("canvas");
+  sourceCanvas.width = layer.imageData.width;
+  sourceCanvas.height = layer.imageData.height;
+  const sourceCtx = sourceCanvas.getContext("2d");
+  if (!sourceCtx) throw new Error("Failed to get source canvas context");
+
+  // Draw the original image data
+  sourceCtx.putImageData(layer.imageData, 0, 0);
+
+  // Calculate position based on padding direction
+  let x = 0;
+  let y = 0;
+
+  switch (padDirection) {
+    case "center":
+      x = Math.floor((newWidth - layer.imageData.width) / 2);
+      y = Math.floor((newHeight - layer.imageData.height) / 2);
+      break;
+    case "right":
+      x = 0;
+      y = 0;
+      break;
+    case "left":
+      x = newWidth - layer.imageData.width;
+      y = 0;
+      break;
+    case "down":
+      x = 0;
+      y = 0;
+      break;
+    case "up":
+      x = 0;
+      y = newHeight - layer.imageData.height;
+      break;
+  }
+
+  // Draw the image at the calculated position
+  tempCtx.drawImage(sourceCanvas, x, y);
+
+  return tempCtx.getImageData(0, 0, newWidth, newHeight);
+};
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
@@ -492,6 +584,53 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     });
   }, []);
 
+  // Define deleteSelection inside the component
+  const deleteSelection = useCallback(() => {
+    if (!selection.selectedImageData) return;
+
+    // Get the selected layer
+    const selectedLayer = layers.find((layer) => layer.id === selectedLayerId);
+    if (!selectedLayer || !selectedLayer.visible) return;
+
+    // Create a temporary canvas
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const tempCtx = tempCanvas.getContext("2d");
+    if (!tempCtx) return;
+
+    // Draw existing layer data
+    if (selectedLayer.imageData) {
+      tempCtx.putImageData(selectedLayer.imageData, 0, 0);
+    }
+
+    // Calculate deletion coordinates
+    const deleteX = selection.originalX ?? 0;
+    const deleteY = selection.originalY ?? 0;
+    const deleteWidth = selection.selectedImageData.width;
+    const deleteHeight = selection.selectedImageData.height;
+
+    // Clear the selected area
+    tempCtx.clearRect(deleteX, deleteY, deleteWidth, deleteHeight);
+
+    // Update layer's imageData
+    selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
+
+    // Clear the selection state
+    clearSelection();
+
+    // Trigger render
+    render();
+  }, [
+    selection,
+    layers,
+    selectedLayerId,
+    width,
+    height,
+    clearSelection,
+    render,
+  ]);
+
   // Update clearCanvas to clear the selected layer
   useImperativeHandle(
     ref,
@@ -503,7 +642,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         if (!selectedLayer) return;
 
         selectedLayer.imageData = new ImageData(width, height);
-
         render();
       },
       importImage: (imageData: ImageData) => {
@@ -512,70 +650,115 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         );
         if (!selectedLayer) return;
 
-        selectedLayer.imageData = imageData;
+        // Only resize if the imported image is larger than current canvas
+        const needsResize =
+          imageData.width > width || imageData.height > height;
 
-        render();
+        if (needsResize) {
+          const newWidth = Math.max(width, imageData.width);
+          const newHeight = Math.max(height, imageData.height);
 
-        // Center the viewport on the new image
-        const displayCanvas = displayCanvasRef.current;
-        if (!displayCanvas) return;
-        setTimeout(() => {
-          setViewport((prev) => ({
-            ...prev,
-            x: (displayCanvas.width - imageData.width * prev.scale) / 2,
-            y: (displayCanvas.height - imageData.height * prev.scale) / 2,
-          }));
-        }, 4);
-      },
+          // Resize all layers to match the new dimensions
+          layers.forEach((layer) => {
+            layer.imageData = resizeLayer(layer, newWidth, newHeight, "center");
+          });
+        }
 
-      getLayerImageData: () => {
-        const selectedLayer = layers.find(
-          (layer) => layer.id === selectedLayerId,
-        );
-        return selectedLayer?.imageData ?? null;
-      },
-
-      deleteSelection: () => {
-        if (!selection.selectedImageData) return;
-
-        // Get the selected layer
-        const selectedLayer = layers.find(
-          (layer) => layer.id === selectedLayerId,
-        );
-        if (!selectedLayer || !selectedLayer.visible) return;
-
-        // Create a temporary canvas
+        // Create a new ImageData with current canvas dimensions
         const tempCanvas = document.createElement("canvas");
         tempCanvas.width = width;
         tempCanvas.height = height;
         const tempCtx = tempCanvas.getContext("2d");
         if (!tempCtx) return;
 
-        // Draw existing layer data
-        if (selectedLayer.imageData) {
-          tempCtx.putImageData(selectedLayer.imageData, 0, 0);
-        }
+        // Calculate center position
+        const x = Math.floor((width - imageData.width) / 2);
+        const y = Math.floor((height - imageData.height) / 2);
 
-        // Calculate deletion coordinates
-        const deleteX = selection.originalX ?? 0;
-        const deleteY = selection.originalY ?? 0;
-        const deleteWidth = selection.selectedImageData.width;
-        const deleteHeight = selection.selectedImageData.height;
+        // Create a temporary canvas for the imported image
+        const importCanvas = document.createElement("canvas");
+        importCanvas.width = imageData.width;
+        importCanvas.height = imageData.height;
+        const importCtx = importCanvas.getContext("2d");
+        if (!importCtx) return;
 
-        // Clear the selected area
-        tempCtx.clearRect(deleteX, deleteY, deleteWidth, deleteHeight);
+        // Draw the imported image data exactly as is
+        importCtx.putImageData(imageData, 0, 0);
 
-        // Update layer's imageData
+        // Draw the imported image centered on the target canvas
+        tempCtx.drawImage(importCanvas, x, y);
+
+        // Update the selected layer with the new image data
         selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
 
-        // Clear the selection state
+        render();
+
+        // Center the viewport on the canvas
+        const displayCanvas = displayCanvasRef.current;
+        if (!displayCanvas) return;
+        setTimeout(() => {
+          setViewport((prev) => ({
+            ...prev,
+            x: (displayCanvas.width - width * prev.scale) / 2,
+            y: (displayCanvas.height - height * prev.scale) / 2,
+          }));
+        }, 4);
+      },
+      getLayerImageData: () => {
+        const selectedLayer = layers.find(
+          (layer) => layer.id === selectedLayerId,
+        );
+        return selectedLayer?.imageData ?? null;
+      },
+      deleteSelection,
+      resizeCanvas: (
+        newWidth: number,
+        newHeight: number,
+        padDirection: PadDirection,
+      ) => {
+        // Update drawing canvas dimensions first
+        const drawingCanvas = drawingCanvasRef.current;
+        if (drawingCanvas) {
+          drawingCanvas.width = newWidth;
+          drawingCanvas.height = newHeight;
+        }
+
+        // Resize all layers
+        layers.forEach((layer) => {
+          layer.imageData = resizeLayer(
+            layer,
+            newWidth,
+            newHeight,
+            padDirection,
+          );
+        });
+
+        // Clear any active selection
         clearSelection();
 
-        // Trigger render
+        // Re-center the viewport
+        const displayCanvas = displayCanvasRef.current;
+        if (displayCanvas) {
+          setViewport((prev) => ({
+            ...prev,
+            x: (displayCanvas.width - newWidth * prev.scale) / 2,
+            y: (displayCanvas.height - newHeight * prev.scale) / 2,
+          }));
+        }
+
+        // Force a re-render
         render();
       },
     }),
-    [width, height, layers, selectedLayerId, selection, clearSelection, render],
+    [
+      width,
+      height,
+      layers,
+      selectedLayerId,
+      clearSelection,
+      deleteSelection,
+      render,
+    ],
   );
 
   // Initialize canvases
@@ -644,7 +827,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     };
   }, [width, height]);
 
-  const handleWheel = useCallback((e: WheelEvent) => {
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     const { deltaY } = e;
     const direction = deltaY > 0 ? -1 : 1;
@@ -988,70 +1171,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onToolSelect,
     render,
   ]);
-
-  const deleteSelection = () => {
-    // Get the selected layer
-    const selectedLayer = layers.find((layer) => layer.id === selectedLayerId);
-    if (!selectedLayer || !selectedLayer.visible) return;
-
-    // Create a temporary canvas
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = width;
-    tempCanvas.height = height;
-    const tempCtx = tempCanvas.getContext("2d");
-    if (!tempCtx) return;
-
-    // Draw existing layer data
-    if (selectedLayer.imageData) {
-      tempCtx.putImageData(selectedLayer.imageData, 0, 0);
-    }
-
-    // Calculate deletion coordinates
-    const deleteX = selection.originalX ?? 0;
-    const deleteY = selection.originalY ?? 0;
-    const deleteWidth = selection.selectedImageData?.width ?? 0;
-    const deleteHeight = selection.selectedImageData?.height ?? 0;
-
-    // Clear the selected area
-    tempCtx.clearRect(deleteX, deleteY, deleteWidth, deleteHeight);
-
-    // Update layer's imageData
-    selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
-
-    // Clear the selection state
-    clearSelection();
-
-    // Trigger render
-    render();
-  };
-
-  // Event listeners with cleanup
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space" && !e.repeat) {
-        setIsSpacePressed(true);
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
-        setIsSpacePressed(false);
-        setIsPanning(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    containerRef.current?.addEventListener("wheel", handleWheel, {
-      passive: false,
-    });
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-      containerRef.current?.removeEventListener("wheel", handleWheel);
-    };
-  }, [handleWheel]);
 
   // Add after initialization effects
   useEffect(() => {
@@ -1650,6 +1769,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onWheel={handleWheel}
       />
       <canvas ref={drawingCanvasRef} className="hidden" data-canvas="drawing" />
       <canvas
