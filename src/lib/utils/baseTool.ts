@@ -100,7 +100,7 @@ export abstract class PreviewTool extends BaseTool implements PreviewableTool {
   }
 
   onMouseMove(e: React.MouseEvent, context: ToolContext) {
-    if (!this.startPoint || (e.buttons !== 1 && e.buttons !== 2)) return;
+    if (!this.startPoint) return;
 
     const coords = this.getCoordinates(e, context);
     this.handlePreview(this.startPoint, coords, e, context);

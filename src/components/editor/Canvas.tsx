@@ -313,40 +313,46 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         selectedTool === "eraser" ||
         selectedTool === "line") &&
       !isDrawing &&
-      !isPanning &&
-      !isMobile
+      !isPanning
     ) {
       const size = brushSize;
       const halfSize = Math.floor(size / 2);
 
-      const x = Math.floor(hoverPosition.x - halfSize);
-      const y = Math.floor(hoverPosition.y - halfSize);
+      // Only show hover preview on non-mobile devices when not drawing
+      if (!isMobile) {
+        const x = Math.floor(hoverPosition.x - halfSize);
+        const y = Math.floor(hoverPosition.y - halfSize);
 
-      ctx.globalAlpha = 0.5;
-      if (selectedTool === "eraser") {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(x, y, size, size);
-      } else {
-        ctx.fillStyle = primaryColor;
-        if (selectedTool === "line" && isMouseDown) {
-          const tool = getToolById(selectedTool);
-          if (isPreviewableTool(tool)) {
-            // Draw line preview
-            const points = tool.lastPreviewPoints;
-            points.forEach((point) => {
-              ctx.fillRect(point.x - halfSize, point.y - halfSize, size, size);
-            });
-          }
+        ctx.globalAlpha = 0.5;
+        if (selectedTool === "eraser") {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(x, y, size, size);
         } else {
+          ctx.fillStyle = primaryColor;
           ctx.fillRect(x, y, size, size);
         }
-      }
-      ctx.globalAlpha = 1.0;
+        ctx.globalAlpha = 1.0;
 
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 1 / viewport.scale;
-      ctx.setLineDash([]);
-      ctx.strokeRect(x, y, size, size);
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1 / viewport.scale;
+        ctx.setLineDash([]);
+        ctx.strokeRect(x, y, size, size);
+      }
+
+      // Show line preview for both mobile and desktop when drawing a line
+      if (selectedTool === "line" && isMouseDown) {
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = primaryColor;
+        const tool = getToolById(selectedTool);
+        if (isPreviewableTool(tool)) {
+          // Draw line preview
+          const points = tool.lastPreviewPoints;
+          points.forEach((point) => {
+            ctx.fillRect(point.x - halfSize, point.y - halfSize, size, size);
+          });
+        }
+        ctx.globalAlpha = 1.0;
+      }
     }
 
     ctx.restore();

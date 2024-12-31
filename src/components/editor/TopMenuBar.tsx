@@ -17,6 +17,7 @@ import { Layer, ToolType } from "@/types/editor";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useEditorStore } from "@/store/editorStore";
+import { SignInModal } from "@/components/modals/signin-modal";
 
 import {
   DropdownMenu,
@@ -76,6 +77,7 @@ export default function TopMenuBar({
   layers,
 }: TopMenuBarProps) {
   const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
+  const [showSignInModal, setShowSignInModal] = useState(false);
 
   const handleToleranceChange = (value: string) => {
     const numValue = Math.max(1, Math.min(10, Number(value) || 1));
@@ -328,6 +330,7 @@ export default function TopMenuBar({
         <div>
           <div className="sm:block">
             <AiPixelArtModal
+              onSignInRequired={() => setShowSignInModal(true)}
               onFinish={(img) => {
                 const image = new Image();
                 image.onload = () => {
@@ -444,6 +447,13 @@ export default function TopMenuBar({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Sign In Modal */}
+      <SignInModal
+        isOpen={showSignInModal}
+        onClose={() => setShowSignInModal(false)}
+        featureName="AI Pixel Art Generator"
+      />
     </div>
   );
 }
