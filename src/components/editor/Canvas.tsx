@@ -23,6 +23,7 @@ import {
   getTouchCoordinates,
 } from "@/lib/utils/coordinates";
 import { useEditorStore } from "@/store/editorStore";
+import { useUserAgent } from "@/lib/utils/user-agent";
 
 interface CanvasProps {
   width: number;
@@ -61,6 +62,7 @@ interface TouchState {
   lastTouchX: number | null;
   lastTouchY: number | null;
   touchStartTime: number | null;
+  lastDrawTime: number | null;
 }
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
@@ -83,11 +85,13 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   ref,
 ) {
   const { shouldClearOriginal } = useEditorStore();
+  const { isMobile } = useUserAgent();
   const containerRef = useRef<HTMLDivElement>(null);
   const displayCanvasRef = useRef<HTMLCanvasElement>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
   const selectionCanvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
+  const lastLayerStateRef = useRef<ImageData | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
@@ -129,6 +133,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     lastTouchX: null,
     lastTouchY: null,
     touchStartTime: null,
+    lastDrawTime: null,
   });
 
   // Create offscreen canvas for checkerboard pattern
@@ -308,7 +313,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         selectedTool === "eraser" ||
         selectedTool === "line") &&
       !isDrawing &&
-      !isPanning
+      !isPanning &&
+      !isMobile
     ) {
       const size = brushSize;
       const halfSize = Math.floor(size / 2);
@@ -1219,6 +1225,18 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           e.touches[0].clientY - e.touches[1].clientY,
         );
 
+        // Check if we recently drew a pixel (within 5ms) and undo it
+        if (touchState.lastDrawTime && now - touchState.lastDrawTime < 50) {
+          // Restore the previous state if it exists
+          const selectedLayer = layers.find(
+            (layer) => layer.id === selectedLayerId,
+          );
+          if (selectedLayer && lastLayerStateRef.current) {
+            selectedLayer.imageData = lastLayerStateRef.current;
+            render();
+          }
+        }
+
         setTouchState({
           touchStartX: touch.clientX,
           touchStartY: touch.clientY,
@@ -1227,21 +1245,86 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           initialPinchDistance: distance,
           initialScale: viewport.scale,
           touchStartTime: now,
+          lastDrawTime: null, // Reset draw time
         });
-      } else if (e.touches.length === 1) {
-        // Single touch - preserve the last scale but update positions
-        setTouchState((prev) => ({
-          ...prev,
+      } else if (e.touches.length === 1 && selectedTool !== "pan") {
+        // Store the current state before drawing
+        const selectedLayer = layers.find(
+          (layer) => layer.id === selectedLayerId,
+        );
+        if (selectedLayer?.imageData) {
+          lastLayerStateRef.current = new ImageData(
+            new Uint8ClampedArray(selectedLayer.imageData.data),
+            selectedLayer.imageData.width,
+            selectedLayer.imageData.height,
+          );
+        }
+
+        // For non-pan tools, start drawing immediately on single touch
+        setIsMouseDown(true);
+        const tool = getToolById(selectedTool);
+        const ctx = drawingCanvas.getContext("2d", {
+          willReadFrequently: true,
+        });
+        if (!ctx) return;
+
+        const toolContext = {
+          canvas: drawingCanvas,
+          ctx,
+          viewport: { x: 0, y: 0, scale: 1 },
+          primaryColor,
+          secondaryColor,
+          brushSize,
+          bucketTolerance,
+          layers,
+          selectedLayerId,
+          onColorPick,
+          selection,
+          setSelection,
+          shouldClearOriginal,
+        };
+
+        tool.onMouseDown?.(
+          {
+            ...e,
+            clientX: coords.x,
+            clientY: coords.y,
+            button: 0,
+            nativeEvent: {
+              ...e.nativeEvent,
+              clientX: coords.x,
+              clientY: coords.y,
+            },
+          } as any,
+          toolContext,
+        );
+
+        // Render immediately for responsiveness
+        render();
+
+        // Update touch state and record draw time
+        setTouchState({
           touchStartX: touch.clientX,
           touchStartY: touch.clientY,
           lastTouchX: touch.clientX,
           lastTouchY: touch.clientY,
           initialPinchDistance: null,
+          initialScale: viewport.scale,
           touchStartTime: now,
-        }));
-
-        // Don't start drawing immediately - wait to see if it's a pinch gesture
-        // Tool activation will happen in handleTouchMove after the delay
+          lastDrawTime: now, // Record when we drew
+        });
+      } else {
+        // Pan tool or other cases
+        setTouchState({
+          touchStartX: touch.clientX,
+          touchStartY: touch.clientY,
+          lastTouchX: touch.clientX,
+          lastTouchY: touch.clientY,
+          initialPinchDistance: null,
+          initialScale: viewport.scale,
+          touchStartTime: now,
+          lastDrawTime: touchState.lastDrawTime, // Preserve last draw time
+        });
       }
     },
     [
@@ -1257,8 +1340,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       selection,
       setSelection,
       shouldClearOriginal,
-      touchState,
       render,
+      touchState.lastDrawTime,
     ],
   );
 
@@ -1268,9 +1351,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const displayCanvas = displayCanvasRef.current;
       const drawingCanvas = drawingCanvasRef.current;
       if (!displayCanvas || !drawingCanvas || !e.touches[0]) return;
-
-      const now = Date.now();
-      const touchDelay = 100; // Wait 100ms before activating tool to detect potential pinch
 
       if (e.touches.length === 2 && e.touches[1]) {
         // Pinch to zoom - disable drawing
@@ -1321,60 +1401,22 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         const coords = getTouchCoordinates(touch, displayCanvas, viewport);
         setHoverPosition(coords);
 
-        // Only activate drawing if:
-        // 1. We're not in a pinch gesture
-        // 2. Enough time has passed since the touch started
-        // 3. The tool isn't pan
-        const shouldActivateTool =
-          !touchState.initialPinchDistance &&
-          touchState.touchStartTime &&
-          now - touchState.touchStartTime > touchDelay &&
-          selectedTool !== "pan";
+        if (selectedTool === "pan") {
+          // Handle panning
+          if (
+            touchState.lastTouchX !== null &&
+            touchState.lastTouchY !== null
+          ) {
+            const deltaX = touch.clientX - touchState.lastTouchX;
+            const deltaY = touch.clientY - touchState.lastTouchY;
 
-        if (!isMouseDown && shouldActivateTool) {
-          // First activation of the tool after delay
-          setIsMouseDown(true);
-          const tool = getToolById(selectedTool);
-          const ctx = drawingCanvas.getContext("2d", {
-            willReadFrequently: true,
-          });
-          if (!ctx) return;
-
-          const toolContext = {
-            canvas: drawingCanvas,
-            ctx,
-            viewport: { x: 0, y: 0, scale: 1 },
-            primaryColor,
-            secondaryColor,
-            brushSize,
-            bucketTolerance,
-            layers,
-            selectedLayerId,
-            onColorPick,
-            selection,
-            setSelection,
-            shouldClearOriginal,
-          };
-
-          tool.onMouseDown?.(
-            {
-              ...e,
-              clientX: coords.x,
-              clientY: coords.y,
-              button: 0,
-              nativeEvent: {
-                ...e.nativeEvent,
-                clientX: coords.x,
-                clientY: coords.y,
-              },
-            } as any,
-            toolContext,
-          );
-
-          requestAnimationFrame(() => {
-            render();
-          });
-        } else if (isMouseDown && shouldActivateTool) {
+            setViewport((prev) => ({
+              ...prev,
+              x: prev.x + deltaX,
+              y: prev.y + deltaY,
+            }));
+          }
+        } else if (isMouseDown) {
           // Continue drawing if already started
           const tool = getToolById(selectedTool);
           const ctx = drawingCanvas.getContext("2d", {
@@ -1413,30 +1455,16 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             toolContext,
           );
 
-          requestAnimationFrame(() => {
-            render();
-          });
-        } else if (
-          touchState.lastTouchX !== null &&
-          touchState.lastTouchY !== null
-        ) {
-          // Handle panning
-          const deltaX = touch.clientX - touchState.lastTouchX;
-          const deltaY = touch.clientY - touchState.lastTouchY;
-
-          setViewport((prev) => ({
-            ...prev,
-            x: prev.x + deltaX,
-            y: prev.y + deltaY,
-          }));
-
-          // Update the last touch position
-          setTouchState((prev) => ({
-            ...prev,
-            lastTouchX: touch.clientX,
-            lastTouchY: touch.clientY,
-          }));
+          // Render immediately for responsiveness
+          render();
         }
+
+        // Always update the last touch position for next frame
+        setTouchState((prev) => ({
+          ...prev,
+          lastTouchX: touch.clientX,
+          lastTouchY: touch.clientY,
+        }));
       }
     },
     [
@@ -1541,6 +1569,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           lastTouchX: null,
           lastTouchY: null,
           touchStartTime: null,
+          lastDrawTime: null,
         });
       }
     },
