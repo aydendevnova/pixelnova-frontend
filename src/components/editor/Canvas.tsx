@@ -923,7 +923,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       // Store history state after drawing
       if (layers.length > 0) {
         pushHistory({
-          type: "editor",
+          type: "editor" as const,
           layers: layers.map((layer) => ({
             ...layer,
             imageData: layer.imageData
@@ -1039,6 +1039,22 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     // Update layer's imageData
     selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
 
+    // Push to history before clearing selection
+    pushHistory({
+      type: "editor" as const,
+      layers: layers.map((layer) => ({
+        ...layer,
+        imageData: layer.imageData
+          ? new ImageData(
+              new Uint8ClampedArray(layer.imageData.data),
+              layer.imageData.width,
+              layer.imageData.height,
+            )
+          : null,
+      })),
+      selectedLayerId,
+    });
+
     // Clear the selection state
     clearSelection();
 
@@ -1084,6 +1100,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     // Save initial blank state
     const initialState = {
+      type: "editor" as const,
       layers: layers.map((layer) => ({
         ...layer,
         imageData: layer.imageData
@@ -1094,8 +1111,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             )
           : new ImageData(width, height),
       })),
-      timestamp: Date.now(),
+      selectedLayerId,
     };
+
+    // Push initial state to history
+    pushHistory(initialState);
 
     // Only render once on initialization
     if (!animationFrameRef.current) {
@@ -1104,7 +1124,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         animationFrameRef.current = undefined;
       });
     }
-  }, [width, height, layers]);
+  }, [width, height, layers, selectedLayerId, pushHistory, render]);
 
   // Add keyboard shortcuts
   useEffect(() => {
@@ -1115,40 +1135,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         clearSelection();
       } else if (e.code === "Delete" || e.code === "Backspace") {
         if (selection.selectedImageData) {
-          const selectedLayer = layers.find(
-            (layer) => layer.id === selectedLayerId,
-          );
-          if (!selectedLayer || !selectedLayer.visible) return;
-
-          // Create a temporary canvas
-          const tempCanvas = document.createElement("canvas");
-          tempCanvas.width = width;
-          tempCanvas.height = height;
-          const tempCtx = tempCanvas.getContext("2d");
-          if (!tempCtx) return;
-
-          // Draw existing layer data
-          if (selectedLayer.imageData) {
-            tempCtx.putImageData(selectedLayer.imageData, 0, 0);
-          }
-
-          // Calculate deletion coordinates
-          const deleteX = selection.originalX ?? 0;
-          const deleteY = selection.originalY ?? 0;
-          const deleteWidth = selection.selectedImageData.width;
-          const deleteHeight = selection.selectedImageData.height;
-
-          // Clear the selected area
-          tempCtx.clearRect(deleteX, deleteY, deleteWidth, deleteHeight);
-
-          // Update layer's imageData
-          selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
-
-          // Clear the selection state
-          clearSelection();
-
-          // Trigger render
-          render();
+          deleteSelection();
         }
       }
     };
@@ -1162,7 +1149,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     width,
     height,
     clearSelection,
-    render,
+    deleteSelection,
   ]);
 
   // Add useEffect to watch for tool changes
@@ -1589,7 +1576,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           // Store history state after drawing
           if (layers.length > 0) {
             pushHistory({
-              type: "editor",
+              type: "editor" as const,
               layers: layers.map((layer) => ({
                 ...layer,
                 imageData: layer.imageData

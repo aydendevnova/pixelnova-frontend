@@ -1,5 +1,6 @@
 import { Tool, ToolContext, SelectionState } from "@/types/editor";
 import { TextSelect } from "lucide-react";
+import { getCanvasCoordinates } from "@/lib/utils/coordinates";
 
 // Add helper function for clamping coordinates
 function clampCoordinates(x: number, y: number, width: number, height: number) {
@@ -16,7 +17,10 @@ export const SelectTool: Tool = {
   shortcut: "M",
   cursor: "crosshair",
 
-  onMouseDown: (e: React.MouseEvent, context: ToolContext) => {
+  onMouseDown: (
+    e: React.MouseEvent<HTMLCanvasElement>,
+    context: ToolContext,
+  ) => {
     const { canvas, viewport, selection, setSelection } = context;
     const coords = getCanvasCoordinates(e, canvas, viewport);
 
@@ -71,7 +75,10 @@ export const SelectTool: Tool = {
     });
   },
 
-  onMouseMove: (e: React.MouseEvent, context: ToolContext) => {
+  onMouseMove: (
+    e: React.MouseEvent<HTMLCanvasElement>,
+    context: ToolContext,
+  ) => {
     const { canvas, viewport, selection, setSelection } = context;
     if (!selection) return;
 
@@ -107,7 +114,7 @@ export const SelectTool: Tool = {
     }
   },
 
-  onMouseUp: (e: React.MouseEvent, context: ToolContext) => {
+  onMouseUp: (e: React.MouseEvent<HTMLCanvasElement>, context: ToolContext) => {
     const {
       canvas,
       viewport,
@@ -172,6 +179,24 @@ export const SelectTool: Tool = {
         tempCanvas.width,
         tempCanvas.height,
       );
+
+      // Push to history after moving selection
+      if (context.pushHistory) {
+        context.pushHistory({
+          type: "editor" as const,
+          layers: layers.map((layer) => ({
+            ...layer,
+            imageData: layer.imageData
+              ? new ImageData(
+                  new Uint8ClampedArray(layer.imageData.data),
+                  layer.imageData.width,
+                  layer.imageData.height,
+                )
+              : null,
+          })),
+          selectedLayerId,
+        });
+      }
 
       // Clear the selection
       setSelection({
@@ -252,14 +277,3 @@ export const SelectTool: Tool = {
     }
   },
 };
-
-function getCanvasCoordinates(
-  e: React.MouseEvent,
-  canvas: HTMLCanvasElement,
-  viewport: { x: number; y: number; scale: number },
-) {
-  const rect = canvas.getBoundingClientRect();
-  const x = Math.floor((e.clientX - rect.left - viewport.x) / viewport.scale);
-  const y = Math.floor((e.clientY - rect.top - viewport.y) / viewport.scale);
-  return { x, y };
-}
