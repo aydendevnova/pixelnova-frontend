@@ -13,7 +13,6 @@ import UserMyAvatar from "./user-my-avatar";
 import Link from "next/link";
 import SignOutButton from "../auth/sign-out-button";
 import { usePathname } from "next/navigation";
-import Image from "next/image";
 
 export default function Header() {
   const { profile, isSignedIn } = useUser();

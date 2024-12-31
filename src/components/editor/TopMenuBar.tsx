@@ -5,11 +5,9 @@ import {
   FolderOpenIcon,
   ArrowDownTrayIcon,
   TrashIcon,
-  SwatchIcon,
 } from "@heroicons/react/24/outline";
 import { Input } from "@/components/ui/input";
 import { Grid2X2, Menu } from "lucide-react";
-import ApiTestDialog from "../modals/api-modal";
 import AiPixelArtModal from "../modals/ai-pixel-art";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";

@@ -8,7 +8,6 @@ import {
   ChevronUpIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";

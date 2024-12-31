@@ -11,6 +11,7 @@ export abstract class BaseTool implements Tool {
   cursor?: string;
 
   protected getCoordinates(e: React.MouseEvent, context: ToolContext) {
+    // @ts-expect-error TODO: fix type later
     return getCanvasCoordinates(e, context.canvas, context.viewport);
   }
 

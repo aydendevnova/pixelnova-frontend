@@ -11,8 +11,7 @@ import ErrorView from "@/components/error-view";
 import { useEditorStore } from "@/store/editorStore";
 import { getAllTools } from "@/lib/tools";
 import { createImageData } from "@/lib/utils/canvas";
-import { Layer, Tool, ToolType } from "@/types/editor";
-import { set } from "zod";
+import { Layer, ToolType } from "@/types/editor";
 import { PALETTE_INFO } from "@/lib/utils/colorPalletes";
 
 export default function Editor() {
@@ -115,7 +114,7 @@ export default function Editor() {
 
   const handlePaletteChange = (newPalette: keyof typeof PALETTE_INFO) => {
     // Get the new palette's colors
-    const newPaletteColors = PALETTE_INFO[newPalette]?.colors || [];
+    const newPaletteColors = PALETTE_INFO[newPalette]?.colors ?? [];
 
     // Extract all unique colors from the current pixel art
     const extractedColors = extractColorsFromLayers();

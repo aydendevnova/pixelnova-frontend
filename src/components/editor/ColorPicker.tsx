@@ -10,9 +10,7 @@ import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
-import { ScrollArea } from "../ui/scroll-area";
 import { Button } from "../ui/button";
-import { Switch } from "../ui/switch";
 import {
   Select,
   SelectContent,
@@ -90,7 +88,7 @@ export default function ColorPicker({
 
   const isColorInPalette = (color: string) => {
     return (
-      PALETTE_INFO[selectedPalette]?.colors.includes(color) ||
+      PALETTE_INFO[selectedPalette]?.colors.includes(color) ??
       importedColors.includes(color)
     );
   };
