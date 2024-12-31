@@ -1169,8 +1169,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         initialPinchDistance:
           e.touches.length === 2 && e.touches[1]
             ? Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY,
+                (e.touches[0]?.clientX ?? 0) - (e.touches[1]?.clientX ?? 0),
+                (e.touches[0]?.clientY ?? 0) - (e.touches[1]?.clientY ?? 0),
               )
             : null,
         initialScale: e.touches.length === 2 ? viewport.scale : null,

@@ -13,6 +13,7 @@ import { getAllTools } from "@/lib/tools";
 import { createImageData } from "@/lib/utils/canvas";
 import { Layer, Tool, ToolType } from "@/types/editor";
 import { set } from "zod";
+import { PALETTE_INFO } from "@/lib/utils/colorPalletes";
 
 export default function Editor() {
   const {
@@ -36,6 +37,7 @@ export default function Editor() {
     setLayers,
     setSelectedLayerId,
     addCustomColor,
+    removeCustomColor,
   } = useEditorStore();
 
   // Initialize canvas with a blank layer
@@ -81,8 +83,61 @@ export default function Editor() {
     setSelectedLayerId(newLayer.id);
   };
 
-  const handleGeneratePalette = (colors: string[]) => {
-    colors.forEach(addCustomColor);
+  const extractColorsFromLayers = () => {
+    const colorSet = new Set<string>();
+    layers.forEach((layer) => {
+      const imageData = layer.imageData;
+      if (!imageData) return;
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        const r = imageData.data[i];
+        const g = imageData.data[i + 1];
+        const b = imageData.data[i + 2];
+        const a = imageData.data[i + 3];
+
+        // Skip fully transparent pixels
+        if (a === 0) continue;
+
+        // Convert to hex
+        const hex = `#${(
+          (1 << 24) +
+          ((r ?? 0) << 16) +
+          ((g ?? 0) << 8) +
+          (b ?? 0)
+        )
+          .toString(16)
+          .slice(1)
+          .toUpperCase()}`;
+        colorSet.add(hex);
+      }
+    });
+    return Array.from(colorSet);
+  };
+
+  const handlePaletteChange = (newPalette: keyof typeof PALETTE_INFO) => {
+    // Get the new palette's colors
+    const newPaletteColors = PALETTE_INFO[newPalette]?.colors || [];
+
+    // Extract all unique colors from the current pixel art
+    const extractedColors = extractColorsFromLayers();
+
+    // For each color in the pixel art
+    extractedColors.forEach((color) => {
+      // If the color is not in the new palette and not already imported
+      if (
+        !newPaletteColors.includes(color) &&
+        !importedColors.includes(color)
+      ) {
+        // Add it to imported colors
+        addCustomColor(color);
+      }
+    });
+
+    // Remove imported colors that are now part of the new palette
+    importedColors.forEach((importedColor) => {
+      if (newPaletteColors.includes(importedColor)) {
+        removeCustomColor(importedColor);
+      }
+    });
   };
 
   return (
@@ -131,16 +186,11 @@ export default function Editor() {
             <ColorPicker
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
-              onPrimaryColorSelect={(color: string) => {
-                setPrimaryColor(color);
-              }}
-              onSecondaryColorSelect={(color: string) => {
-                setSecondaryColor(color);
-              }}
+              onPrimaryColorSelect={setPrimaryColor}
+              onSecondaryColorSelect={setSecondaryColor}
               importedColors={importedColors}
-              onAddCustomColor={(color: string) => {
-                addCustomColor(color);
-              }}
+              onAddCustomColor={addCustomColor}
+              onPaletteChange={handlePaletteChange}
             />
           </ErrorBoundary>
         </div>

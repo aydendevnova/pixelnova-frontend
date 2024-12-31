@@ -32,6 +32,7 @@ interface EditorState {
   setShouldClearOriginal: (shouldClearOriginal: boolean) => void;
   setBucketTolerance: (tolerance: number) => void;
   addCustomColor: (color: string) => void;
+  removeCustomColor: (color: string) => void;
   setLayers: (layers: Layer[] | ((prev: Layer[]) => Layer[])) => void;
   setSelectedLayerId: (id: string) => void;
 }
@@ -68,6 +69,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   addCustomColor: (color) =>
     set((state) => ({
       importedColors: [...state.importedColors, color],
+    })),
+  removeCustomColor: (color) =>
+    set((state) => ({
+      importedColors: state.importedColors.filter((c) => c !== color),
     })),
   setLayers: (layersOrUpdater) =>
     set((state) => ({

@@ -39,102 +39,102 @@ export default function Toolbar({
     <div className="absolute bottom-0 left-0 top-4 z-20">
       <TooltipProvider>
         <div className="flex max-h-[calc(100vh-10rem)] flex-col gap-3 rounded-lg bg-gray-900 p-3 shadow-lg backdrop-blur">
-          {/* Toggle and History controls - these should stay fixed */}
-          <div className="flex flex-shrink-0 flex-col gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-12 w-12 rounded-lg text-gray-900 hover:bg-gray-700",
-                  )}
-                  onClick={() => setShowTools(!showTools)}
-                >
-                  {showTools ? (
-                    <ChevronUp
-                      className="text-white"
-                      style={{ width: "24px", height: "24px" }}
-                    />
-                  ) : (
-                    <ChevronDown
-                      className="text-white"
-                      style={{ width: "24px", height: "24px" }}
-                    />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="bg-white text-gray-900">
-                <p>Toggle Tools</p>
-              </TooltipContent>
-            </Tooltip>
+          <div className="flex max-h-full flex-col gap-2 overflow-y-auto">
+            {/* Toggle button - always visible */}
+            <div className="flex-shrink-0">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-12 w-12 rounded-lg text-gray-900 hover:bg-gray-700",
+                    )}
+                    onClick={() => setShowTools(!showTools)}
+                  >
+                    {showTools ? (
+                      <ChevronUp
+                        className="text-white"
+                        style={{ width: "24px", height: "24px" }}
+                      />
+                    ) : (
+                      <ChevronDown
+                        className="text-white"
+                        style={{ width: "24px", height: "24px" }}
+                      />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-white text-gray-900">
+                  <p>Toggle Tools</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
 
             {showTools && (
               <>
-                <Separator className="bg-gray-700" />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={cn(
-                        "h-12 w-12 rounded-lg text-white",
-                        !canUndo && "opacity-50",
-                        canUndo && "hover:bg-gray-700/50 hover:text-gray-200",
-                      )}
-                      onClick={onUndo}
-                      disabled={!canUndo}
+                <Separator className="flex-shrink-0 bg-gray-700" />
+
+                {/* History controls */}
+                <div className="flex flex-shrink-0 flex-col gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "h-12 w-12 rounded-lg text-white",
+                          !canUndo && "opacity-50",
+                          canUndo && "hover:bg-gray-700/50 hover:text-gray-200",
+                        )}
+                        onClick={onUndo}
+                        disabled={!canUndo}
+                      >
+                        <Undo2
+                          className="text-white"
+                          style={{ width: "24px", height: "24px" }}
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="right"
+                      className="bg-white text-gray-900"
                     >
-                      <Undo2
-                        className="text-white"
-                        style={{ width: "24px", height: "24px" }}
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    className="bg-white text-gray-900"
-                  >
-                    <p>Undo (Ctrl+Z)</p>
-                  </TooltipContent>
-                </Tooltip>
+                      <p>Undo (Ctrl+Z)</p>
+                    </TooltipContent>
+                  </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={cn(
-                        "h-12 w-12 rounded-lg text-white",
-                        !canRedo && "opacity-50",
-                        canRedo && "hover:bg-gray-700/50 hover:text-gray-200",
-                      )}
-                      onClick={onRedo}
-                      disabled={!canRedo}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "h-12 w-12 rounded-lg text-white",
+                          !canRedo && "opacity-50",
+                          canRedo && "hover:bg-gray-700/50 hover:text-gray-200",
+                        )}
+                        onClick={onRedo}
+                        disabled={!canRedo}
+                      >
+                        <Redo2
+                          className="text-white"
+                          style={{ width: "24px", height: "24px" }}
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="right"
+                      className="bg-white text-gray-900"
                     >
-                      <Redo2
-                        className="text-white"
-                        style={{ width: "24px", height: "24px" }}
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    className="bg-white text-gray-900"
-                  >
-                    <p>Redo (Ctrl+Shift+Z)</p>
-                  </TooltipContent>
-                </Tooltip>
-              </>
-            )}
-          </div>
+                      <p>Redo (Ctrl+Shift+Z)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
 
-          {showTools && (
-            <>
-              <Separator className="flex-shrink-0 bg-gray-700" />
+                <Separator className="flex-shrink-0 bg-gray-700" />
 
-              {/* Drawing tools - this section becomes scrollable */}
-              <div className="flex-1 overflow-y-auto">
+                {/* Drawing tools */}
                 <div className="flex flex-col gap-2">
                   {tools.map((tool) => {
                     const Icon = tool.icon;
@@ -176,9 +176,9 @@ export default function Toolbar({
                     );
                   })}
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </TooltipProvider>
     </div>

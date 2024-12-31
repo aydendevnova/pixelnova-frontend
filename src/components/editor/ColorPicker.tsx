@@ -30,6 +30,7 @@ interface ColorPickerProps {
   onSecondaryColorSelect: (color: string) => void;
   importedColors?: string[];
   onAddCustomColor?: (color: string) => void;
+  onPaletteChange: (palette: keyof typeof PALETTE_INFO) => void;
 }
 
 const ColorButton = ({
@@ -77,6 +78,7 @@ export default function ColorPicker({
   onSecondaryColorSelect,
   importedColors = [],
   onAddCustomColor,
+  onPaletteChange,
 }: ColorPickerProps) {
   const [open, setOpen] = useState(false);
   const [keepOpen, setKeepOpen] = useState(false);
@@ -103,6 +105,11 @@ export default function ColorPicker({
     if (!keepOpen) {
       setOpen(newOpen);
     }
+  };
+
+  const handlePaletteChange = (newPalette: keyof typeof PALETTE_INFO) => {
+    setSelectedPalette(newPalette);
+    onPaletteChange(newPalette);
   };
 
   return (
@@ -190,97 +197,37 @@ export default function ColorPicker({
           {/* Imported colors */}
           {importedColors.length > 0 && (
             <div>
-              <Label className="text-sm text-white">Imported</Label>
-              <ScrollArea className="h-48">
-                <div className="mt-1 grid grid-cols-5 gap-1">
-                  {importedColors.map((color) => (
-                    <div
-                      key={color}
-                      className="relative cursor-pointer"
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        handleColorSelect(color, true);
-                      }}
-                      onClick={() => handleColorSelect(color, false)}
-                    >
-                      <ColorButton
-                        color={color}
-                        isSelected={
-                          primaryColor === color || secondaryColor === color
-                        }
+              <Label className="text-sm text-white">Custom</Label>
+              <div className="overflow-y-auto">
+                <div className="h-full max-h-48">
+                  <div className="mt-1 grid grid-cols-5 gap-1">
+                    {importedColors.map((color) => (
+                      <div
+                        key={color}
+                        className="relative cursor-pointer"
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          handleColorSelect(color, true);
+                        }}
                         onClick={() => handleColorSelect(color, false)}
-                        title={color}
-                        isPrimary={primaryColor === color}
-                        size="normal"
-                      />
-                    </div>
-                  ))}
+                      >
+                        <ColorButton
+                          color={color}
+                          isSelected={
+                            primaryColor === color || secondaryColor === color
+                          }
+                          onClick={() => handleColorSelect(color, false)}
+                          title={color}
+                          isPrimary={primaryColor === color}
+                          size="normal"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </ScrollArea>
+              </div>
             </div>
           )}
-
-          {/* Preset colors */}
-          <div>
-            <div className="my-2 flex items-center justify-between">
-              <Label className="text-sm text-white">Presets</Label>
-              <div className="flex items-center gap-2">
-                <Select
-                  value={selectedPalette}
-                  onValueChange={(value) =>
-                    setSelectedPalette(value as keyof typeof PALETTE_INFO)
-                  }
-                >
-                  <SelectTrigger className="h-7 w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(PALETTE_INFO).map(([key, info]) => (
-                      <SelectItem key={key} value={key}>
-                        {info.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <button
-                  onClick={() => setPresetsExpanded(!presetsExpanded)}
-                  className="text-gray-400 hover:text-white"
-                >
-                  {presetsExpanded ? (
-                    <ChevronUpIcon className="h-4 w-4" />
-                  ) : (
-                    <ChevronDownIcon className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-            {presetsExpanded && (
-              <div className="mt-1 grid grid-cols-5 gap-1">
-                {PALETTE_INFO[selectedPalette]?.colors.map((color) => (
-                  <div
-                    key={color}
-                    className="relative cursor-pointer"
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      handleColorSelect(color, true);
-                    }}
-                    onClick={() => handleColorSelect(color, false)}
-                  >
-                    <ColorButton
-                      color={color}
-                      isSelected={
-                        primaryColor === color || secondaryColor === color
-                      }
-                      onClick={() => handleColorSelect(color, false)}
-                      title={`${color}`}
-                      isPrimary={primaryColor === color}
-                      size="normal"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Add to palette buttons */}
           {onAddCustomColor && (
@@ -309,6 +256,69 @@ export default function ColorPicker({
               )}
             </div>
           )}
+
+          {/* Preset colors */}
+          <div>
+            <div className="my-2 flex items-center justify-between">
+              <Label className="text-sm text-white">Presets</Label>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={selectedPalette}
+                  onValueChange={(value: keyof typeof PALETTE_INFO) => {
+                    handlePaletteChange(value);
+                  }}
+                >
+                  <SelectTrigger className="h-7 w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PALETTE_INFO).map(([key, info]) => (
+                      <SelectItem key={key} value={key}>
+                        {info.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <button
+                  onClick={() => setPresetsExpanded(!presetsExpanded)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  {presetsExpanded ? (
+                    <ChevronUpIcon className="h-4 w-4" />
+                  ) : (
+                    <ChevronDownIcon className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {presetsExpanded && (
+              <div className="mt-1 grid grid-cols-5 gap-1">
+                {PALETTE_INFO[selectedPalette]?.colors.map((color) => (
+                  <div
+                    key={color}
+                    className="relative cursor-pointer"
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      handleColorSelect(color, true);
+                    }}
+                    onClick={() => handleColorSelect(color, false)}
+                  >
+                    <ColorButton
+                      color={color}
+                      isSelected={
+                        primaryColor === color || secondaryColor === color
+                      }
+                      onClick={() => handleColorSelect(color, false)}
+                      title={`${color}`}
+                      isPrimary={primaryColor === color}
+                      size="normal"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </PopoverContent>
     </Popover>
