@@ -1,5 +1,6 @@
 import { Tool, ToolContext, SelectionState } from "@/types/editor";
 import { TextSelect } from "lucide-react";
+import { getCanvasCoordinates } from "@/lib/utils/coordinates";
 
 // Add helper function for clamping coordinates
 function clampCoordinates(x: number, y: number, width: number, height: number) {
@@ -9,6 +10,9 @@ function clampCoordinates(x: number, y: number, width: number, height: number) {
   };
 }
 
+// Minimum size for a selection to be valid
+const MIN_SELECTION_SIZE = 1;
+
 export const SelectTool: Tool = {
   id: "select",
   name: "Select",
@@ -16,7 +20,10 @@ export const SelectTool: Tool = {
   shortcut: "M",
   cursor: "crosshair",
 
-  onMouseDown: (e: React.MouseEvent, context: ToolContext) => {
+  onMouseDown: (
+    e: React.MouseEvent<HTMLCanvasElement>,
+    context: ToolContext,
+  ) => {
     const { canvas, viewport, selection, setSelection } = context;
     const coords = getCanvasCoordinates(e, canvas, viewport);
 
@@ -71,7 +78,10 @@ export const SelectTool: Tool = {
     });
   },
 
-  onMouseMove: (e: React.MouseEvent, context: ToolContext) => {
+  onMouseMove: (
+    e: React.MouseEvent<HTMLCanvasElement>,
+    context: ToolContext,
+  ) => {
     const { canvas, viewport, selection, setSelection } = context;
     if (!selection) return;
 
@@ -98,6 +108,7 @@ export const SelectTool: Tool = {
         canvas.width,
         canvas.height,
       );
+
       setSelection({
         ...selection,
         endX: clampedEnd.x,
@@ -107,7 +118,7 @@ export const SelectTool: Tool = {
     }
   },
 
-  onMouseUp: (e: React.MouseEvent, context: ToolContext) => {
+  onMouseUp: (e: React.MouseEvent<HTMLCanvasElement>, context: ToolContext) => {
     const {
       canvas,
       viewport,
@@ -173,6 +184,24 @@ export const SelectTool: Tool = {
         tempCanvas.height,
       );
 
+      // Push to history after moving selection
+      if (context.pushHistory) {
+        context.pushHistory({
+          type: "editor" as const,
+          layers: layers.map((layer) => ({
+            ...layer,
+            imageData: layer.imageData
+              ? new ImageData(
+                  new Uint8ClampedArray(layer.imageData.data),
+                  layer.imageData.width,
+                  layer.imageData.height,
+                )
+              : null,
+          })),
+          selectedLayerId,
+        });
+      }
+
       // Clear the selection
       setSelection({
         isSelecting: false,
@@ -209,8 +238,8 @@ export const SelectTool: Tool = {
       const width = bounds.maxX - bounds.minX;
       const height = bounds.maxY - bounds.minY;
 
-      // Only create a selection if it has a non-zero size
-      if (width > 0 && height > 0) {
+      // Only create a selection if it meets minimum size requirements
+      if (width >= MIN_SELECTION_SIZE && height >= MIN_SELECTION_SIZE) {
         const selectedLayer = layers.find(
           (layer) => layer.id === selectedLayerId,
         );
@@ -248,18 +277,22 @@ export const SelectTool: Tool = {
           originalX: bounds.minX,
           originalY: bounds.minY,
         });
+      } else {
+        // Clear the selection if it's too small
+        setSelection({
+          isSelecting: false,
+          startX: 0,
+          startY: 0,
+          endX: 0,
+          endY: 0,
+          isMoving: false,
+          moveStartX: 0,
+          moveStartY: 0,
+          selectedImageData: undefined,
+          originalX: undefined,
+          originalY: undefined,
+        });
       }
     }
   },
 };
-
-function getCanvasCoordinates(
-  e: React.MouseEvent,
-  canvas: HTMLCanvasElement,
-  viewport: { x: number; y: number; scale: number },
-) {
-  const rect = canvas.getBoundingClientRect();
-  const x = Math.floor((e.clientX - rect.left - viewport.x) / viewport.scale);
-  const y = Math.floor((e.clientY - rect.top - viewport.y) / viewport.scale);
-  return { x, y };
-}

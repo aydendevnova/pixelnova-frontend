@@ -115,7 +115,7 @@ export default function ColorPicker({
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <div className="absolute -top-16 right-4 z-50">
+        <div className="absolute right-4 top-16 z-50 mt-2">
           <div className="flex cursor-pointer items-center gap-2 rounded-lg bg-gray-900/90 p-2 shadow-lg backdrop-blur">
             <div className="relative">
               <div
