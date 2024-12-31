@@ -1205,68 +1205,78 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
       const touch = e.touches[0];
       const coords = getTouchCoordinates(touch, displayCanvas, viewport);
-      setHoverPosition(coords); // Important for line preview
+      setHoverPosition(coords);
 
-      setTouchState((prev) => ({
-        ...prev,
-        touchStartX: touch.clientX,
-        touchStartY: touch.clientY,
-        lastTouchX: touch.clientX,
-        lastTouchY: touch.clientY,
-        initialPinchDistance:
-          e.touches.length === 2 && e.touches[1]
-            ? Math.hypot(
-                (e.touches[0]?.clientX ?? 0) - (e.touches[1]?.clientX ?? 0),
-                (e.touches[0]?.clientY ?? 0) - (e.touches[1]?.clientY ?? 0),
-              )
-            : null,
-        initialScale: e.touches.length === 2 ? viewport.scale : null,
-      }));
-
-      // Only start drawing if a tool is selected and it's not the pan tool
-      if (e.touches.length === 1 && selectedTool !== "pan") {
-        setIsMouseDown(true);
-        const tool = getToolById(selectedTool);
-        const ctx = drawingCanvas.getContext("2d", {
-          willReadFrequently: true,
-        });
-        if (!ctx) return;
-
-        const toolContext = {
-          canvas: drawingCanvas,
-          ctx,
-          viewport: { x: 0, y: 0, scale: 1 },
-          primaryColor,
-          secondaryColor,
-          brushSize,
-          bucketTolerance,
-          layers,
-          selectedLayerId,
-          onColorPick,
-          selection,
-          setSelection,
-          shouldClearOriginal,
-        };
-
-        tool.onMouseDown?.(
-          {
-            ...e,
-            clientX: coords.x,
-            clientY: coords.y,
-            button: 0,
-            nativeEvent: {
-              ...e.nativeEvent,
-              clientX: coords.x,
-              clientY: coords.y,
-            },
-          } as any,
-          toolContext,
+      if (e.touches.length === 2 && e.touches[1]) {
+        // Starting a pinch gesture
+        const distance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY,
         );
 
-        // Render immediately after tool start
-        requestAnimationFrame(() => {
-          render();
+        setTouchState({
+          touchStartX: touch.clientX,
+          touchStartY: touch.clientY,
+          lastTouchX: touch.clientX,
+          lastTouchY: touch.clientY,
+          initialPinchDistance: distance,
+          initialScale: viewport.scale,
         });
+      } else if (e.touches.length === 1) {
+        // Single touch - preserve the last scale but update positions
+        setTouchState((prev) => ({
+          ...prev,
+          touchStartX: touch.clientX,
+          touchStartY: touch.clientY,
+          lastTouchX: touch.clientX,
+          lastTouchY: touch.clientY,
+          initialPinchDistance: null,
+        }));
+
+        // Only start drawing if a tool is selected and it's not the pan tool
+        if (selectedTool !== "pan") {
+          setIsMouseDown(true);
+          const tool = getToolById(selectedTool);
+          const ctx = drawingCanvas.getContext("2d", {
+            willReadFrequently: true,
+          });
+          if (!ctx) return;
+
+          const toolContext = {
+            canvas: drawingCanvas,
+            ctx,
+            viewport: { x: 0, y: 0, scale: 1 },
+            primaryColor,
+            secondaryColor,
+            brushSize,
+            bucketTolerance,
+            layers,
+            selectedLayerId,
+            onColorPick,
+            selection,
+            setSelection,
+            shouldClearOriginal,
+          };
+
+          tool.onMouseDown?.(
+            {
+              ...e,
+              clientX: coords.x,
+              clientY: coords.y,
+              button: 0,
+              nativeEvent: {
+                ...e.nativeEvent,
+                clientX: coords.x,
+                clientY: coords.y,
+              },
+            } as any,
+            toolContext,
+          );
+
+          requestAnimationFrame(() => {
+            render();
+          });
+        }
       }
     },
     [
@@ -1295,9 +1305,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
       if (e.touches.length === 2 && e.touches[1]) {
         // Pinch to zoom
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
         const currentDistance = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY,
+          touch1.clientX - touch2.clientX,
+          touch1.clientY - touch2.clientY,
         );
 
         if (touchState.initialPinchDistance && touchState.initialScale) {
@@ -1306,15 +1318,18 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             touchState.initialScale;
           const newScale = Math.max(1, Math.min(32, scale));
 
-          const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-          const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-
           const rect = containerRef.current?.getBoundingClientRect();
           if (!rect) return;
 
+          // Calculate the center point of the pinch gesture relative to the canvas
+          const centerX = (touch1.clientX + touch2.clientX) / 2 - rect.left;
+          const centerY = (touch1.clientY + touch2.clientY) / 2 - rect.top;
+
+          // Convert the center point to world coordinates before scaling
           const worldX = (centerX - viewport.x) / viewport.scale;
           const worldY = (centerY - viewport.y) / viewport.scale;
 
+          // Calculate the new viewport position to keep the center point fixed
           const newX = centerX - worldX * newScale;
           const newY = centerY - worldY * newScale;
 
@@ -1323,11 +1338,18 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             y: newY,
             scale: newScale,
           });
+
+          // Update touch state with both touch positions
+          setTouchState((prev) => ({
+            ...prev,
+            lastTouchX: touch1.clientX,
+            lastTouchY: touch1.clientY,
+          }));
         }
       } else if (e.touches.length === 1) {
         const touch = e.touches[0];
         const coords = getTouchCoordinates(touch, displayCanvas, viewport);
-        setHoverPosition(coords); // Important for line preview
+        setHoverPosition(coords);
 
         if (isMouseDown && selectedTool !== "pan") {
           // Drawing
@@ -1353,7 +1375,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             shouldClearOriginal,
           };
 
-          // Call tool's move handler
           tool.onMouseMove?.(
             {
               ...e,
@@ -1369,7 +1390,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             toolContext,
           );
 
-          // Always render after any tool interaction
           requestAnimationFrame(() => {
             render();
           });
@@ -1377,7 +1397,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           touchState.lastTouchX !== null &&
           touchState.lastTouchY !== null
         ) {
-          // Panning - now enabled by default for single touch when not drawing
+          // Only pan if we have a valid last touch position
           const deltaX = touch.clientX - touchState.lastTouchX;
           const deltaY = touch.clientY - touchState.lastTouchY;
 
@@ -1386,14 +1406,14 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             x: prev.x + deltaX,
             y: prev.y + deltaY,
           }));
-        }
 
-        // Update last touch position
-        setTouchState((prev) => ({
-          ...prev,
-          lastTouchX: touch.clientX,
-          lastTouchY: touch.clientY,
-        }));
+          // Update the last touch position
+          setTouchState((prev) => ({
+            ...prev,
+            lastTouchX: touch.clientX,
+            lastTouchY: touch.clientY,
+          }));
+        }
       }
     },
     [
@@ -1420,15 +1440,29 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       e.preventDefault();
       const displayCanvas = displayCanvasRef.current;
       const drawingCanvas = drawingCanvasRef.current;
-      if (!displayCanvas || !drawingCanvas || !e.changedTouches[0]) return;
+      if (!displayCanvas || !drawingCanvas) return;
 
-      if (e.touches.length === 0) {
+      // If we still have touches, update the state for the remaining touches
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        if (touch) {
+          setTouchState((prev) => ({
+            ...prev,
+            lastTouchX: touch.clientX,
+            lastTouchY: touch.clientY,
+            initialPinchDistance: null,
+            initialScale: viewport.scale,
+          }));
+        }
+      } else if (e.touches.length === 0) {
+        // All touches ended
         setIsMouseDown(false);
-        setHoverPosition(null); // Clear hover position when touch ends
+        setHoverPosition(null);
 
-        if (isMouseDown) {
+        const changedTouch = e.changedTouches[0];
+        if (isMouseDown && changedTouch) {
           const coords = getTouchCoordinates(
-            e.changedTouches[0],
+            changedTouch,
             displayCanvas,
             viewport,
           );
@@ -1469,19 +1503,20 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             toolContext,
           );
 
-          // Final render after tool end
           requestAnimationFrame(() => {
             render();
           });
         }
 
-        setTouchState((prev) => ({
-          ...prev,
+        // Reset touch state while preserving the last scale
+        setTouchState({
+          touchStartX: 0,
+          touchStartY: 0,
           initialPinchDistance: null,
-          initialScale: null,
+          initialScale: viewport.scale,
           lastTouchX: null,
           lastTouchY: null,
-        }));
+        });
       }
     },
     [
