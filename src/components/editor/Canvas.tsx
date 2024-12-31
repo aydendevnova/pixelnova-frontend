@@ -24,6 +24,7 @@ import {
 } from "@/lib/utils/coordinates";
 import { useEditorStore } from "@/store/editorStore";
 import { useUserAgent } from "@/lib/utils/user-agent";
+import { useHistoryStore } from "@/store/historyStore";
 
 interface CanvasProps {
   width: number;
@@ -85,6 +86,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   ref,
 ) {
   const { shouldClearOriginal } = useEditorStore();
+  const { pushHistory } = useHistoryStore();
   const { isMobile } = useUserAgent();
   const containerRef = useRef<HTMLDivElement>(null);
   const displayCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -917,6 +919,24 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         toolContext,
       );
       render();
+
+      // Store history state after drawing
+      if (layers.length > 0) {
+        pushHistory({
+          type: "editor",
+          layers: layers.map((layer) => ({
+            ...layer,
+            imageData: layer.imageData
+              ? new ImageData(
+                  new Uint8ClampedArray(layer.imageData.data),
+                  layer.imageData.width,
+                  layer.imageData.height,
+                )
+              : null,
+          })),
+          selectedLayerId,
+        });
+      }
     },
     [
       isSpacePressed,
@@ -933,6 +953,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setSelection,
       shouldClearOriginal,
       render,
+      pushHistory,
     ],
   );
 
@@ -1564,6 +1585,24 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           requestAnimationFrame(() => {
             render();
           });
+
+          // Store history state after drawing
+          if (layers.length > 0) {
+            pushHistory({
+              type: "editor",
+              layers: layers.map((layer) => ({
+                ...layer,
+                imageData: layer.imageData
+                  ? new ImageData(
+                      new Uint8ClampedArray(layer.imageData.data),
+                      layer.imageData.width,
+                      layer.imageData.height,
+                    )
+                  : null,
+              })),
+              selectedLayerId,
+            });
+          }
         }
 
         // Reset touch state while preserving the last scale
@@ -1594,6 +1633,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setSelection,
       shouldClearOriginal,
       render,
+      pushHistory,
     ],
   );
 
@@ -1629,7 +1669,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   return (
     <div
       ref={containerRef}
-      className="h-full w-full touch-none overflow-hidden bg-gray-800"
+      className="relative h-full w-full touch-none overflow-hidden bg-gray-800"
     >
       <canvas
         ref={displayCanvasRef}
@@ -1640,6 +1680,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             WebkitTouchCallout: "none",
             WebkitUserSelect: "none",
             WebkitTapHighlightColor: "transparent",
+            width: "100%",
+            height: "100%",
           } as React.CSSProperties
         }
         onMouseDown={handleMouseDown}
