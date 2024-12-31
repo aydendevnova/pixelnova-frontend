@@ -1176,7 +1176,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         initialScale: e.touches.length === 2 ? viewport.scale : null,
       }));
 
-      if (e.touches.length === 1) {
+      // Only start drawing if a tool is selected and it's not the pan tool
+      if (e.touches.length === 1 && selectedTool !== "pan") {
         setIsMouseDown(true);
         const tool = getToolById(selectedTool);
         const ctx = drawingCanvas.getContext("2d", {
@@ -1281,7 +1282,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         const coords = getTouchCoordinates(touch, displayCanvas, viewport);
         setHoverPosition(coords); // Important for line preview
 
-        if (isMouseDown) {
+        if (isMouseDown && selectedTool !== "pan") {
           // Drawing
           const tool = getToolById(selectedTool);
           const ctx = drawingCanvas.getContext("2d", {
@@ -1329,7 +1330,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           touchState.lastTouchX !== null &&
           touchState.lastTouchY !== null
         ) {
-          // Panning
+          // Panning - now enabled by default for single touch when not drawing
           const deltaX = touch.clientX - touchState.lastTouchX;
           const deltaY = touch.clientY - touchState.lastTouchY;
 
@@ -1340,6 +1341,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           }));
         }
 
+        // Update last touch position
         setTouchState((prev) => ({
           ...prev,
           lastTouchX: touch.clientX,
