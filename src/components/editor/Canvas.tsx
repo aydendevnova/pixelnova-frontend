@@ -60,6 +60,7 @@ interface TouchState {
   initialScale: number | null;
   lastTouchX: number | null;
   lastTouchY: number | null;
+  touchStartTime: number | null;
 }
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
@@ -127,6 +128,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     initialScale: null,
     lastTouchX: null,
     lastTouchY: null,
+    touchStartTime: null,
   });
 
   // Create offscreen canvas for checkerboard pattern
@@ -1207,8 +1209,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const coords = getTouchCoordinates(touch, displayCanvas, viewport);
       setHoverPosition(coords);
 
+      const now = Date.now();
+
       if (e.touches.length === 2 && e.touches[1]) {
-        // Starting a pinch gesture
+        // Starting a pinch gesture - disable drawing
+        setIsMouseDown(false);
         const distance = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY,
@@ -1221,6 +1226,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           lastTouchY: touch.clientY,
           initialPinchDistance: distance,
           initialScale: viewport.scale,
+          touchStartTime: now,
         });
       } else if (e.touches.length === 1) {
         // Single touch - preserve the last scale but update positions
@@ -1231,52 +1237,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           lastTouchX: touch.clientX,
           lastTouchY: touch.clientY,
           initialPinchDistance: null,
+          touchStartTime: now,
         }));
 
-        // Only start drawing if a tool is selected and it's not the pan tool
-        if (selectedTool !== "pan") {
-          setIsMouseDown(true);
-          const tool = getToolById(selectedTool);
-          const ctx = drawingCanvas.getContext("2d", {
-            willReadFrequently: true,
-          });
-          if (!ctx) return;
-
-          const toolContext = {
-            canvas: drawingCanvas,
-            ctx,
-            viewport: { x: 0, y: 0, scale: 1 },
-            primaryColor,
-            secondaryColor,
-            brushSize,
-            bucketTolerance,
-            layers,
-            selectedLayerId,
-            onColorPick,
-            selection,
-            setSelection,
-            shouldClearOriginal,
-          };
-
-          tool.onMouseDown?.(
-            {
-              ...e,
-              clientX: coords.x,
-              clientY: coords.y,
-              button: 0,
-              nativeEvent: {
-                ...e.nativeEvent,
-                clientX: coords.x,
-                clientY: coords.y,
-              },
-            } as any,
-            toolContext,
-          );
-
-          requestAnimationFrame(() => {
-            render();
-          });
-        }
+        // Don't start drawing immediately - wait to see if it's a pinch gesture
+        // Tool activation will happen in handleTouchMove after the delay
       }
     },
     [
@@ -1292,6 +1257,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       selection,
       setSelection,
       shouldClearOriginal,
+      touchState,
       render,
     ],
   );
@@ -1303,8 +1269,12 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const drawingCanvas = drawingCanvasRef.current;
       if (!displayCanvas || !drawingCanvas || !e.touches[0]) return;
 
+      const now = Date.now();
+      const touchDelay = 100; // Wait 100ms before activating tool to detect potential pinch
+
       if (e.touches.length === 2 && e.touches[1]) {
-        // Pinch to zoom
+        // Pinch to zoom - disable drawing
+        setIsMouseDown(false);
         const touch1 = e.touches[0];
         const touch2 = e.touches[1];
         const currentDistance = Math.hypot(
@@ -1351,8 +1321,61 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         const coords = getTouchCoordinates(touch, displayCanvas, viewport);
         setHoverPosition(coords);
 
-        if (isMouseDown && selectedTool !== "pan") {
-          // Drawing
+        // Only activate drawing if:
+        // 1. We're not in a pinch gesture
+        // 2. Enough time has passed since the touch started
+        // 3. The tool isn't pan
+        const shouldActivateTool =
+          !touchState.initialPinchDistance &&
+          touchState.touchStartTime &&
+          now - touchState.touchStartTime > touchDelay &&
+          selectedTool !== "pan";
+
+        if (!isMouseDown && shouldActivateTool) {
+          // First activation of the tool after delay
+          setIsMouseDown(true);
+          const tool = getToolById(selectedTool);
+          const ctx = drawingCanvas.getContext("2d", {
+            willReadFrequently: true,
+          });
+          if (!ctx) return;
+
+          const toolContext = {
+            canvas: drawingCanvas,
+            ctx,
+            viewport: { x: 0, y: 0, scale: 1 },
+            primaryColor,
+            secondaryColor,
+            brushSize,
+            bucketTolerance,
+            layers,
+            selectedLayerId,
+            onColorPick,
+            selection,
+            setSelection,
+            shouldClearOriginal,
+          };
+
+          tool.onMouseDown?.(
+            {
+              ...e,
+              clientX: coords.x,
+              clientY: coords.y,
+              button: 0,
+              nativeEvent: {
+                ...e.nativeEvent,
+                clientX: coords.x,
+                clientY: coords.y,
+              },
+            } as any,
+            toolContext,
+          );
+
+          requestAnimationFrame(() => {
+            render();
+          });
+        } else if (isMouseDown && shouldActivateTool) {
+          // Continue drawing if already started
           const tool = getToolById(selectedTool);
           const ctx = drawingCanvas.getContext("2d", {
             willReadFrequently: true,
@@ -1397,7 +1420,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           touchState.lastTouchX !== null &&
           touchState.lastTouchY !== null
         ) {
-          // Only pan if we have a valid last touch position
+          // Handle panning
           const deltaX = touch.clientX - touchState.lastTouchX;
           const deltaY = touch.clientY - touchState.lastTouchY;
 
@@ -1452,6 +1475,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             lastTouchY: touch.clientY,
             initialPinchDistance: null,
             initialScale: viewport.scale,
+            touchStartTime: prev.touchStartTime,
           }));
         }
       } else if (e.touches.length === 0) {
@@ -1516,6 +1540,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           initialScale: viewport.scale,
           lastTouchX: null,
           lastTouchY: null,
+          touchStartTime: null,
         });
       }
     },

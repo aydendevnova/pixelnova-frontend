@@ -22,6 +22,7 @@ import {
 } from "../ui/select";
 import { PALETTE_INFO } from "@/lib/utils/colorPalletes";
 import { Pin, PinOff } from "lucide-react";
+import { useUserAgent } from "@/lib/utils/user-agent";
 
 interface ColorPickerProps {
   primaryColor: string;
@@ -80,6 +81,7 @@ export default function ColorPicker({
   onAddCustomColor,
   onPaletteChange,
 }: ColorPickerProps) {
+  const { isMobile } = useUserAgent();
   const [open, setOpen] = useState(false);
   const [keepOpen, setKeepOpen] = useState(false);
   const [selectedPalette, setSelectedPalette] =
@@ -130,21 +132,23 @@ export default function ColorPicker({
               />
               <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-blue-500" />
             </div>
-            <div className="relative">
-              <div
-                className={cn(
-                  "h-8 w-8 rounded border border-gray-600",
-                  secondaryColor === "transparent" ? "bg-checkerboard" : "",
-                )}
-                style={{
-                  backgroundColor:
-                    secondaryColor === "transparent"
-                      ? undefined
-                      : secondaryColor,
-                }}
-              />
-              <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-green-500" />
-            </div>
+            {!isMobile && (
+              <div className="relative">
+                <div
+                  className={cn(
+                    "h-8 w-8 rounded border border-gray-600",
+                    secondaryColor === "transparent" ? "bg-checkerboard" : "",
+                  )}
+                  style={{
+                    backgroundColor:
+                      secondaryColor === "transparent"
+                        ? undefined
+                        : secondaryColor,
+                  }}
+                />
+                <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-green-500" />
+              </div>
+            )}
           </div>
         </div>
       </PopoverTrigger>
@@ -181,17 +185,21 @@ export default function ColorPicker({
                 className="m-0 h-8 w-full cursor-pointer rounded bg-gray-700 p-0"
               />
             </div>
-            <div className="flex-1">
-              <Label className="text-xs text-gray-400">Secondary</Label>
-              <Input
-                type="color"
-                value={
-                  secondaryColor === "transparent" ? "#FFFFFF" : secondaryColor
-                }
-                onChange={(e) => onSecondaryColorSelect(e.target.value)}
-                className="m-0 h-8 w-full cursor-pointer rounded bg-gray-700 p-0"
-              />
-            </div>
+            {!isMobile && (
+              <div className="flex-1">
+                <Label className="text-xs text-gray-400">Secondary</Label>
+                <Input
+                  type="color"
+                  value={
+                    secondaryColor === "transparent"
+                      ? "#FFFFFF"
+                      : secondaryColor
+                  }
+                  onChange={(e) => onSecondaryColorSelect(e.target.value)}
+                  className="m-0 h-8 w-full cursor-pointer rounded bg-gray-700 p-0"
+                />
+              </div>
+            )}
           </div>
 
           {/* Imported colors */}
@@ -243,7 +251,7 @@ export default function ColorPicker({
                   Add Primary
                 </Button>
               )}
-              {!isColorInPalette(secondaryColor) && (
+              {!isColorInPalette(secondaryColor) && !isMobile && (
                 <Button
                   onClick={() => onAddCustomColor(secondaryColor)}
                   variant="default"
