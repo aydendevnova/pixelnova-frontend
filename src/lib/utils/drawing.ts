@@ -99,6 +99,7 @@ export function getPixelColor(
   x: number,
   y: number,
   layers: Layer[],
+  selectedLayerId?: string,
 ): string | null {
   // Create a temporary canvas to sample colors
   const tempCanvas = document.createElement("canvas");
@@ -116,19 +117,52 @@ export function getPixelColor(
   const tempCtx = tempCanvas.getContext("2d");
   if (!tempCtx) return null;
 
-  // Draw all visible layers from bottom to top
-  for (const layer of visibleLayers) {
-    if (layer?.imageData) {
-      tempCtx.putImageData(layer.imageData, 0, 0);
+  // If we have a selected layer, start from there and search upwards
+  if (selectedLayerId) {
+    const selectedLayerIndex = visibleLayers.findIndex(
+      (layer) => layer.id === selectedLayerId,
+    );
+    if (selectedLayerIndex !== -1) {
+      // First check the selected layer
+      const selectedLayer = visibleLayers[selectedLayerIndex];
+      if (selectedLayer?.imageData) {
+        tempCtx.putImageData(selectedLayer.imageData, 0, 0);
+        const pixel = tempCtx.getImageData(x, y, 1, 1).data;
+        if (pixel[3] !== 0) {
+          // Found a non-transparent pixel in the selected layer
+          if (pixel[3] === 255) {
+            return `#${[pixel[0], pixel[1], pixel[2]]
+              .map((x) => x?.toString(16).padStart(2, "0"))
+              .join("")
+              .toUpperCase()}`;
+          }
+          return `rgba(${pixel[0]}, ${pixel[1]}, ${pixel[2]}, ${(pixel[3] ?? 0) / 255})`;
+        }
+
+        // If not found in selected layer, check layers above it
+        for (let i = selectedLayerIndex - 1; i >= 0; i--) {
+          const layer = visibleLayers[i];
+          if (layer?.imageData) {
+            tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.putImageData(layer.imageData, 0, 0);
+            const pixel = tempCtx.getImageData(x, y, 1, 1).data;
+            if (pixel[3] !== 0) {
+              // Found a non-transparent pixel
+              if (pixel[3] === 255) {
+                return `#${[pixel[0], pixel[1], pixel[2]]
+                  .map((x) => x?.toString(16).padStart(2, "0"))
+                  .join("")
+                  .toUpperCase()}`;
+              }
+              return `rgba(${pixel[0]}, ${pixel[1]}, ${pixel[2]}, ${(pixel[3] ?? 0) / 255})`;
+            }
+          }
+        }
+      }
     }
   }
 
-  // Get the color data at the specified pixel
-  const pixel = tempCtx.getImageData(x, y, 1, 1).data;
-
-  // Convert to rgba string
-  if (!pixel[3] || pixel[3] === 0) return "transparent";
-  return `rgba(${pixel[0]}, ${pixel[1]}, ${pixel[2]}, ${pixel[3] / 255})`;
+  return "transparent";
 }
 
 export function drawToolPreview(

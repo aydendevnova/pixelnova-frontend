@@ -11,9 +11,9 @@ class EyedropperToolImpl extends BaseTool {
   cursor = "crosshair";
 
   onMouseDown(e: React.MouseEvent, context: ToolContext): void {
-    const { canvas, viewport, layers, onColorPick } = context;
+    const { canvas, viewport, layers, selectedLayerId, onColorPick } = context;
     const coords = this.getCoordinates(e, context);
-    const color = getPixelColor(coords.x, coords.y, layers);
+    const color = getPixelColor(coords.x, coords.y, layers, selectedLayerId);
 
     if (color && onColorPick) {
       onColorPick(color, e.button === 2);
