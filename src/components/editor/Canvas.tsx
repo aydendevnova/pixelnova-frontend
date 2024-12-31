@@ -37,12 +37,15 @@ interface CanvasProps {
   onToolSelect: (tool: ToolType) => void;
   layers: Layer[];
   selectedLayerId: string;
+  setValidSelection: (isValid: boolean) => void;
+  onDeleteSelection: () => void;
 }
 
 export interface CanvasRef {
   clearCanvas: () => void;
   importImage: (imageData: ImageData) => void;
   getLayerImageData: () => ImageData | null;
+  deleteSelection: () => void;
 }
 
 // Add type guard as a standalone function
@@ -73,6 +76,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onToolSelect,
     layers,
     selectedLayerId,
+    setValidSelection,
+    onDeleteSelection,
   },
   ref,
 ) {
@@ -177,7 +182,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       if (pattern) {
         const patternTransform = new DOMMatrix()
           .translateSelf(0, 0)
-          .scaleSelf(1 / viewport.scale);
+          .scaleSelf(0.0625);
         pattern.setTransform(patternTransform);
         ctx.fillStyle = pattern;
         ctx.fillRect(0, 0, drawingCanvas.width, drawingCanvas.height);
@@ -443,6 +448,36 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     ],
   );
 
+  // Helper functions
+  const handlePan = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (!isPanning) return;
+
+      setViewport((prev) => ({
+        ...prev,
+        x: prev.x + e.movementX,
+        y: prev.y + e.movementY,
+      }));
+    },
+    [isPanning],
+  );
+
+  const clearSelection = useCallback(() => {
+    setSelection({
+      isSelecting: false,
+      startX: 0,
+      startY: 0,
+      endX: 0,
+      endY: 0,
+      isMoving: false,
+      moveStartX: 0,
+      moveStartY: 0,
+      selectedImageData: undefined,
+      originalX: undefined,
+      originalY: undefined,
+    });
+  }, []);
+
   // Update clearCanvas to clear the selected layer
   useImperativeHandle(
     ref,
@@ -485,8 +520,48 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         );
         return selectedLayer?.imageData ?? null;
       },
+
+      deleteSelection: () => {
+        if (!selection.selectedImageData) return;
+
+        // Get the selected layer
+        const selectedLayer = layers.find(
+          (layer) => layer.id === selectedLayerId,
+        );
+        if (!selectedLayer || !selectedLayer.visible) return;
+
+        // Create a temporary canvas
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        const tempCtx = tempCanvas.getContext("2d");
+        if (!tempCtx) return;
+
+        // Draw existing layer data
+        if (selectedLayer.imageData) {
+          tempCtx.putImageData(selectedLayer.imageData, 0, 0);
+        }
+
+        // Calculate deletion coordinates
+        const deleteX = selection.originalX ?? 0;
+        const deleteY = selection.originalY ?? 0;
+        const deleteWidth = selection.selectedImageData.width;
+        const deleteHeight = selection.selectedImageData.height;
+
+        // Clear the selected area
+        tempCtx.clearRect(deleteX, deleteY, deleteWidth, deleteHeight);
+
+        // Update layer's imageData
+        selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
+
+        // Clear the selection state
+        clearSelection();
+
+        // Trigger render
+        render();
+      },
     }),
-    [width, height, layers, selectedLayerId],
+    [width, height, layers, selectedLayerId, selection, clearSelection, render],
   );
 
   // Initialize canvases
@@ -554,36 +629,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       window.removeEventListener("resize", handleResize);
     };
   }, [width, height]);
-
-  // Helper functions
-  const handlePan = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!isPanning) return;
-
-      setViewport((prev) => ({
-        ...prev,
-        x: prev.x + e.movementX,
-        y: prev.y + e.movementY,
-      }));
-    },
-    [isPanning],
-  );
-
-  const clearSelection = useCallback(() => {
-    setSelection({
-      isSelecting: false,
-      startX: 0,
-      startY: 0,
-      endX: 0,
-      endY: 0,
-      isMoving: false,
-      moveStartX: 0,
-      moveStartY: 0,
-      selectedImageData: undefined,
-      originalX: undefined,
-      originalY: undefined,
-    });
-  }, []);
 
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
@@ -913,41 +958,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         (e.code === "Delete" || e.code === "Backspace") &&
         selection.selectedImageData
       ) {
-        // Get the selected layer
-        const selectedLayer = layers.find(
-          (layer) => layer.id === selectedLayerId,
-        );
-        if (!selectedLayer || !selectedLayer.visible) return;
-
-        // Create a temporary canvas
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = width;
-        tempCanvas.height = height;
-        const tempCtx = tempCanvas.getContext("2d");
-        if (!tempCtx) return;
-
-        // Draw existing layer data
-        if (selectedLayer.imageData) {
-          tempCtx.putImageData(selectedLayer.imageData, 0, 0);
-        }
-
-        // Calculate deletion coordinates
-        const deleteX = selection.originalX ?? 0;
-        const deleteY = selection.originalY ?? 0;
-        const deleteWidth = selection.selectedImageData.width;
-        const deleteHeight = selection.selectedImageData.height;
-
-        // Clear the selected area
-        tempCtx.clearRect(deleteX, deleteY, deleteWidth, deleteHeight);
-
-        // Update layer's imageData
-        selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
-
-        // Clear the selection state
-        clearSelection();
-
-        // Trigger render
-        render();
+        deleteSelection();
       }
     };
 
@@ -963,6 +974,42 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onToolSelect,
     render,
   ]);
+
+  const deleteSelection = () => {
+    // Get the selected layer
+    const selectedLayer = layers.find((layer) => layer.id === selectedLayerId);
+    if (!selectedLayer || !selectedLayer.visible) return;
+
+    // Create a temporary canvas
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const tempCtx = tempCanvas.getContext("2d");
+    if (!tempCtx) return;
+
+    // Draw existing layer data
+    if (selectedLayer.imageData) {
+      tempCtx.putImageData(selectedLayer.imageData, 0, 0);
+    }
+
+    // Calculate deletion coordinates
+    const deleteX = selection.originalX ?? 0;
+    const deleteY = selection.originalY ?? 0;
+    const deleteWidth = selection.selectedImageData?.width ?? 0;
+    const deleteHeight = selection.selectedImageData?.height ?? 0;
+
+    // Clear the selected area
+    tempCtx.clearRect(deleteX, deleteY, deleteWidth, deleteHeight);
+
+    // Update layer's imageData
+    selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
+
+    // Clear the selection state
+    clearSelection();
+
+    // Trigger render
+    render();
+  };
 
   // Event listeners with cleanup
   useEffect(() => {
@@ -1478,6 +1525,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
     };
   }, []);
+
+  // Update isValidSelection when selection state changes
+  useEffect(() => {
+    setValidSelection(!!selection.selectedImageData);
+  }, [selection.selectedImageData, setValidSelection]);
 
   return (
     <div

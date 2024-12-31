@@ -55,6 +55,8 @@ interface TopMenuBarProps {
   showGrid: boolean;
   onToggleGrid: () => void;
   layers: Layer[];
+  isValidSelection: boolean;
+  onDeleteSelection: () => void;
 }
 
 export default function TopMenuBar({
@@ -69,6 +71,8 @@ export default function TopMenuBar({
   onBrushSizeChange,
   showGrid,
   onToggleGrid,
+  isValidSelection,
+  onDeleteSelection,
   layers,
 }: TopMenuBarProps) {
   const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
@@ -394,7 +398,7 @@ export default function TopMenuBar({
               onCheckedChange={setShouldClearOriginal}
             />
             <Label htmlFor="clear-original" className="text-sm text-gray-300">
-              Move (instead of copy)
+              Move <span className="hidden md:inline">(instead of copy)</span>
             </Label>
           </div>
         )}
@@ -402,6 +406,12 @@ export default function TopMenuBar({
         {(selectedTool === "eyedropper" || selectedTool === "pan") && (
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-400">No options available</span>
+          </div>
+        )}
+
+        {selectedTool === "select" && isValidSelection && (
+          <div className="flex items-center gap-3">
+            <Button onClick={onDeleteSelection}>Delete</Button>
           </div>
         )}
       </div>

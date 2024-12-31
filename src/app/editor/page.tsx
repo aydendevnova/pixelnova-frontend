@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Canvas from "@/components/editor/Canvas";
+import { useEffect, useState, useRef } from "react";
+import Canvas, { CanvasRef } from "@/components/editor/Canvas";
 import Toolbar from "@/components/editor/Toolbar";
 import ColorPicker from "@/components/editor/ColorPicker";
 import LayersPanel from "@/components/editor/LayersPanel";
@@ -140,6 +140,15 @@ export default function Editor() {
     });
   };
 
+  const [isValidSelection, setIsValidSelection] = useState(false);
+  const canvasRef = useRef<CanvasRef>(null);
+
+  const onDeleteSelection = () => {
+    if (canvasRef.current?.deleteSelection) {
+      canvasRef.current.deleteSelection();
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-gray-900">
       <ErrorBoundary
@@ -162,6 +171,8 @@ export default function Editor() {
           showGrid={showGrid}
           onToggleGrid={() => setShowGrid(!showGrid)}
           layers={layers}
+          isValidSelection={isValidSelection}
+          onDeleteSelection={onDeleteSelection}
         />
         <div className="relative z-20 ">
           <ErrorBoundary
@@ -204,6 +215,7 @@ export default function Editor() {
               )}
             >
               <Canvas
+                ref={canvasRef}
                 width={canvasSize.width}
                 height={canvasSize.height}
                 primaryColor={primaryColor}
@@ -225,6 +237,8 @@ export default function Editor() {
                 }}
                 layers={layers}
                 selectedLayerId={selectedLayerId}
+                setValidSelection={setIsValidSelection}
+                onDeleteSelection={onDeleteSelection}
               />
             </ErrorBoundary>
           </div>
