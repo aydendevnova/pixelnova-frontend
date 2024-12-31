@@ -10,6 +10,9 @@ function clampCoordinates(x: number, y: number, width: number, height: number) {
   };
 }
 
+// Minimum size for a selection to be valid
+const MIN_SELECTION_SIZE = 1;
+
 export const SelectTool: Tool = {
   id: "select",
   name: "Select",
@@ -105,6 +108,7 @@ export const SelectTool: Tool = {
         canvas.width,
         canvas.height,
       );
+
       setSelection({
         ...selection,
         endX: clampedEnd.x,
@@ -234,8 +238,8 @@ export const SelectTool: Tool = {
       const width = bounds.maxX - bounds.minX;
       const height = bounds.maxY - bounds.minY;
 
-      // Only create a selection if it has a non-zero size
-      if (width > 0 && height > 0) {
+      // Only create a selection if it meets minimum size requirements
+      if (width >= MIN_SELECTION_SIZE && height >= MIN_SELECTION_SIZE) {
         const selectedLayer = layers.find(
           (layer) => layer.id === selectedLayerId,
         );
@@ -272,6 +276,21 @@ export const SelectTool: Tool = {
           selectedImageData,
           originalX: bounds.minX,
           originalY: bounds.minY,
+        });
+      } else {
+        // Clear the selection if it's too small
+        setSelection({
+          isSelecting: false,
+          startX: 0,
+          startY: 0,
+          endX: 0,
+          endY: 0,
+          isMoving: false,
+          moveStartX: 0,
+          moveStartY: 0,
+          selectedImageData: undefined,
+          originalX: undefined,
+          originalY: undefined,
         });
       }
     }
