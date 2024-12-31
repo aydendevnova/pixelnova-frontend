@@ -49,9 +49,18 @@ export interface Tool {
   }>;
   shortcut: string;
   cursor?: string;
-  onMouseDown?: (e: React.MouseEvent, context: ToolContext) => void;
-  onMouseMove?: (e: React.MouseEvent, context: ToolContext) => void;
-  onMouseUp?: (e: React.MouseEvent, context: ToolContext) => void;
+  onMouseDown?: (
+    e: React.MouseEvent<HTMLCanvasElement>,
+    context: ToolContext,
+  ) => void;
+  onMouseMove?: (
+    e: React.MouseEvent<HTMLCanvasElement>,
+    context: ToolContext,
+  ) => void;
+  onMouseUp?: (
+    e: React.MouseEvent<HTMLCanvasElement>,
+    context: ToolContext,
+  ) => void;
 }
 
 export interface ToolContext {
@@ -68,6 +77,11 @@ export interface ToolContext {
   selection?: SelectionState;
   setSelection: (selection: SelectionState) => void;
   shouldClearOriginal: boolean;
+  pushHistory?: (state: {
+    type: "editor";
+    layers: Layer[];
+    selectedLayerId: string;
+  }) => void;
 }
 
 export interface PreviewableTool extends Tool {

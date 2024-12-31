@@ -9,41 +9,109 @@ import TopMenuBar from "@/components/editor/TopMenuBar";
 import { ErrorBoundary } from "@/components/error-boundary";
 import ErrorView from "@/components/error-view";
 import { useEditorStore } from "@/store/editorStore";
+import { useHistoryStore } from "@/store/historyStore";
 import { getAllTools } from "@/lib/tools";
 import { createImageData } from "@/lib/utils/canvas";
 import { Layer, ToolType } from "@/types/editor";
 import { PALETTE_INFO } from "@/lib/utils/colorPalletes";
+import { extractColors } from "@/lib/utils/image";
 
 export default function Editor() {
   const {
     canvasSize,
-    selectedTool,
-    primaryColor,
-    secondaryColor,
-    brushSize,
-    bucketTolerance,
-    showGrid,
-    layers,
-    selectedLayerId,
-    importedColors: importedColors,
     setCanvasSize,
+    selectedTool,
     setSelectedTool,
+    primaryColor,
     setPrimaryColor,
+    secondaryColor,
     setSecondaryColor,
+    brushSize,
     setBrushSize,
+    bucketTolerance,
     setBucketTolerance,
+    showGrid,
     setShowGrid,
+    layers,
     setLayers,
+    selectedLayerId,
     setSelectedLayerId,
+    importedColors,
     addCustomColor,
     removeCustomColor,
   } = useEditorStore();
+
+  const { pushHistory, undo, redo, canUndo, canRedo } = useHistoryStore();
+
+  // Add handlers for undo/redo
+  const handleUndo = () => {
+    const prevState = undo();
+    if (prevState) {
+      setLayers(prevState.layers);
+      setSelectedLayerId(prevState.selectedLayerId);
+    }
+  };
+
+  const handleRedo = () => {
+    const nextState = redo();
+    if (nextState) {
+      setLayers(nextState.layers);
+      setSelectedLayerId(nextState.selectedLayerId);
+    }
+  };
+
+  // Store history state when layers change
+  useEffect(() => {
+    if (layers.length > 0) {
+      pushHistory({
+        type: "editor",
+        layers: layers.map((layer) => ({
+          ...layer,
+          imageData: layer.imageData
+            ? new ImageData(
+                new Uint8ClampedArray(layer.imageData.data),
+                layer.imageData.width,
+                layer.imageData.height,
+              )
+            : null,
+        })),
+        selectedLayerId,
+      });
+    }
+  }, [layers, selectedLayerId]);
+
+  // Add keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+        if (e.shiftKey) {
+          e.preventDefault();
+          handleRedo();
+        } else {
+          e.preventDefault();
+          handleUndo();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleUndo, handleRedo]);
+
+  const [isValidSelection, setIsValidSelection] = useState(false);
+  const canvasRef = useRef<CanvasRef>(null);
+
+  const onDeleteSelection = () => {
+    if (canvasRef.current?.deleteSelection) {
+      canvasRef.current.deleteSelection();
+    }
+  };
 
   // Initialize canvas with a blank layer
   useEffect(() => {
     if (layers.length === 0) {
       const blankLayer: Layer = {
-        id: "layer_0",
+        id: "layer_1",
         name: "Layer 1",
         visible: true,
         imageData: createImageData(canvasSize.width, canvasSize.height),
@@ -51,17 +119,11 @@ export default function Editor() {
       setLayers([blankLayer]);
       setSelectedLayerId(blankLayer.id);
     }
-  }, [
-    canvasSize.width,
-    canvasSize.height,
-    layers.length,
-    setLayers,
-    setSelectedLayerId,
-  ]);
+  }, []);
 
   const handleClearCanvas = () => {
     const blankLayer: Layer = {
-      id: "layer_0",
+      id: "layer_1",
       name: "Layer 1",
       visible: true,
       imageData: createImageData(canvasSize.width, canvasSize.height),
@@ -82,42 +144,14 @@ export default function Editor() {
     setSelectedLayerId(newLayer.id);
   };
 
-  const extractColorsFromLayers = () => {
-    const colorSet = new Set<string>();
-    layers.forEach((layer) => {
-      const imageData = layer.imageData;
-      if (!imageData) return;
-      for (let i = 0; i < imageData.data.length; i += 4) {
-        const r = imageData.data[i];
-        const g = imageData.data[i + 1];
-        const b = imageData.data[i + 2];
-        const a = imageData.data[i + 3];
-
-        // Skip fully transparent pixels
-        if (a === 0) continue;
-
-        // Convert to hex
-        const hex = `#${(
-          (1 << 24) +
-          ((r ?? 0) << 16) +
-          ((g ?? 0) << 8) +
-          (b ?? 0)
-        )
-          .toString(16)
-          .slice(1)
-          .toUpperCase()}`;
-        colorSet.add(hex);
-      }
-    });
-    return Array.from(colorSet);
-  };
-
   const handlePaletteChange = (newPalette: keyof typeof PALETTE_INFO) => {
     // Get the new palette's colors
     const newPaletteColors = PALETTE_INFO[newPalette]?.colors ?? [];
 
     // Extract all unique colors from the current pixel art
-    const extractedColors = extractColorsFromLayers();
+    const extractedColors = layers.flatMap((layer) =>
+      layer.imageData ? extractColors(layer.imageData) : [],
+    );
 
     // For each color in the pixel art
     extractedColors.forEach((color) => {
@@ -137,15 +171,6 @@ export default function Editor() {
         removeCustomColor(importedColor);
       }
     });
-  };
-
-  const [isValidSelection, setIsValidSelection] = useState(false);
-  const canvasRef = useRef<CanvasRef>(null);
-
-  const onDeleteSelection = () => {
-    if (canvasRef.current?.deleteSelection) {
-      canvasRef.current.deleteSelection();
-    }
   };
 
   return (
@@ -173,41 +198,28 @@ export default function Editor() {
           isValidSelection={isValidSelection}
           onDeleteSelection={onDeleteSelection}
         />
-        <div className="relative z-20 ">
-          <ErrorBoundary
-            fallback={({ error, reset }) => (
-              <ErrorView error={error} reset={reset} />
-            )}
-          >
-            <Toolbar
-              selectedTool={selectedTool.id}
-              onToolSelect={(toolId: ToolType) => {
-                const tool = getAllTools().find((t) => t.id === toolId);
-                if (tool) setSelectedTool(tool);
-              }}
-            />
-          </ErrorBoundary>
-
-          <ErrorBoundary
-            fallback={({ error, reset }) => (
-              <ErrorView error={error} reset={reset} />
-            )}
-          >
-            <ColorPicker
-              primaryColor={primaryColor}
-              secondaryColor={secondaryColor}
-              onPrimaryColorSelect={setPrimaryColor}
-              onSecondaryColorSelect={setSecondaryColor}
-              importedColors={importedColors}
-              onAddCustomColor={addCustomColor}
-              onPaletteChange={handlePaletteChange}
-            />
-          </ErrorBoundary>
-        </div>
-
         <div className="relative flex flex-1">
-          {/* Main Canvas Area */}
-          <div className="relative flex-1">
+          <div className="absolute left-0 top-0 z-20">
+            <ErrorBoundary
+              fallback={({ error, reset }) => (
+                <ErrorView error={error} reset={reset} />
+              )}
+            >
+              <Toolbar
+                selectedTool={selectedTool.id}
+                onToolSelect={(toolId: ToolType) => {
+                  const tool = getAllTools().find((t) => t.id === toolId);
+                  if (tool) setSelectedTool(tool);
+                }}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                onUndo={handleUndo}
+                onRedo={handleRedo}
+              />
+            </ErrorBoundary>
+          </div>
+
+          <div className="flex h-[calc(100vh-4rem)] flex-1">
             <ErrorBoundary
               fallback={({ error, reset }) => (
                 <ErrorView error={error} reset={reset} />
@@ -223,16 +235,16 @@ export default function Editor() {
                 bucketTolerance={bucketTolerance}
                 brushSize={brushSize}
                 showGrid={showGrid}
-                onToolSelect={(toolId: ToolType) => {
-                  const tool = getAllTools().find((t) => t.id === toolId);
-                  if (tool) setSelectedTool(tool);
-                }}
-                onColorPick={(color: string, isRightPressed: boolean) => {
-                  if (isRightPressed) {
+                onColorPick={(color, isRightClick) => {
+                  if (isRightClick) {
                     setSecondaryColor(color);
                   } else {
                     setPrimaryColor(color);
                   }
+                }}
+                onToolSelect={(toolId: ToolType) => {
+                  const tool = getAllTools().find((t) => t.id === toolId);
+                  if (tool) setSelectedTool(tool);
                 }}
                 layers={layers}
                 selectedLayerId={selectedLayerId}
@@ -240,67 +252,87 @@ export default function Editor() {
                 onDeleteSelection={onDeleteSelection}
               />
             </ErrorBoundary>
-          </div>
-          <ErrorBoundary>
-            <LayersPanel
-              layers={layers}
-              selectedLayerId={selectedLayerId}
-              onLayerSelect={setSelectedLayerId}
-              onLayerVisibilityToggle={(layerId: string) => {
-                setLayers((prev) =>
-                  prev.map((layer) =>
-                    layer.id === layerId
-                      ? { ...layer, visible: !layer.visible }
-                      : layer,
-                  ),
-                );
-              }}
-              onAddLayer={() => {
-                const newLayer: Layer = {
-                  id: `layer_${Date.now()}`,
-                  name: `Layer ${layers.length + 1}`,
-                  visible: true,
-                  imageData: createImageData(
-                    canvasSize.width,
-                    canvasSize.height,
-                  ),
-                };
-                setLayers((prev) => [...prev, newLayer]);
-                setSelectedLayerId(newLayer.id);
-              }}
-              onDeleteLayer={(layerId: string) => {
-                if (layers.length <= 1) return;
-                setLayers((prev) => {
-                  const filtered = prev.filter((layer) => layer.id !== layerId);
-                  if (filtered.length === 0) return prev;
-                  return filtered.map((layer, index) => ({
-                    ...layer,
-                    id: `layer_${index}`,
-                    name: `Layer ${index + 1}`,
-                  }));
-                });
-                if (selectedLayerId === layerId) {
-                  setSelectedLayerId("layer_0");
-                }
-              }}
-              onLayerReorder={(fromIndex: number, toIndex: number) => {
-                setLayers((prev: Layer[]) => {
-                  const newLayers = [...prev];
-                  const [movedLayer] = newLayers.splice(fromIndex, 1);
-                  if (movedLayer) {
-                    newLayers.splice(toIndex, 0, movedLayer);
-                    return newLayers.map((layer, index) => ({
-                      ...layer,
-                      id: `layer_${index}`,
-                      name: `Layer ${index + 1}`,
-                    }));
+
+            <ErrorBoundary
+              fallback={({ error, reset }) => (
+                <ErrorView error={error} reset={reset} />
+              )}
+            >
+              <LayersPanel
+                layers={layers}
+                selectedLayerId={selectedLayerId}
+                onLayerSelect={setSelectedLayerId}
+                onLayerVisibilityToggle={(layerId: string) => {
+                  setLayers((prev) =>
+                    prev.map((layer) =>
+                      layer.id === layerId
+                        ? { ...layer, visible: !layer.visible }
+                        : layer,
+                    ),
+                  );
+                }}
+                onAddLayer={() => {
+                  const newLayer: Layer = {
+                    id: `layer_${Date.now()}`,
+                    name: `Layer ${layers.length + 1}`,
+                    visible: true,
+                    imageData: createImageData(
+                      canvasSize.width,
+                      canvasSize.height,
+                    ),
+                  };
+                  setLayers((prev) => [...prev, newLayer]);
+                  setSelectedLayerId(newLayer.id);
+                }}
+                onDeleteLayer={(layerId: string) => {
+                  setLayers((prev) =>
+                    prev.filter((layer) => layer.id !== layerId),
+                  );
+                  if (selectedLayerId === layerId && layers.length > 1) {
+                    const index = layers.findIndex((l) => l.id === layerId);
+                    if (index !== -1) {
+                      const newIndex = Math.max(0, index - 1);
+                      const layer = layers[newIndex];
+                      if (layer) {
+                        setSelectedLayerId(layer.id);
+                      }
+                    }
                   }
-                  return prev;
-                });
-              }}
-            />
-          </ErrorBoundary>
+                }}
+                onLayerReorder={(fromIndex: number, toIndex: number) => {
+                  setLayers((prev: Layer[]) => {
+                    const newLayers = [...prev];
+                    const [movedLayer] = newLayers.splice(fromIndex, 1);
+                    if (movedLayer) {
+                      newLayers.splice(toIndex, 0, movedLayer);
+                      return newLayers.map((layer, index) => ({
+                        ...layer,
+                        id: `layer_${index}`,
+                        name: `Layer ${index + 1}`,
+                      }));
+                    }
+                    return prev;
+                  });
+                }}
+              />
+            </ErrorBoundary>
+          </div>
         </div>
+      </ErrorBoundary>
+      <ErrorBoundary
+        fallback={({ error, reset }) => (
+          <ErrorView error={error} reset={reset} />
+        )}
+      >
+        <ColorPicker
+          primaryColor={primaryColor}
+          secondaryColor={secondaryColor}
+          onPrimaryColorSelect={setPrimaryColor}
+          onSecondaryColorSelect={setSecondaryColor}
+          importedColors={importedColors}
+          onAddCustomColor={addCustomColor}
+          onPaletteChange={handlePaletteChange}
+        />
       </ErrorBoundary>
     </div>
   );

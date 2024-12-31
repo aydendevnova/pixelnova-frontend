@@ -24,6 +24,7 @@ import {
 } from "@/lib/utils/coordinates";
 import { useEditorStore } from "@/store/editorStore";
 import { useUserAgent } from "@/lib/utils/user-agent";
+import { useHistoryStore } from "@/store/historyStore";
 
 interface CanvasProps {
   width: number;
@@ -85,6 +86,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   ref,
 ) {
   const { shouldClearOriginal } = useEditorStore();
+  const { pushHistory } = useHistoryStore();
   const { isMobile } = useUserAgent();
   const containerRef = useRef<HTMLDivElement>(null);
   const displayCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -917,6 +919,24 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         toolContext,
       );
       render();
+
+      // Store history state after drawing
+      if (layers.length > 0) {
+        pushHistory({
+          type: "editor" as const,
+          layers: layers.map((layer) => ({
+            ...layer,
+            imageData: layer.imageData
+              ? new ImageData(
+                  new Uint8ClampedArray(layer.imageData.data),
+                  layer.imageData.width,
+                  layer.imageData.height,
+                )
+              : null,
+          })),
+          selectedLayerId,
+        });
+      }
     },
     [
       isSpacePressed,
@@ -933,6 +953,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setSelection,
       shouldClearOriginal,
       render,
+      pushHistory,
     ],
   );
 
@@ -1018,6 +1039,22 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     // Update layer's imageData
     selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
 
+    // Push to history before clearing selection
+    pushHistory({
+      type: "editor" as const,
+      layers: layers.map((layer) => ({
+        ...layer,
+        imageData: layer.imageData
+          ? new ImageData(
+              new Uint8ClampedArray(layer.imageData.data),
+              layer.imageData.width,
+              layer.imageData.height,
+            )
+          : null,
+      })),
+      selectedLayerId,
+    });
+
     // Clear the selection state
     clearSelection();
 
@@ -1055,27 +1092,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Add after initialization effects
   useEffect(() => {
-    const canvas = drawingCanvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return;
-
-    // Save initial blank state
-    const initialState = {
-      layers: layers.map((layer) => ({
-        ...layer,
-        imageData: layer.imageData
-          ? new ImageData(
-              new Uint8ClampedArray(layer.imageData.data),
-              layer.imageData.width,
-              layer.imageData.height,
-            )
-          : new ImageData(width, height),
-      })),
-      timestamp: Date.now(),
-    };
-
     // Only render once on initialization
     if (!animationFrameRef.current) {
       animationFrameRef.current = requestAnimationFrame(() => {
@@ -1083,7 +1099,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         animationFrameRef.current = undefined;
       });
     }
-  }, [width, height, layers]);
+  }, [width, height, layers, selectedLayerId, pushHistory, render]);
 
   // Add keyboard shortcuts
   useEffect(() => {
@@ -1094,40 +1110,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         clearSelection();
       } else if (e.code === "Delete" || e.code === "Backspace") {
         if (selection.selectedImageData) {
-          const selectedLayer = layers.find(
-            (layer) => layer.id === selectedLayerId,
-          );
-          if (!selectedLayer || !selectedLayer.visible) return;
-
-          // Create a temporary canvas
-          const tempCanvas = document.createElement("canvas");
-          tempCanvas.width = width;
-          tempCanvas.height = height;
-          const tempCtx = tempCanvas.getContext("2d");
-          if (!tempCtx) return;
-
-          // Draw existing layer data
-          if (selectedLayer.imageData) {
-            tempCtx.putImageData(selectedLayer.imageData, 0, 0);
-          }
-
-          // Calculate deletion coordinates
-          const deleteX = selection.originalX ?? 0;
-          const deleteY = selection.originalY ?? 0;
-          const deleteWidth = selection.selectedImageData.width;
-          const deleteHeight = selection.selectedImageData.height;
-
-          // Clear the selected area
-          tempCtx.clearRect(deleteX, deleteY, deleteWidth, deleteHeight);
-
-          // Update layer's imageData
-          selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
-
-          // Clear the selection state
-          clearSelection();
-
-          // Trigger render
-          render();
+          deleteSelection();
         }
       }
     };
@@ -1141,7 +1124,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     width,
     height,
     clearSelection,
-    render,
+    deleteSelection,
   ]);
 
   // Add useEffect to watch for tool changes
@@ -1564,6 +1547,24 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           requestAnimationFrame(() => {
             render();
           });
+
+          // Store history state after drawing
+          if (layers.length > 0) {
+            pushHistory({
+              type: "editor" as const,
+              layers: layers.map((layer) => ({
+                ...layer,
+                imageData: layer.imageData
+                  ? new ImageData(
+                      new Uint8ClampedArray(layer.imageData.data),
+                      layer.imageData.width,
+                      layer.imageData.height,
+                    )
+                  : null,
+              })),
+              selectedLayerId,
+            });
+          }
         }
 
         // Reset touch state while preserving the last scale
@@ -1594,6 +1595,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setSelection,
       shouldClearOriginal,
       render,
+      pushHistory,
     ],
   );
 
@@ -1629,7 +1631,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   return (
     <div
       ref={containerRef}
-      className="h-full w-full touch-none overflow-hidden bg-gray-800"
+      className="relative h-full w-full touch-none overflow-hidden bg-gray-800"
     >
       <canvas
         ref={displayCanvasRef}
@@ -1640,6 +1642,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             WebkitTouchCallout: "none",
             WebkitUserSelect: "none",
             WebkitTapHighlightColor: "transparent",
+            width: "100%",
+            height: "100%",
           } as React.CSSProperties
         }
         onMouseDown={handleMouseDown}
