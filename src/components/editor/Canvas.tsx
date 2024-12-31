@@ -1092,31 +1092,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Add after initialization effects
   useEffect(() => {
-    const canvas = drawingCanvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return;
-
-    // Save initial blank state
-    const initialState = {
-      type: "editor" as const,
-      layers: layers.map((layer) => ({
-        ...layer,
-        imageData: layer.imageData
-          ? new ImageData(
-              new Uint8ClampedArray(layer.imageData.data),
-              layer.imageData.width,
-              layer.imageData.height,
-            )
-          : new ImageData(width, height),
-      })),
-      selectedLayerId,
-    };
-
-    // Push initial state to history
-    pushHistory(initialState);
-
     // Only render once on initialization
     if (!animationFrameRef.current) {
       animationFrameRef.current = requestAnimationFrame(() => {
