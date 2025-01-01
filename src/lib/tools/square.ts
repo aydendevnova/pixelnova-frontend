@@ -26,14 +26,11 @@ class SquareToolImpl extends PreviewTool {
     const maxY = Math.max(from.y, to.y);
 
     if (this._isFilled) {
-      // For filled preview, only generate outline points to reduce computation
-      // Top and bottom lines
+      // For filled preview, generate all points within the rectangle
       for (let x = minX; x <= maxX; x++) {
-        points.push({ x, y: minY }, { x, y: maxY });
-      }
-      // Left and right lines (excluding corners)
-      for (let y = minY + 1; y < maxY; y++) {
-        points.push({ x: minX, y }, { x: maxX, y });
+        for (let y = minY; y <= maxY; y++) {
+          points.push({ x, y });
+        }
       }
     } else {
       // For outline, generate only the perimeter points
