@@ -7,7 +7,7 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { Input } from "@/components/ui/input";
-import { Grid2X2, Menu } from "lucide-react";
+import { Grid2X2, HistoryIcon, Menu } from "lucide-react";
 import AiPixelArtModal from "../modals/ai-pixel-art";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -62,6 +62,8 @@ interface TopMenuBarProps {
   width: number;
   height: number;
   onCanvasResize: (newWidth: number, newHeight: number) => void;
+  showHistory: boolean;
+  onToggleHistory: () => void;
 }
 
 export default function TopMenuBar({
@@ -83,6 +85,8 @@ export default function TopMenuBar({
   width,
   height,
   onCanvasResize,
+  showHistory,
+  onToggleHistory,
 }: TopMenuBarProps) {
   const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
   const [showSignInModal, setShowSignInModal] = useState(false);
@@ -325,6 +329,11 @@ export default function TopMenuBar({
               <Grid2X2 className="h-4 w-4" />
               <span className="text-black">Toggle Grid</span>
               {showGrid && <span className="ml-auto">✓</span>}
+            </DropdownMenuItem>
+            <DropdownMenuItem className="gap-2" onSelect={onToggleHistory}>
+              <HistoryIcon className="h-4 w-4" />
+              <span className="text-black">Visualize History</span>
+              {showHistory && <span className="ml-auto">✓</span>}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
