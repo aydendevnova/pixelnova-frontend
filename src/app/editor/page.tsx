@@ -321,6 +321,10 @@ export default function Editor() {
           width={canvasSize.width}
           height={canvasSize.height}
           onCanvasResize={handleCanvasResize}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
         />
         <div className="relative flex flex-1">
           <div className="absolute left-0 top-0 z-20">
@@ -335,10 +339,6 @@ export default function Editor() {
                   const tool = getAllTools().find((t) => t.id === toolId);
                   if (tool) setSelectedTool(tool);
                 }}
-                canUndo={canUndo}
-                canRedo={canRedo}
-                onUndo={handleUndo}
-                onRedo={handleRedo}
               />
             </ErrorBoundary>
           </div>

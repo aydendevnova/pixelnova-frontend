@@ -12,7 +12,9 @@ export type ToolType =
   | "select"
   | "eyedropper"
   | "pan"
-  | "line";
+  | "line"
+  | "square"
+  | "circle";
 
 export interface ViewportState {
   x: number;

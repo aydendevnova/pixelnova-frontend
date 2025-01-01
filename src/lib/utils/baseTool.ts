@@ -90,6 +90,7 @@ export abstract class PreviewTool extends BaseTool implements PreviewableTool {
   cursor = "crosshair";
   protected startPoint: { x: number; y: number } | null = null;
   lastPreviewPoints: { x: number; y: number }[] = [];
+  protected drawOnStart = false;
 
   onMouseDown(e: React.MouseEvent, context: ToolContext) {
     if (e.button !== 0 && e.button !== 2) return;
@@ -97,7 +98,18 @@ export abstract class PreviewTool extends BaseTool implements PreviewableTool {
     const coords = this.getCoordinates(e, context);
     this.startPoint = coords;
     this.lastPreviewPoints = [];
-    this.drawAtPoint(coords.x, coords.y, this.getColor(e, context), context);
+
+    if (this.drawOnStart) {
+      this.handleInitialDraw(coords, e, context);
+    }
+  }
+
+  protected handleInitialDraw(
+    point: { x: number; y: number },
+    e: React.MouseEvent,
+    context: ToolContext,
+  ): void {
+    this.drawAtPoint(point.x, point.y, this.getColor(e, context), context);
   }
 
   onMouseMove(e: React.MouseEvent, context: ToolContext) {
