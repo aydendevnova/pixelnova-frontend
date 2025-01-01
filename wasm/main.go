@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"image"
 	"io"
-	"pixlabs/wasm/util"
+	"pixelnova/wasm/util"
 	"strings"
 	"time"
 

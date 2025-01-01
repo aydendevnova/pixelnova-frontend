@@ -1,7 +1,7 @@
 import { GeneratedImage } from "@/types/types";
 import { useState, useEffect } from "react";
 
-const DB_NAME = "pixlabs-db";
+const DB_NAME = "pixelnova-db";
 const STORE_NAME = "generated-images";
 const DB_VERSION = 1;
 

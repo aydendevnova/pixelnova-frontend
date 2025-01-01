@@ -1,4 +1,4 @@
-module pixlabs/wasm
+module pixelnova/wasm
 
 go 1.23.4
 
