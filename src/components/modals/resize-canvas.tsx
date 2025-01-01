@@ -78,16 +78,17 @@ export function ResizeCanvasModal({
     const numberRegex = /^\d+$/;
     if (!numberRegex.test(value)) return null;
     const num = parseInt(value);
-    return num > 0 ? num : null;
+    if (num <= 0) return null;
+    return Math.min(num, 256); // Limit to max 256
   };
 
   // Update input handlers
   useEffect(() => {
     if (isOpen) {
-      setWidthInput(currentWidth.toString());
-      setHeightInput(currentHeight.toString());
-      setWidth(currentWidth);
-      setHeight(currentHeight);
+      setWidthInput(Math.min(currentWidth, 256).toString());
+      setHeightInput(Math.min(currentHeight, 256).toString());
+      setWidth(Math.min(currentWidth, 256));
+      setHeight(Math.min(currentHeight, 256));
       setPadDirection({ width: "center", height: "center" });
       setTimeout(generatePreview, 0);
     }
@@ -103,9 +104,9 @@ export function ResizeCanvasModal({
   const handleResize = () => {
     if (!canvasRef.current) return;
 
-    // Ensure dimensions are at least 1x1
-    const newWidth = Math.max(1, width);
-    const newHeight = Math.max(1, height);
+    // Ensure dimensions are between 1 and 256
+    const newWidth = Math.max(1, Math.min(256, width));
+    const newHeight = Math.max(1, Math.min(256, height));
 
     canvasRef.current.resizeCanvas(newWidth, newHeight, padDirection);
     onResize(newWidth, newHeight);
@@ -118,7 +119,7 @@ export function ResizeCanvasModal({
         <DialogHeader>
           <DialogTitle>Resize Canvas</DialogTitle>
           <DialogDescription>
-            Enter new dimensions and choose padding direction.
+            Enter new dimensions (max 256x256) and choose padding direction.
           </DialogDescription>
         </DialogHeader>
         <div>
@@ -139,7 +140,7 @@ export function ResizeCanvasModal({
                       <AlertTriangle className="h-4 w-4" />
                       <AlertDescription>
                         Choose the padding direction to decide where your
-                        content will go.
+                        content will go. Maximum size is 256x256.
                       </AlertDescription>
                     </Alert>
                   )}
@@ -180,7 +181,10 @@ export function ResizeCanvasModal({
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          const newValue = parseInt(widthInput) + 1;
+                          const newValue = Math.min(
+                            256,
+                            parseInt(widthInput) + 1,
+                          );
                           setWidthInput(newValue.toString());
                           setWidth(newValue);
                         }}
@@ -224,7 +228,10 @@ export function ResizeCanvasModal({
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          const newValue = parseInt(heightInput) + 1;
+                          const newValue = Math.min(
+                            256,
+                            parseInt(heightInput) + 1,
+                          );
                           setHeightInput(newValue.toString());
                           setHeight(newValue);
                         }}

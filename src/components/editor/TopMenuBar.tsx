@@ -145,7 +145,7 @@ export default function TopMenuBar({
           // Extract initial colors
           const initialColors = extractColors(imageData);
 
-          if (initialColors.length > 100) {
+          if (initialColors.length > 128) {
             // Convert to basic colors
             imageData = convertToBasicColors(imageData);
 

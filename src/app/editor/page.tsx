@@ -136,9 +136,52 @@ export default function Editor() {
   };
 
   const handleImageImport = (imageData: ImageData) => {
+    let finalImageData = imageData;
+    const MAX_DIMENSION = 256;
+
+    // Check if image needs resizing
+    if (imageData.width > MAX_DIMENSION || imageData.height > MAX_DIMENSION) {
+      // Calculate new dimensions maintaining aspect ratio
+      const aspectRatio = imageData.width / imageData.height;
+      let newWidth = imageData.width;
+      let newHeight = imageData.height;
+
+      if (imageData.width > imageData.height) {
+        newWidth = MAX_DIMENSION;
+        newHeight = Math.round(MAX_DIMENSION / aspectRatio);
+      } else {
+        newHeight = MAX_DIMENSION;
+        newWidth = Math.round(MAX_DIMENSION * aspectRatio);
+      }
+
+      // Create temporary canvases for resizing
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = newWidth;
+      tempCanvas.height = newHeight;
+      const tempCtx = tempCanvas.getContext("2d");
+
+      const sourceCanvas = document.createElement("canvas");
+      sourceCanvas.width = imageData.width;
+      sourceCanvas.height = imageData.height;
+      const sourceCtx = sourceCanvas.getContext("2d");
+
+      if (tempCtx && sourceCtx) {
+        // Draw original image and resize
+        sourceCtx.putImageData(imageData, 0, 0);
+        tempCtx.drawImage(sourceCanvas, 0, 0, newWidth, newHeight);
+        finalImageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
+
+        toast({
+          title: "Image Resized",
+          description: `Click "Generate Pixel Art" to convert this image to pixel art.`,
+          duration: 5000,
+        });
+      }
+    }
+
     // First determine the target canvas size
-    const targetWidth = Math.max(canvasSize.width, imageData.width);
-    const targetHeight = Math.max(canvasSize.height, imageData.height);
+    const targetWidth = Math.max(canvasSize.width, finalImageData.width);
+    const targetHeight = Math.max(canvasSize.height, finalImageData.height);
 
     // If we need to resize the canvas
     if (
@@ -186,7 +229,7 @@ export default function Editor() {
       setCanvasSize({ width: targetWidth, height: targetHeight });
     }
 
-    // Create the new layer with the imported image
+    // Create a temporary canvas for the new layer
     const tempCanvas = document.createElement("canvas");
     tempCanvas.width = targetWidth;
     tempCanvas.height = targetHeight;
@@ -195,17 +238,17 @@ export default function Editor() {
 
     // Create a source canvas for the imported image
     const sourceCanvas = document.createElement("canvas");
-    sourceCanvas.width = imageData.width;
-    sourceCanvas.height = imageData.height;
+    sourceCanvas.width = finalImageData.width;
+    sourceCanvas.height = finalImageData.height;
     const sourceCtx = sourceCanvas.getContext("2d");
     if (!sourceCtx) return;
 
     // Draw the imported image
-    sourceCtx.putImageData(imageData, 0, 0);
+    sourceCtx.putImageData(finalImageData, 0, 0);
 
     // Center the imported image in the new layer
-    const x = Math.floor((targetWidth - imageData.width) / 2);
-    const y = Math.floor((targetHeight - imageData.height) / 2);
+    const x = Math.floor((targetWidth - finalImageData.width) / 2);
+    const y = Math.floor((targetHeight - finalImageData.height) / 2);
     tempCtx.drawImage(sourceCanvas, x, y);
 
     const newLayer: Layer = {
