@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { PALETTE_INFO } from "@/lib/utils/colorPalletes";
-import { Pin, PinOff } from "lucide-react";
+import { Pin, PinOff, RefreshCw } from "lucide-react";
 import { useUserAgent } from "@/lib/utils/user-agent";
 
 interface ColorPickerProps {
@@ -99,6 +99,10 @@ export default function ColorPicker({
     } else {
       onPrimaryColorSelect(color);
     }
+
+    if (onAddCustomColor && !isColorInPalette(color)) {
+      onAddCustomColor(color);
+    }
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -153,21 +157,33 @@ export default function ColorPicker({
 
       <PopoverContent className="w-[240px] border-gray-700 bg-gray-900/90 backdrop-blur sm:w-[240px]">
         <div className="flex flex-col gap-3">
-          {/* Keep open toggle */}
+          {/* Keep open toggle and refresh */}
           <div className="flex items-center justify-between">
             <Label className="text-sm text-white">Colors</Label>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto h-8 w-8 p-0 text-gray-400 hover:bg-gray-800 hover:text-white"
-              onClick={() => setKeepOpen(!keepOpen)}
-            >
-              {keepOpen ? (
-                <Pin className="h-4 w-4 rotate-45 text-red-500" />
-              ) : (
-                <PinOff className="h-4 w-4 rotate-45" />
-              )}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 p-0 text-gray-400 hover:bg-gray-800 hover:text-white"
+                onClick={() => onPaletteChange(selectedPalette)}
+                title="Re-extract colors from image"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 p-0 text-gray-400 hover:bg-gray-800 hover:text-white"
+                onClick={() => setKeepOpen(!keepOpen)}
+              >
+                {keepOpen ? (
+                  <Pin className="h-4 w-4 rotate-45 text-red-500" />
+                ) : (
+                  <PinOff className="h-4 w-4 rotate-45" />
+                )}
+              </Button>
+            </div>
           </div>
 
           {/* Color inputs */}
@@ -232,34 +248,6 @@ export default function ColorPicker({
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Add to palette buttons */}
-          {onAddCustomColor && (
-            <div className="flex gap-2">
-              {!isColorInPalette(primaryColor) && (
-                <Button
-                  onClick={() => onAddCustomColor(primaryColor)}
-                  variant="default"
-                  className="bg-blue-500 hover:bg-blue-600"
-                  size="sm"
-                >
-                  <PlusIcon className="mr-1 h-3 w-3" />
-                  Add Primary
-                </Button>
-              )}
-              {!isColorInPalette(secondaryColor) && !isMobile && (
-                <Button
-                  onClick={() => onAddCustomColor(secondaryColor)}
-                  variant="default"
-                  className="bg-green-500 hover:bg-green-600"
-                  size="sm"
-                >
-                  <PlusIcon className="mr-1 h-3 w-3" />
-                  Add Secondary
-                </Button>
-              )}
             </div>
           )}
 
