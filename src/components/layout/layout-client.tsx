@@ -9,6 +9,7 @@ import { ErrorBoundary } from "../error-boundary";
 import ErrorView from "../error-view";
 import { WasmProvider } from "../wasm-provider";
 import { useEffect } from "react";
+import { Toaster } from "../ui/toaster";
 
 // Create a Supabase client
 const supabase = createClient(
@@ -39,6 +40,7 @@ export default function LayoutClient({
                   <ErrorView error={error} reset={reset} />
                 )}
               >
+                <Toaster />
                 {children}
               </ErrorBoundary>
             </WasmProvider>

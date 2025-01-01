@@ -16,6 +16,7 @@ import { Layer, ToolType } from "@/types/editor";
 import { PALETTE_INFO } from "@/lib/utils/colorPalletes";
 import { extractColors } from "@/lib/utils/image";
 import HistoryPanel from "@/components/editor/HistoryPanel";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Editor() {
   const {
@@ -121,6 +122,8 @@ export default function Editor() {
     }
   }, []);
 
+  const { toast } = useToast();
+
   const handleClearCanvas = () => {
     const blankLayer: Layer = {
       id: "layer_1",
@@ -133,9 +136,53 @@ export default function Editor() {
   };
 
   const handleImageImport = (imageData: ImageData) => {
+    let finalImageData = imageData;
+    const MAX_DIMENSION = 256;
+
+    // Check if image needs resizing
+    if (imageData.width > MAX_DIMENSION || imageData.height > MAX_DIMENSION) {
+      // Calculate new dimensions maintaining aspect ratio
+      const aspectRatio = imageData.width / imageData.height;
+      let newWidth = imageData.width;
+      let newHeight = imageData.height;
+
+      if (imageData.width > imageData.height) {
+        newWidth = MAX_DIMENSION;
+        newHeight = Math.round(MAX_DIMENSION / aspectRatio);
+      } else {
+        newHeight = MAX_DIMENSION;
+        newWidth = Math.round(MAX_DIMENSION * aspectRatio);
+      }
+
+      // Create temporary canvases for resizing
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = newWidth;
+      tempCanvas.height = newHeight;
+      const tempCtx = tempCanvas.getContext("2d");
+
+      const sourceCanvas = document.createElement("canvas");
+      sourceCanvas.width = imageData.width;
+      sourceCanvas.height = imageData.height;
+      const sourceCtx = sourceCanvas.getContext("2d");
+
+      if (tempCtx && sourceCtx) {
+        // Draw original image and resize
+        sourceCtx.putImageData(imageData, 0, 0);
+        tempCtx.drawImage(sourceCanvas, 0, 0, newWidth, newHeight);
+        finalImageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
+
+        toast({
+          title: "Image Too Large - Resized",
+          variant: "destructive",
+          description: `Click "Generate Pixel Art" and upload this image there to convert it into better pixel art.`,
+          duration: 5000,
+        });
+      }
+    }
+
     // First determine the target canvas size
-    const targetWidth = Math.max(canvasSize.width, imageData.width);
-    const targetHeight = Math.max(canvasSize.height, imageData.height);
+    const targetWidth = Math.max(canvasSize.width, finalImageData.width);
+    const targetHeight = Math.max(canvasSize.height, finalImageData.height);
 
     // If we need to resize the canvas
     if (
@@ -183,7 +230,7 @@ export default function Editor() {
       setCanvasSize({ width: targetWidth, height: targetHeight });
     }
 
-    // Now create the new layer with the imported image
+    // Create a temporary canvas for the new layer
     const tempCanvas = document.createElement("canvas");
     tempCanvas.width = targetWidth;
     tempCanvas.height = targetHeight;
@@ -192,17 +239,17 @@ export default function Editor() {
 
     // Create a source canvas for the imported image
     const sourceCanvas = document.createElement("canvas");
-    sourceCanvas.width = imageData.width;
-    sourceCanvas.height = imageData.height;
+    sourceCanvas.width = finalImageData.width;
+    sourceCanvas.height = finalImageData.height;
     const sourceCtx = sourceCanvas.getContext("2d");
     if (!sourceCtx) return;
 
     // Draw the imported image
-    sourceCtx.putImageData(imageData, 0, 0);
+    sourceCtx.putImageData(finalImageData, 0, 0);
 
     // Center the imported image in the new layer
-    const x = Math.floor((targetWidth - imageData.width) / 2);
-    const y = Math.floor((targetHeight - imageData.height) / 2);
+    const x = Math.floor((targetWidth - finalImageData.width) / 2);
+    const y = Math.floor((targetHeight - finalImageData.height) / 2);
     tempCtx.drawImage(sourceCanvas, x, y);
 
     const newLayer: Layer = {
@@ -217,22 +264,29 @@ export default function Editor() {
   };
 
   const handlePaletteChange = (newPalette: keyof typeof PALETTE_INFO) => {
-    // Get the new palette's colors
     const newPaletteColors = PALETTE_INFO[newPalette]?.colors ?? [];
-
-    // Extract all unique colors from the current pixel art
     const extractedColors = layers.flatMap((layer) =>
       layer.imageData ? extractColors(layer.imageData) : [],
     );
 
-    // For each color in the pixel art
-    extractedColors.forEach((color) => {
-      // If the color is not in the new palette and not already imported
+    // Limit the number of imported colors
+    const maxImportedColors = 100 - newPaletteColors.length;
+    const uniqueExtractedColors = [...new Set(extractedColors)];
+
+    if (uniqueExtractedColors.length > maxImportedColors) {
+      toast({
+        title: "Too many unique colors",
+        description: `Image converted into black and white.`,
+        duration: 5000,
+      });
+    }
+
+    // Only process up to the maximum allowed colors
+    uniqueExtractedColors.slice(0, maxImportedColors).forEach((color) => {
       if (
         !newPaletteColors.includes(color) &&
         !importedColors.includes(color)
       ) {
-        // Add it to imported colors
         addCustomColor(color);
       }
     });
