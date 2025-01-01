@@ -30,16 +30,9 @@ export default function Auth() {
   };
 
   return (
-    <div
-      className="flex min-h-screen flex-col items-center"
-      style={{
-        backgroundImage: "url('/background.webp')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+    <div className="flex min-h-screen flex-col items-center  bg-gradient-to-b from-gray-900 via-[#300171] to-slate-900 ">
       <div className="flex min-h-[85vh] w-full max-w-xl flex-col items-center justify-center">
-        <div className="w-full max-w-md rounded-lg border border-white/10 bg-black/80 p-8 shadow-lg backdrop-blur-sm">
+        <div className="w-full max-w-md rounded-lg border border-white/10 bg-black/80 p-8 shadow-lg backdrop-blur-sm duration-500 animate-in fade-in">
           <div className="mb-8 text-center">
             <h1 className="mb-2 text-4xl font-bold text-white drop-shadow-lg">
               Pixel Nova
