@@ -48,6 +48,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import UploadImageModal from "../modals/upload-image";
+import { extractColors } from "@/lib/utils/color";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
@@ -110,6 +112,8 @@ export default function TopMenuBar({
   const [isResizeModalOpen, setIsResizeModalOpen] = useState(false);
   const [isSquareFilled, setIsSquareFilled] = useState(false);
   const [isCircleFilled, setIsCircleFilled] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [alertOpen, setAlertOpen] = useState(false);
 
   const { toast } = useToast();
 
@@ -122,73 +126,6 @@ export default function TopMenuBar({
     const numValue = Math.max(1, Math.min(32, Number(value) || 1));
     onBrushSizeChange(numValue);
   };
-
-  // Function to handle file import
-  const handleFileImport = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return;
-
-          ctx.drawImage(img, 0, 0);
-          let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-          // Extract initial colors
-          const initialColors = extractColors(imageData);
-
-          if (initialColors.length > 128) {
-            // Convert to basic colors
-            imageData = convertToBasicColors(imageData);
-
-            // Show warning toast
-            toast({
-              title: "Too many colors",
-              description: `Image converted to basic colors for better performance.`,
-              duration: 5000,
-            });
-
-            // Import the converted image
-            onImportImage(imageData);
-
-            // Extract colors from the converted image and generate palette
-            const tempCanvas = document.createElement("canvas");
-            tempCanvas.width = imageData.width;
-            tempCanvas.height = imageData.height;
-            const tempCtx = tempCanvas.getContext("2d");
-            if (tempCtx) {
-              tempCtx.putImageData(imageData, 0, 0);
-              const convertedImageData = tempCtx.getImageData(
-                0,
-                0,
-                imageData.width,
-                imageData.height,
-              );
-              const convertedColors = extractColors(convertedImageData);
-              onGeneratePalette(convertedColors);
-            }
-          } else {
-            onImportImage(imageData);
-            onGeneratePalette(initialColors);
-          }
-
-          // Clear the input value
-          e.target.value = "";
-        };
-        img.src = event.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    },
-    [onImportImage, onGeneratePalette],
-  );
 
   // Function to handle file export
   const handleExport = useCallback(async () => {
@@ -280,37 +217,16 @@ export default function TopMenuBar({
     }
   }, [layers]);
 
-  // Function to extract unique colors from image data
-  const extractColors = useCallback((imageData: ImageData) => {
-    const colorSet = new Set<string>();
-    const { data } = imageData;
-
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      const a = data[i + 3];
-
-      // Skip fully transparent pixels
-      if (a === 0) continue;
-
-      // Convert to hex color
-      const color = `#${(
-        (1 << 24) +
-        ((r ?? 0) << 16) +
-        ((g ?? 0) << 8) +
-        (b ?? 0)
-      )
-        .toString(16)
-        .slice(1)
-        .toUpperCase()}`;
-      colorSet.add(color);
-    }
-
-    return Array.from(colorSet);
+  // Add handler for square fill toggle
+  const handleSquareFillToggle = useCallback((checked: boolean) => {
+    setIsSquareFilled(checked);
+    SquareTool.setFilled(checked);
   }, []);
 
-  const [alertOpen, setAlertOpen] = useState(false);
+  const handleCircleFillToggle = useCallback((checked: boolean) => {
+    setIsCircleFilled(checked);
+    CircleTool.setFilled(checked);
+  }, []);
 
   // Thanks Radix UI for your garbage cleanup in your Dialogs
   useEffect(() => {
@@ -329,95 +245,7 @@ export default function TopMenuBar({
     return () => {
       document.body.style.pointerEvents = "auto";
     };
-  }, [alertOpen, isResizeModalOpen]);
-
-  // Add handler for square fill toggle
-  const handleSquareFillToggle = useCallback((checked: boolean) => {
-    setIsSquareFilled(checked);
-    SquareTool.setFilled(checked);
-  }, []);
-
-  const handleCircleFillToggle = useCallback((checked: boolean) => {
-    setIsCircleFilled(checked);
-    CircleTool.setFilled(checked);
-  }, []);
-
-  const convertToGrayscale = (imageData: ImageData): ImageData => {
-    const newImageData = new ImageData(imageData.width, imageData.height);
-
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      // Calculate grayscale value using luminance formula
-      const r = imageData.data[i];
-      const g = imageData.data[i + 1];
-      const b = imageData.data[i + 2];
-      const a = imageData.data[i + 3];
-
-      const grayscale = Math.round(
-        0.299 * (r ?? 0) + 0.587 * (g ?? 0) + 0.114 * (b ?? 0),
-      );
-
-      // Quantize to 8 levels of gray
-      const level = Math.round(grayscale / 32) * 32;
-
-      newImageData.data[i] = level; // R
-      newImageData.data[i + 1] = level; // G
-      newImageData.data[i + 2] = level; // B
-      newImageData.data[i + 3] = a ?? 0; // A
-    }
-
-    return newImageData;
-  };
-
-  // Update the conversion function to use simple color rounding
-  const convertToBasicColors = (imageData: ImageData): ImageData => {
-    const newImageData = new ImageData(imageData.width, imageData.height);
-
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      const r = imageData.data[i];
-      const g = imageData.data[i + 1];
-      const b = imageData.data[i + 2];
-      const a = imageData.data[i + 3];
-
-      // Round to nearest 255 or 0 for each channel
-      const newR = r ? (r > 127 ? 255 : 0) : 0;
-      const newG = g ? (g > 127 ? 255 : 0) : 0;
-      const newB = b ? (b > 127 ? 255 : 0) : 0;
-
-      // Special case for grays
-      if (
-        Math.abs((r ?? 0) - (g ?? 0)) < 30 &&
-        Math.abs((g ?? 0) - (b ?? 0)) < 30 &&
-        Math.abs((r ?? 0) - (b ?? 0)) < 30
-      ) {
-        // If all channels are similar, convert to gray
-        if ((r ?? 0) > 170) {
-          newImageData.data[i] =
-            newImageData.data[i + 1] =
-            newImageData.data[i + 2] =
-              255; // White
-        } else if (r ?? 0 < 85) {
-          newImageData.data[i] =
-            newImageData.data[i + 1] =
-            newImageData.data[i + 2] =
-              0; // Black
-        } else {
-          newImageData.data[i] =
-            newImageData.data[i + 1] =
-            newImageData.data[i + 2] =
-              128; // Gray
-        }
-      } else {
-        // Use rounded RGB values for colors
-        newImageData.data[i] = newR; // R
-        newImageData.data[i + 1] = newG; // G
-        newImageData.data[i + 2] = newB; // B
-      }
-
-      newImageData.data[i + 3] = a ?? 0; // Keep original alpha
-    }
-
-    return newImageData;
-  };
+  }, [alertOpen, isResizeModalOpen, isUploadModalOpen]);
 
   return (
     <div className="z-10 flex flex-col border-b border-gray-700 bg-gray-900/50">
@@ -437,7 +265,7 @@ export default function TopMenuBar({
           <DropdownMenuContent align="start" className="w-48">
             <DropdownMenuItem
               className="gap-2 bg-white"
-              onSelect={() => document.getElementById("file-input")?.click()}
+              onSelect={() => setIsUploadModalOpen(true)}
             >
               <FolderOpenIcon className="h-4 w-4 text-black" />
               <span className="text-black">Open</span>
@@ -485,15 +313,6 @@ export default function TopMenuBar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Hidden file input */}
-        <input
-          id="file-input"
-          type="file"
-          accept="image/*"
-          onChange={handleFileImport}
-          className="hidden"
-        />
 
         {/* AI Pixel Art Generator */}
         <div>
@@ -709,6 +528,13 @@ export default function TopMenuBar({
           onCanvasResize(newWidth, newHeight);
           setIsResizeModalOpen(false);
         }}
+      />
+
+      <UploadImageModal
+        open={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onImportImage={onImportImage}
+        onGeneratePalette={onGeneratePalette}
       />
     </div>
   );

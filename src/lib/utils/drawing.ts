@@ -205,3 +205,29 @@ export function drawToolPreview(
 
   return points;
 }
+
+export function convertToBasicColors(imageData: ImageData): ImageData {
+  const data = imageData.data;
+  const newData = new Uint8ClampedArray(data.length);
+
+  for (let i = 0; i < data.length; i += 4) {
+    // Get RGBA values
+    const r = data[i] as number;
+    const g = data[i + 1] as number;
+    const b = data[i + 2] as number;
+    const a = data[i + 3] as number;
+
+    // Convert to basic colors (quantize to 32 levels)
+    const newR = Math.round(r / 32) * 32;
+    const newG = Math.round(g / 32) * 32;
+    const newB = Math.round(b / 32) * 32;
+
+    // Set new values
+    newData[i] = newR;
+    newData[i + 1] = newG;
+    newData[i + 2] = newB;
+    newData[i + 3] = a;
+  }
+
+  return new ImageData(newData, imageData.width, imageData.height);
+}

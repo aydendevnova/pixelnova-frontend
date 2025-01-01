@@ -56,6 +56,7 @@ const config = {
     "@typescript-eslint/prefer-optional-chain": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "@next/next/no-assign-module-variable": "warn",
+    "react/no-unescaped-entities": "off",
   },
   overrides: [
     {

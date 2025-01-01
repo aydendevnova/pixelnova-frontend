@@ -172,8 +172,9 @@ export default function Editor() {
         finalImageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
 
         toast({
-          title: "Image Resized",
-          description: `Click "Generate Pixel Art" to convert this image to pixel art.`,
+          title: "Image Too Large - Resized",
+          variant: "destructive",
+          description: `Click "Generate Pixel Art" and upload this image there to convert it into better pixel art.`,
           duration: 5000,
         });
       }
