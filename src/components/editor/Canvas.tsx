@@ -629,6 +629,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           : null,
       })),
       selectedLayerId,
+      canvasSize: { width, height },
     });
 
     // Clear the selection state
@@ -1123,6 +1124,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               : null,
           })),
           selectedLayerId,
+          canvasSize: { width, height },
         });
       }
     },
@@ -1699,6 +1701,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   : null,
               })),
               selectedLayerId,
+              canvasSize: { width, height },
             });
           }
         }

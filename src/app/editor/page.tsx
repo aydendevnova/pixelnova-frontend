@@ -49,6 +49,7 @@ export default function Editor() {
     if (prevState) {
       setLayers(prevState.layers);
       setSelectedLayerId(prevState.selectedLayerId);
+      setCanvasSize(prevState.canvasSize);
     }
   };
 
@@ -57,6 +58,7 @@ export default function Editor() {
     if (nextState) {
       setLayers(nextState.layers);
       setSelectedLayerId(nextState.selectedLayerId);
+      setCanvasSize(nextState.canvasSize);
     }
   };
 
@@ -76,9 +78,10 @@ export default function Editor() {
             : null,
         })),
         selectedLayerId,
+        canvasSize,
       });
     }
-  }, [layers, selectedLayerId]);
+  }, [layers, selectedLayerId, canvasSize]);
 
   // Add keyboard shortcuts for undo/redo
   useEffect(() => {

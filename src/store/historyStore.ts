@@ -6,6 +6,7 @@ interface HistoryState {
   layers: Layer[];
   selectedLayerId: string;
   timestamp: number;
+  canvasSize: { width: number; height: number };
 }
 
 interface HistoryStore {
@@ -33,6 +34,7 @@ const cloneState = (state: HistoryState): HistoryState => ({
         )
       : null,
   })),
+  canvasSize: { ...state.canvasSize },
 });
 
 export const useHistoryStore = create<HistoryStore>((set, get) => ({
