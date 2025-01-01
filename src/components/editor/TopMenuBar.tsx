@@ -7,7 +7,16 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { Input } from "@/components/ui/input";
-import { Grid2X2, HistoryIcon, Menu, Undo2, Redo2 } from "lucide-react";
+import {
+  Grid2X2,
+  HistoryIcon,
+  Menu,
+  Undo2,
+  Redo2,
+  Copy,
+  Clipboard,
+  ArrowRight,
+} from "lucide-react";
 import AiPixelArtModal from "../modals/ai-pixel-art";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -79,6 +88,9 @@ interface TopMenuBarProps {
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
+  onToolSelect: (tool: ToolType) => void;
+  onCopy?: () => void;
+  onPaste?: () => void;
 }
 
 export default function TopMenuBar({
@@ -106,6 +118,9 @@ export default function TopMenuBar({
   canRedo = false,
   onUndo,
   onRedo,
+  onToolSelect,
+  onCopy,
+  onPaste,
 }: TopMenuBarProps) {
   const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
   const [showSignInModal, setShowSignInModal] = useState(false);
@@ -299,6 +314,7 @@ export default function TopMenuBar({
               className="gap-2"
               onSelect={() => setIsResizeModalOpen(true)}
             >
+              <ArrowRight className="h-4 w-4" />
               <span className="text-black">Resize Canvas</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2" onSelect={onToggleGrid}>
@@ -396,7 +412,8 @@ export default function TopMenuBar({
             </Tooltip>
           </TooltipProvider>
         </div>
-        <SelectedToolIcon className="ml-2 h-5 w-5 text-white" />
+
+        <SelectedToolIcon className="ml-2 hidden h-5 w-5 text-white md:inline" />
         {/* Tool-specific controls */}
         {(selectedTool === "pencil" ||
           selectedTool === "eraser" ||
@@ -404,7 +421,7 @@ export default function TopMenuBar({
           selectedTool === "square" ||
           selectedTool === "circle") && (
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-400">Brush Size:</span>
+            <span className="text-sm text-gray-400">Size:</span>
             <Input
               type="number"
               min={1}
@@ -417,7 +434,7 @@ export default function TopMenuBar({
         )}
 
         {selectedTool === "square" && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center gap-3 max-md:mt-4 md:flex-row">
             <Switch
               id="fill-square"
               checked={isSquareFilled}
@@ -430,7 +447,7 @@ export default function TopMenuBar({
         )}
 
         {selectedTool === "circle" && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center gap-3 max-md:mt-4 md:flex-row">
             <Switch
               id="fill-circle"
               checked={isCircleFilled}
@@ -458,14 +475,58 @@ export default function TopMenuBar({
 
         {selectedTool === "select" && (
           <div className="flex items-center gap-3">
-            <Switch
-              id="clear-original"
-              checked={shouldClearOriginal}
-              onCheckedChange={setShouldClearOriginal}
-            />
-            <Label htmlFor="clear-original" className="text-sm text-gray-300">
-              Move <span className="hidden md:inline">(instead of copy)</span>
-            </Label>
+            <div className="flex flex-col items-center gap-3 max-md:mt-4 md:flex-row">
+              <Switch
+                id="clear-original"
+                checked={shouldClearOriginal}
+                onCheckedChange={setShouldClearOriginal}
+              />
+              <Label htmlFor="clear-original" className="text-sm text-gray-300">
+                Move <span className="hidden md:inline">(instead of copy)</span>
+              </Label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {isValidSelection && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-white hover:bg-gray-700"
+                        onClick={onCopy}
+                      >
+                        <Copy className="h-4 w-4 text-white" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Copy (Ctrl+C)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
+              {onPaste && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-white hover:bg-gray-700"
+                        onClick={onPaste}
+                      >
+                        <Clipboard className="h-4 w-4 text-white" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Paste (Ctrl+V)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
           </div>
         )}
 
@@ -477,7 +538,12 @@ export default function TopMenuBar({
 
         {selectedTool === "select" && isValidSelection && (
           <div className="flex items-center gap-3">
-            <Button onClick={onDeleteSelection}>Delete</Button>
+            <Button onClick={onDeleteSelection}>
+              <span className="hidden text-sm text-gray-400 md:inline">
+                Delete
+              </span>
+              <TrashIcon className="inline h-4 w-4 text-white md:hidden" />
+            </Button>
           </div>
         )}
       </div>

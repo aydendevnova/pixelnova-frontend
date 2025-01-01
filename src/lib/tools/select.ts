@@ -149,9 +149,10 @@ export const SelectTool: Tool = {
       // Draw the current layer
       tempCtx.putImageData(selectedLayer.imageData, 0, 0);
 
-      // If shouldClearOriginal is true, clear the original selection area
+      // If shouldClearOriginal is true AND this is not a paste operation, clear the original selection area
       if (
         shouldClearOriginal &&
+        !selection.isPastedContent &&
         selection.originalX !== undefined &&
         selection.originalY !== undefined
       ) {
@@ -173,7 +174,7 @@ export const SelectTool: Tool = {
       // Draw the selection
       selectionCtx.putImageData(selection.selectedImageData, 0, 0);
 
-      // Simply draw at current position - canvas will handle clipping
+      // Draw at current position
       tempCtx.drawImage(selectionCanvas, selection.startX, selection.startY);
 
       // Update the layer with the new image data
@@ -215,6 +216,7 @@ export const SelectTool: Tool = {
         selectedImageData: undefined,
         originalX: undefined,
         originalY: undefined,
+        isPastedContent: false,
       });
       return;
     }
@@ -238,48 +240,15 @@ export const SelectTool: Tool = {
       const width = bounds.maxX - bounds.minX;
       const height = bounds.maxY - bounds.minY;
 
-      // Only create a selection if it meets minimum size requirements
-      if (width >= MIN_SELECTION_SIZE && height >= MIN_SELECTION_SIZE) {
-        const selectedLayer = layers.find(
-          (layer) => layer.id === selectedLayerId,
-        );
-        if (!selectedLayer?.imageData) return;
-
-        // Create a temporary canvas to extract the selection
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = selectedLayer.imageData.width;
-        tempCanvas.height = selectedLayer.imageData.height;
-        const tempCtx = tempCanvas.getContext("2d");
-        if (!tempCtx) return;
-
-        // Draw the full layer
-        tempCtx.putImageData(selectedLayer.imageData, 0, 0);
-
-        // Extract just the selected region
-        const selectedImageData = tempCtx.getImageData(
-          bounds.minX,
-          bounds.minY,
-          width,
-          height,
-        );
-
-        // Update selection state with the extracted region
-        setSelection({
-          isSelecting: false,
-          startX: bounds.minX,
-          startY: bounds.minY,
-          endX: bounds.maxX,
-          endY: bounds.maxY,
-          isMoving: false,
-          moveStartX: coords.x,
-          moveStartY: coords.y,
-          selectedImageData,
-          originalX: bounds.minX,
-          originalY: bounds.minY,
-        });
-      } else {
-        // Clear the selection if it's too small
-        setSelection({
+      // Clear selection if it's a tap (zero width/height) or too small
+      if (
+        width === 0 ||
+        height === 0 ||
+        width < MIN_SELECTION_SIZE ||
+        height < MIN_SELECTION_SIZE
+      ) {
+        // Force a state update with a completely new object
+        const clearedSelection: SelectionState = {
           isSelecting: false,
           startX: 0,
           startY: 0,
@@ -291,8 +260,93 @@ export const SelectTool: Tool = {
           selectedImageData: undefined,
           originalX: undefined,
           originalY: undefined,
-        });
+          isPastedContent: false,
+        };
+        setSelection(clearedSelection);
+        return;
       }
+
+      const selectedLayer = layers.find(
+        (layer) => layer.id === selectedLayerId,
+      );
+      if (!selectedLayer?.imageData) return;
+
+      // Create a temporary canvas to extract the selection
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = selectedLayer.imageData.width;
+      tempCanvas.height = selectedLayer.imageData.height;
+      const tempCtx = tempCanvas.getContext("2d");
+      if (!tempCtx) return;
+
+      // Draw the full layer
+      tempCtx.putImageData(selectedLayer.imageData, 0, 0);
+
+      // Extract just the selected region
+      const selectedImageData = tempCtx.getImageData(
+        bounds.minX,
+        bounds.minY,
+        width,
+        height,
+      );
+
+      // Update selection state with the extracted region
+      setSelection({
+        isSelecting: false,
+        startX: bounds.minX,
+        startY: bounds.minY,
+        endX: bounds.maxX,
+        endY: bounds.maxY,
+        isMoving: false,
+        moveStartX: coords.x,
+        moveStartY: coords.y,
+        selectedImageData,
+        originalX: bounds.minX,
+        originalY: bounds.minY,
+      });
     }
+  },
+
+  onConfirmPaste: (
+    context: Pick<
+      ToolContext,
+      "canvas" | "layers" | "selectedLayerId" | "selection"
+    >,
+  ) => {
+    const { canvas, layers, selectedLayerId, selection } = context;
+    if (!selection?.selectedImageData) return;
+
+    const selectedLayer = layers.find((layer) => layer.id === selectedLayerId);
+    if (!selectedLayer?.imageData) return;
+
+    // Create a temporary canvas to apply the pasted content
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tempCtx = tempCanvas.getContext("2d");
+    if (!tempCtx) return;
+
+    // Draw the current layer
+    tempCtx.putImageData(selectedLayer.imageData, 0, 0);
+
+    // Create another canvas for the selection
+    const selectionCanvas = document.createElement("canvas");
+    selectionCanvas.width = selection.selectedImageData.width;
+    selectionCanvas.height = selection.selectedImageData.height;
+    const selectionCtx = selectionCanvas.getContext("2d");
+    if (!selectionCtx) return;
+
+    // Draw the selection
+    selectionCtx.putImageData(selection.selectedImageData, 0, 0);
+
+    // Draw the selection at its current position
+    tempCtx.drawImage(selectionCanvas, selection.startX, selection.startY);
+
+    // Update the layer with the new image data
+    selectedLayer.imageData = tempCtx.getImageData(
+      0,
+      0,
+      tempCanvas.width,
+      tempCanvas.height,
+    );
   },
 };
