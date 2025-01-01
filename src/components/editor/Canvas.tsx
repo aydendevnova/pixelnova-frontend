@@ -1628,6 +1628,31 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           });
           if (!ctx) return;
 
+          // Check if this was a tap without movement (zero-width selection)
+          if (selectedTool === "select" && selection.isSelecting) {
+            const width = Math.abs(selection.endX - selection.startX);
+            const height = Math.abs(selection.endY - selection.startY);
+
+            if (width === 0 || height === 0) {
+              // Clear the selection immediately for zero-width/height
+              setSelection({
+                isSelecting: false,
+                startX: 0,
+                startY: 0,
+                endX: 0,
+                endY: 0,
+                isMoving: false,
+                moveStartX: 0,
+                moveStartY: 0,
+                selectedImageData: undefined,
+                originalX: undefined,
+                originalY: undefined,
+                isPastedContent: false,
+              });
+              return;
+            }
+          }
+
           const toolContext = {
             canvas: drawingCanvas,
             ctx,
