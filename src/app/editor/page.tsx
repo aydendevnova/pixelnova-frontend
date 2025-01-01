@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Canvas, { CanvasRef } from "@/components/editor/Canvas";
 import Toolbar from "@/components/editor/Toolbar";
 import ColorPicker from "@/components/editor/ColorPicker";
@@ -345,6 +345,31 @@ export default function Editor() {
     setCanvasSize({ width: newWidth, height: newHeight });
   };
 
+  // Inside the Editor component
+  const [hasClipboardData, setHasClipboardData] = useState(false);
+
+  // Update the copy handler to set clipboard state
+  const handleCopy = useCallback(() => {
+    const copyEvent = new KeyboardEvent("keydown", {
+      key: "c",
+      ctrlKey: true,
+      metaKey: true,
+    });
+    window.dispatchEvent(copyEvent);
+    setHasClipboardData(true);
+  }, []);
+
+  // Update the paste handler
+  const handlePaste = useCallback(() => {
+    if (!hasClipboardData) return;
+    const pasteEvent = new KeyboardEvent("keydown", {
+      key: "v",
+      ctrlKey: true,
+      metaKey: true,
+    });
+    window.dispatchEvent(pasteEvent);
+  }, [hasClipboardData]);
+
   return (
     <div className="flex min-h-screen flex-col bg-gray-900">
       <ErrorBoundary
@@ -366,8 +391,6 @@ export default function Editor() {
           onBrushSizeChange={setBrushSize}
           showGrid={showGrid}
           onToggleGrid={() => setShowGrid(!showGrid)}
-          showHistory={showHistory}
-          onToggleHistory={() => setShowHistory(!showHistory)}
           layers={layers}
           isValidSelection={isValidSelection}
           onDeleteSelection={onDeleteSelection}
@@ -375,149 +398,157 @@ export default function Editor() {
           width={canvasSize.width}
           height={canvasSize.height}
           onCanvasResize={handleCanvasResize}
+          showHistory={showHistory}
+          onToggleHistory={() => setShowHistory(!showHistory)}
           canUndo={canUndo}
           canRedo={canRedo}
           onUndo={handleUndo}
           onRedo={handleRedo}
+          onCopy={handleCopy}
+          onPaste={hasClipboardData ? handlePaste : undefined}
+          onToolSelect={(toolType: ToolType) => {
+            const tool = getAllTools().find((t) => t.id === toolType);
+            if (tool) setSelectedTool(tool);
+          }}
         />
-        <div className="relative flex flex-1">
-          <div className="absolute left-0 top-0 z-20">
-            <ErrorBoundary
-              fallback={({ error, reset }) => (
-                <ErrorView error={error} reset={reset} />
-              )}
-            >
-              <Toolbar
-                selectedTool={selectedTool.id}
-                onToolSelect={(toolId: ToolType) => {
-                  const tool = getAllTools().find((t) => t.id === toolId);
-                  if (tool) setSelectedTool(tool);
-                }}
-              />
-            </ErrorBoundary>
-          </div>
+      </ErrorBoundary>
+      <div className="relative flex flex-1">
+        <div className="absolute left-0 top-0 z-20">
+          <ErrorBoundary
+            fallback={({ error, reset }) => (
+              <ErrorView error={error} reset={reset} />
+            )}
+          >
+            <Toolbar
+              selectedTool={selectedTool.id}
+              onToolSelect={(toolId: ToolType) => {
+                const tool = getAllTools().find((t) => t.id === toolId);
+                if (tool) setSelectedTool(tool);
+              }}
+            />
+          </ErrorBoundary>
+        </div>
 
-          <div className="flex h-[calc(100vh-4rem)] flex-1">
+        <div className="flex h-[calc(100vh-4rem)] flex-1">
+          <ErrorBoundary
+            fallback={({ error, reset }) => (
+              <ErrorView error={error} reset={reset} />
+            )}
+          >
+            <Canvas
+              ref={canvasRef}
+              width={canvasSize.width}
+              height={canvasSize.height}
+              primaryColor={primaryColor}
+              secondaryColor={secondaryColor}
+              selectedTool={selectedTool.id}
+              bucketTolerance={bucketTolerance}
+              brushSize={brushSize}
+              showGrid={showGrid}
+              onColorPick={(color, isRightClick) => {
+                if (isRightClick) {
+                  setSecondaryColor(color);
+                } else {
+                  setPrimaryColor(color);
+                }
+              }}
+              onToolSelect={(toolId: ToolType) => {
+                const tool = getAllTools().find((t) => t.id === toolId);
+                if (tool) setSelectedTool(tool);
+              }}
+              layers={layers}
+              selectedLayerId={selectedLayerId}
+              setValidSelection={setIsValidSelection}
+              onDeleteSelection={onDeleteSelection}
+            />
+          </ErrorBoundary>
+
+          <div className="flex flex-col">
             <ErrorBoundary
               fallback={({ error, reset }) => (
                 <ErrorView error={error} reset={reset} />
               )}
             >
-              <Canvas
-                ref={canvasRef}
-                width={canvasSize.width}
-                height={canvasSize.height}
-                primaryColor={primaryColor}
-                secondaryColor={secondaryColor}
-                selectedTool={selectedTool.id}
-                bucketTolerance={bucketTolerance}
-                brushSize={brushSize}
-                showGrid={showGrid}
-                onColorPick={(color, isRightClick) => {
-                  if (isRightClick) {
-                    setSecondaryColor(color);
-                  } else {
-                    setPrimaryColor(color);
-                  }
-                }}
-                onToolSelect={(toolId: ToolType) => {
-                  const tool = getAllTools().find((t) => t.id === toolId);
-                  if (tool) setSelectedTool(tool);
-                }}
+              <LayersPanel
+                isHistoryOpen={showHistory}
                 layers={layers}
                 selectedLayerId={selectedLayerId}
-                setValidSelection={setIsValidSelection}
-                onDeleteSelection={onDeleteSelection}
+                onLayerSelect={setSelectedLayerId}
+                onLayerVisibilityToggle={(layerId: string) => {
+                  setLayers((prev) =>
+                    prev.map((layer) =>
+                      layer.id === layerId
+                        ? { ...layer, visible: !layer.visible }
+                        : layer,
+                    ),
+                  );
+                }}
+                onAddLayer={() => {
+                  const newLayer: Layer = {
+                    id: `layer_${Date.now()}`,
+                    name: `Layer ${layers.length + 1}`,
+                    visible: true,
+                    imageData: createImageData(
+                      canvasSize.width,
+                      canvasSize.height,
+                    ),
+                  };
+                  setLayers((prev) => [...prev, newLayer]);
+                  setSelectedLayerId(newLayer.id);
+                }}
+                onDeleteLayer={(layerId: string) => {
+                  setLayers((prev) =>
+                    prev.filter((layer) => layer.id !== layerId),
+                  );
+                  if (selectedLayerId === layerId && layers.length > 1) {
+                    const index = layers.findIndex((l) => l.id === layerId);
+                    if (index !== -1) {
+                      const newIndex = Math.max(0, index - 1);
+                      const layer = layers[newIndex];
+                      if (layer) {
+                        setSelectedLayerId(layer.id);
+                      }
+                    }
+                  }
+                }}
+                onLayerReorder={(fromIndex: number, toIndex: number) => {
+                  setLayers((prev: Layer[]) => {
+                    const newLayers = [...prev];
+                    const [movedLayer] = newLayers.splice(fromIndex, 1);
+                    if (movedLayer) {
+                      newLayers.splice(toIndex, 0, movedLayer);
+                      return newLayers.map((layer, index) => ({
+                        ...layer,
+                        id: `layer_${index}`,
+                        name: `Layer ${index + 1}`,
+                      }));
+                    }
+                    return prev;
+                  });
+                }}
               />
             </ErrorBoundary>
 
-            <div className="flex flex-col">
+            {showHistory && (
               <ErrorBoundary
                 fallback={({ error, reset }) => (
                   <ErrorView error={error} reset={reset} />
                 )}
               >
-                <LayersPanel
-                  isHistoryOpen={showHistory}
-                  layers={layers}
-                  selectedLayerId={selectedLayerId}
-                  onLayerSelect={setSelectedLayerId}
-                  onLayerVisibilityToggle={(layerId: string) => {
-                    setLayers((prev) =>
-                      prev.map((layer) =>
-                        layer.id === layerId
-                          ? { ...layer, visible: !layer.visible }
-                          : layer,
-                      ),
-                    );
-                  }}
-                  onAddLayer={() => {
-                    const newLayer: Layer = {
-                      id: `layer_${Date.now()}`,
-                      name: `Layer ${layers.length + 1}`,
-                      visible: true,
-                      imageData: createImageData(
-                        canvasSize.width,
-                        canvasSize.height,
-                      ),
-                    };
-                    setLayers((prev) => [...prev, newLayer]);
-                    setSelectedLayerId(newLayer.id);
-                  }}
-                  onDeleteLayer={(layerId: string) => {
-                    setLayers((prev) =>
-                      prev.filter((layer) => layer.id !== layerId),
-                    );
-                    if (selectedLayerId === layerId && layers.length > 1) {
-                      const index = layers.findIndex((l) => l.id === layerId);
-                      if (index !== -1) {
-                        const newIndex = Math.max(0, index - 1);
-                        const layer = layers[newIndex];
-                        if (layer) {
-                          setSelectedLayerId(layer.id);
-                        }
-                      }
-                    }
-                  }}
-                  onLayerReorder={(fromIndex: number, toIndex: number) => {
-                    setLayers((prev: Layer[]) => {
-                      const newLayers = [...prev];
-                      const [movedLayer] = newLayers.splice(fromIndex, 1);
-                      if (movedLayer) {
-                        newLayers.splice(toIndex, 0, movedLayer);
-                        return newLayers.map((layer, index) => ({
-                          ...layer,
-                          id: `layer_${index}`,
-                          name: `Layer ${index + 1}`,
-                        }));
-                      }
-                      return prev;
-                    });
-                  }}
-                />
+                <div className="md:w-64">
+                  <HistoryPanel
+                    onUndo={handleUndo}
+                    onRedo={handleRedo}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    onClose={() => setShowHistory(false)}
+                  />
+                </div>
               </ErrorBoundary>
-
-              {showHistory && (
-                <ErrorBoundary
-                  fallback={({ error, reset }) => (
-                    <ErrorView error={error} reset={reset} />
-                  )}
-                >
-                  <div className="md:w-64">
-                    <HistoryPanel
-                      onUndo={handleUndo}
-                      onRedo={handleRedo}
-                      canUndo={canUndo}
-                      canRedo={canRedo}
-                      onClose={() => setShowHistory(false)}
-                    />
-                  </div>
-                </ErrorBoundary>
-              )}
-            </div>
+            )}
           </div>
         </div>
-      </ErrorBoundary>
+      </div>
       <ErrorBoundary
         fallback={({ error, reset }) => (
           <ErrorView error={error} reset={reset} />

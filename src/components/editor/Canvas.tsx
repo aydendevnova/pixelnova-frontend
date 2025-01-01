@@ -30,6 +30,8 @@ import {
   resizeAllLayers,
   PadDirection,
 } from "@/lib/utils/resizeCanvas";
+import { Check, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CanvasProps {
   width: number;
@@ -76,6 +78,21 @@ interface TouchState {
   touchStartTime: number | null;
   lastDrawTime: number | null;
 }
+
+// Add helper function at the top of the file, after imports
+const clampToCanvas = (
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  contentWidth: number,
+  contentHeight: number,
+): { x: number; y: number } => {
+  return {
+    x: Math.max(0, Math.min(x, width - contentWidth)),
+    y: Math.max(0, Math.min(y, height - contentHeight)),
+  };
+};
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
@@ -149,6 +166,9 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     touchStartTime: null,
     lastDrawTime: null,
   });
+
+  const [isPasting, setIsPasting] = useState(false);
+  const clipboardDataRef = useRef<ImageData | null>(null);
 
   // Create offscreen canvas for checkerboard pattern
   const checkerboardPattern = useMemo(() => {
@@ -255,6 +275,20 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         -selectionBounds.height,
       );
       ctx.fill("evenodd"); // Use even-odd fill rule to create cutout
+
+      // If we have selected image data and it's a paste operation, show it immediately
+      if (selection.selectedImageData && selection.isPastedContent) {
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = selection.selectedImageData.width;
+        tempCanvas.height = selection.selectedImageData.height;
+        const tempCtx = tempCanvas.getContext("2d");
+        if (tempCtx) {
+          tempCtx.putImageData(selection.selectedImageData, 0, 0);
+          ctx.globalAlpha = 0.8; // Make it slightly transparent
+          ctx.drawImage(tempCanvas, selectionBounds.x, selectionBounds.y);
+          ctx.globalAlpha = 1.0;
+        }
+      }
 
       // Draw selection outline
       ctx.strokeStyle = "#ffffff";
@@ -393,10 +427,14 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     isDrawing,
     isPanning,
     primaryColor,
+    secondaryColor,
+    mouseButtons,
+    isMouseDown,
     layers,
     width,
     height,
     selectedLayerId,
+    isMobile,
   ]);
 
   // Start render loop
@@ -1706,6 +1744,193 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     setValidSelection(!!selection.selectedImageData);
   }, [selection.selectedImageData, setValidSelection]);
 
+  // Add clipboard handlers
+  const handleCopy = useCallback(
+    (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+        if (selection.selectedImageData) {
+          clipboardDataRef.current = selection.selectedImageData;
+        }
+      }
+    },
+    [selection],
+  );
+
+  const handlePaste = useCallback(
+    (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+        if (!clipboardDataRef.current) return;
+
+        // If there's an active paste, confirm it first
+        if (isPasting) {
+          const tool = getToolById(selectedTool);
+          if (tool.onConfirmPaste) {
+            tool.onConfirmPaste({
+              canvas: drawingCanvasRef.current!,
+              layers,
+              selectedLayerId,
+              selection,
+            });
+          }
+        }
+
+        // Switch to select tool
+        onToolSelect("select");
+
+        // Clear any existing selection
+        setSelection({
+          isSelecting: false,
+          startX: 0,
+          startY: 0,
+          endX: 0,
+          endY: 0,
+          isMoving: false,
+          moveStartX: 0,
+          moveStartY: 0,
+          selectedImageData: undefined,
+          originalX: undefined,
+          originalY: undefined,
+        });
+
+        // Get mouse position in canvas coordinates
+        const displayCanvas = displayCanvasRef.current;
+        if (!displayCanvas || !hoverPosition) {
+          // Fallback to center if no mouse position
+          const centerX = Math.floor(
+            (width - clipboardDataRef.current.width) / 2,
+          );
+          const centerY = Math.floor(
+            (height - clipboardDataRef.current.height) / 2,
+          );
+
+          // Create new selection with pasted content at center
+          setSelection({
+            isSelecting: false,
+            startX: centerX,
+            startY: centerY,
+            endX: centerX + clipboardDataRef.current.width,
+            endY: centerY + clipboardDataRef.current.height,
+            isMoving: false,
+            moveStartX: centerX,
+            moveStartY: centerY,
+            selectedImageData: clipboardDataRef.current,
+            originalX: undefined,
+            originalY: undefined,
+            shouldClearOriginal: false,
+            isPastedContent: true,
+          });
+        } else {
+          // Use mouse position, but clamp to ensure content is visible
+          const { x, y } = clampToCanvas(
+            hoverPosition.x - Math.floor(clipboardDataRef.current.width / 2),
+            hoverPosition.y - Math.floor(clipboardDataRef.current.height / 2),
+            width,
+            height,
+            clipboardDataRef.current.width,
+            clipboardDataRef.current.height,
+          );
+
+          // Create new selection with pasted content at mouse position
+          setSelection({
+            isSelecting: false,
+            startX: x,
+            startY: y,
+            endX: x + clipboardDataRef.current.width,
+            endY: y + clipboardDataRef.current.height,
+            isMoving: false,
+            moveStartX: x,
+            moveStartY: y,
+            selectedImageData: clipboardDataRef.current,
+            originalX: undefined,
+            originalY: undefined,
+            shouldClearOriginal: false,
+            isPastedContent: true,
+          });
+        }
+
+        setIsPasting(true);
+      }
+    },
+    [
+      width,
+      height,
+      isPasting,
+      selectedTool,
+      onToolSelect,
+      layers,
+      selectedLayerId,
+      selection,
+      hoverPosition,
+    ],
+  );
+
+  // Add keyboard event listeners
+  useEffect(() => {
+    window.addEventListener("keydown", handleCopy);
+    window.addEventListener("keydown", handlePaste);
+    return () => {
+      window.removeEventListener("keydown", handleCopy);
+      window.removeEventListener("keydown", handlePaste);
+    };
+  }, [handleCopy, handlePaste]);
+
+  // Update confirmation handler
+  const handleConfirmPaste = useCallback(() => {
+    const tool = getToolById(selectedTool);
+    if (tool.onConfirmPaste) {
+      tool.onConfirmPaste({
+        canvas: drawingCanvasRef.current!,
+        layers,
+        selectedLayerId,
+        selection,
+      });
+
+      // Push to history after confirming paste
+      pushHistory({
+        type: "editor" as const,
+        layers: layers.map((layer) => ({
+          ...layer,
+          imageData: layer.imageData
+            ? new ImageData(
+                new Uint8ClampedArray(layer.imageData.data),
+                layer.imageData.width,
+                layer.imageData.height,
+              )
+            : null,
+        })),
+        selectedLayerId,
+        canvasSize: { width, height },
+      });
+    }
+    setIsPasting(false);
+  }, [
+    selectedTool,
+    layers,
+    selectedLayerId,
+    selection,
+    pushHistory,
+    width,
+    height,
+  ]);
+
+  const handleCancelPaste = useCallback(() => {
+    setSelection({
+      isSelecting: false,
+      startX: 0,
+      startY: 0,
+      endX: 0,
+      endY: 0,
+      isMoving: false,
+      moveStartX: 0,
+      moveStartY: 0,
+      selectedImageData: undefined,
+      originalX: undefined,
+      originalY: undefined,
+      isPastedContent: false,
+    });
+    setIsPasting(false);
+  }, []);
+
   return (
     <div
       ref={containerRef}
@@ -1741,6 +1966,28 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         width={width}
         height={height}
       />
+
+      {/* Add confirmation UI */}
+      {isPasting && (
+        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+          <Button
+            variant="default"
+            size="icon"
+            onClick={handleConfirmPaste}
+            className="h-8 w-8 rounded-full bg-green-500 p-1.5 hover:bg-green-600"
+          >
+            <Check className="h-full w-full" />
+          </Button>
+          <Button
+            variant="default"
+            size="icon"
+            onClick={handleCancelPaste}
+            className="h-8 w-8 rounded-full bg-red-500 p-1.5 hover:bg-red-600"
+          >
+            <X className="h-full w-full" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 });

@@ -35,6 +35,7 @@ export interface SelectionState {
   originalX?: number;
   originalY?: number;
   shouldClearOriginal?: boolean;
+  isPastedContent?: boolean;
 }
 
 export interface Command {
@@ -62,6 +63,12 @@ export interface Tool {
   onMouseUp?: (
     e: React.MouseEvent<HTMLCanvasElement>,
     context: ToolContext,
+  ) => void;
+  onConfirmPaste?: (
+    context: Pick<
+      ToolContext,
+      "canvas" | "layers" | "selectedLayerId" | "selection"
+    >,
   ) => void;
 }
 
