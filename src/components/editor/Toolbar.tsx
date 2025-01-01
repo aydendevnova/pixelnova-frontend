@@ -1,6 +1,6 @@
 "use client";
 
-import { Undo2, Redo2, ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { getAllTools } from "@/lib/tools";
 import { ToolType } from "@/types/editor";
 import { Button } from "@/components/ui/button";
@@ -17,22 +17,10 @@ import { useState } from "react";
 interface ToolbarProps {
   selectedTool: ToolType;
   onToolSelect: (tool: ToolType) => void;
-  canUndo?: boolean;
-  canRedo?: boolean;
-  onUndo?: () => void;
-  onRedo?: () => void;
 }
 
-export default function Toolbar({
-  selectedTool,
-  onToolSelect,
-  canUndo = false,
-  canRedo = false,
-  onUndo,
-  onRedo,
-}: ToolbarProps) {
+export default function Toolbar({ selectedTool, onToolSelect }: ToolbarProps) {
   const tools = getAllTools();
-
   const [showTools, setShowTools] = useState(true);
 
   return (
@@ -73,65 +61,6 @@ export default function Toolbar({
 
             {showTools && (
               <>
-                <Separator className="flex-shrink-0 bg-gray-700" />
-
-                {/* History controls */}
-                <div className="flex flex-shrink-0 flex-col gap-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                          "h-12 w-12 rounded-lg text-white",
-                          !canUndo && "opacity-50",
-                          canUndo && "hover:bg-gray-700/50 hover:text-gray-200",
-                        )}
-                        onClick={onUndo}
-                        disabled={!canUndo}
-                      >
-                        <Undo2
-                          className="text-white"
-                          style={{ width: "24px", height: "24px" }}
-                        />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="right"
-                      className="bg-white text-gray-900"
-                    >
-                      <p>Undo (Ctrl+Z)</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                          "h-12 w-12 rounded-lg text-white",
-                          !canRedo && "opacity-50",
-                          canRedo && "hover:bg-gray-700/50 hover:text-gray-200",
-                        )}
-                        onClick={onRedo}
-                        disabled={!canRedo}
-                      >
-                        <Redo2
-                          className="text-white"
-                          style={{ width: "24px", height: "24px" }}
-                        />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="right"
-                      className="bg-white text-gray-900"
-                    >
-                      <p>Redo (Ctrl+Shift+Z)</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-
                 <Separator className="flex-shrink-0 bg-gray-700" />
 
                 {/* Drawing tools */}

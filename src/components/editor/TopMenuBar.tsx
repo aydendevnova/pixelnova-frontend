@@ -7,7 +7,7 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { Input } from "@/components/ui/input";
-import { Grid2X2, HistoryIcon, Menu } from "lucide-react";
+import { Grid2X2, HistoryIcon, Menu, Undo2, Redo2 } from "lucide-react";
 import AiPixelArtModal from "../modals/ai-pixel-art";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -39,6 +39,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ResizeCanvasModal } from "../modals/resize-canvas";
 import { CanvasRef } from "./Canvas";
+import { SquareTool } from "@/lib/tools/square";
+import { CircleTool } from "@/lib/tools/circle";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
@@ -64,6 +72,10 @@ interface TopMenuBarProps {
   onCanvasResize: (newWidth: number, newHeight: number) => void;
   showHistory: boolean;
   onToggleHistory: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export default function TopMenuBar({
@@ -87,10 +99,16 @@ export default function TopMenuBar({
   onCanvasResize,
   showHistory,
   onToggleHistory,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
 }: TopMenuBarProps) {
   const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [isResizeModalOpen, setIsResizeModalOpen] = useState(false);
+  const [isSquareFilled, setIsSquareFilled] = useState(false);
+  const [isCircleFilled, setIsCircleFilled] = useState(false);
 
   const handleToleranceChange = (value: string) => {
     const numValue = Math.max(1, Math.min(10, Number(value) || 1));
@@ -277,6 +295,17 @@ export default function TopMenuBar({
     };
   }, [alertOpen, isResizeModalOpen]);
 
+  // Add handler for square fill toggle
+  const handleSquareFillToggle = useCallback((checked: boolean) => {
+    setIsSquareFilled(checked);
+    SquareTool.setFilled(checked);
+  }, []);
+
+  const handleCircleFillToggle = useCallback((checked: boolean) => {
+    setIsCircleFilled(checked);
+    CircleTool.setFilled(checked);
+  }, []);
+
   return (
     <div className="z-10 flex flex-col border-b border-gray-700 bg-gray-900/50">
       {/* Top row with main controls */}
@@ -387,12 +416,61 @@ export default function TopMenuBar({
       </div>
 
       {/* Bottom row with editor-specific controls */}
-      <div className="flex h-[70px] items-center gap-4 border-b border-t border-gray-700 px-8 py-4">
-        <SelectedToolIcon className="h-5 w-5 text-white" />
+      <div className="flex h-[70px] items-center gap-4 border-b border-t border-gray-700 py-4 pl-4 pr-8">
+        {/* Undo/Redo Controls */}
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-10 w-10 text-white",
+                    !canUndo && "opacity-50",
+                    canUndo && "hover:bg-gray-700",
+                  )}
+                  onClick={onUndo}
+                  disabled={!canUndo}
+                >
+                  <Undo2 style={{ width: "24px", height: "24px" }} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Undo (Ctrl+Z)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-12 w-12 text-white",
+                    !canRedo && "opacity-50",
+                    canRedo && "hover:bg-gray-700",
+                  )}
+                  onClick={onRedo}
+                  disabled={!canRedo}
+                >
+                  <Redo2 style={{ width: "24px", height: "24px" }} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Redo (Ctrl+Shift+Z)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <SelectedToolIcon className="ml-2 h-5 w-5 text-white" />
         {/* Tool-specific controls */}
         {(selectedTool === "pencil" ||
           selectedTool === "eraser" ||
-          selectedTool === "line") && (
+          selectedTool === "line" ||
+          selectedTool === "square" ||
+          selectedTool === "circle") && (
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-400">Brush Size:</span>
             <Input
@@ -403,6 +481,32 @@ export default function TopMenuBar({
               onChange={(e) => handleBrushSizeChange(e.target.value)}
               className="w-16 bg-gray-700 text-white sm:w-20"
             />
+          </div>
+        )}
+
+        {selectedTool === "square" && (
+          <div className="flex items-center gap-3">
+            <Switch
+              id="fill-square"
+              checked={isSquareFilled}
+              onCheckedChange={handleSquareFillToggle}
+            />
+            <Label htmlFor="fill-square" className="text-sm text-gray-300">
+              Filled
+            </Label>
+          </div>
+        )}
+
+        {selectedTool === "circle" && (
+          <div className="flex items-center gap-3">
+            <Switch
+              id="fill-circle"
+              checked={isCircleFilled}
+              onCheckedChange={handleCircleFillToggle}
+            />
+            <Label htmlFor="fill-circle" className="text-sm text-gray-300">
+              Filled
+            </Label>
           </div>
         )}
 

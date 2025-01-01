@@ -137,6 +137,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     x: number;
     y: number;
   } | null>(null);
+  const [mouseButtons, setMouseButtons] = useState<number>(0);
 
   const [touchState, setTouchState] = useState<TouchState>({
     touchStartX: 0,
@@ -319,12 +320,14 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       ctx.stroke();
     }
 
-    // Draw brush preview
+    // Show brush preview
     if (
       hoverPosition &&
       (selectedTool === "pencil" ||
         selectedTool === "eraser" ||
-        selectedTool === "line") &&
+        selectedTool === "line" ||
+        selectedTool === "square" ||
+        selectedTool === "circle") &&
       !isDrawing &&
       !isPanning
     ) {
@@ -341,7 +344,8 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           ctx.fillStyle = "#ffffff";
           ctx.fillRect(x, y, size, size);
         } else {
-          ctx.fillStyle = primaryColor;
+          // Use secondary color if right mouse button is pressed
+          ctx.fillStyle = mouseButtons === 2 ? secondaryColor : primaryColor;
           ctx.fillRect(x, y, size, size);
         }
         ctx.globalAlpha = 1.0;
@@ -352,17 +356,26 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         ctx.strokeRect(x, y, size, size);
       }
 
-      // Show line preview for both mobile and desktop when drawing a line
-      if (selectedTool === "line" && isMouseDown) {
+      // Show preview for previewable tools when drawing
+      if (isMouseDown) {
         ctx.globalAlpha = 0.5;
-        ctx.fillStyle = primaryColor;
         const tool = getToolById(selectedTool);
         if (isPreviewableTool(tool)) {
-          // Draw line preview
+          // Draw preview points with correct color based on mouse button
           const points = tool.lastPreviewPoints;
-          points.forEach((point) => {
-            ctx.fillRect(point.x - halfSize, point.y - halfSize, size, size);
-          });
+          ctx.fillStyle = mouseButtons === 2 ? secondaryColor : primaryColor;
+
+          // For shape tools, draw single pixels for preview
+          if (selectedTool === "circle" || selectedTool === "square") {
+            points.forEach((point) => {
+              ctx.fillRect(point.x, point.y, 1, 1);
+            });
+          } else {
+            // For other tools, use brush size
+            points.forEach((point) => {
+              ctx.fillRect(point.x - halfSize, point.y - halfSize, size, size);
+            });
+          }
         }
         ctx.globalAlpha = 1.0;
       }
@@ -802,6 +815,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       setIsMouseDown(true);
+      setMouseButtons(e.buttons);
       const isRightClick = e.button === 2;
 
       if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
@@ -890,6 +904,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Update handleMouseMove to use tool architecture
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
+      setMouseButtons(e.buttons);
       const displayCanvas = displayCanvasRef.current;
       const drawingCanvas = drawingCanvasRef.current;
       if (!displayCanvas || !drawingCanvas) return;
@@ -973,6 +988,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const handleMouseUp = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       setIsMouseDown(false);
+      setMouseButtons(e.buttons);
 
       if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
         setIsPanning(false);
