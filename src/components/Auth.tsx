@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Separator } from "./ui/separator";
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -29,19 +30,28 @@ export default function Auth() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-gray-900">
+    <div
+      className="flex min-h-screen flex-col items-center"
+      style={{
+        backgroundImage: "url('/background.webp')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <div className="flex min-h-[85vh] w-full max-w-xl flex-col items-center justify-center">
-        <div className="mb-8 text-center">
-          <h1 className="mb-2 text-4xl font-bold text-white">Pixel Labs</h1>
-          <p className="text-gray-400">
-            Create and share pixel art with the world
-          </p>
-        </div>
-
-        <div className="w-full max-w-md rounded-lg border border-gray-700 bg-gray-800 p-8 shadow-lg">
+        <div className="w-full max-w-md rounded-lg border border-white/10 bg-black/80 p-8 shadow-lg backdrop-blur-sm">
+          <div className="mb-8 text-center">
+            <h1 className="mb-2 text-4xl font-bold text-white drop-shadow-lg">
+              Pixel Nova
+            </h1>
+            <p className="text-white/90 drop-shadow-md">
+              Create and share pixel art with the world
+            </p>
+            <Separator className="my-4" />
+          </div>
           <div className="mb-6 text-center">
             <h2 className="text-xl font-semibold text-white">Welcome Back</h2>
-            <p className="mt-2 text-sm text-gray-400">
+            <p className="mt-2 text-sm text-white/80">
               Sign in to continue creating
             </p>
           </div>
@@ -49,7 +59,7 @@ export default function Auth() {
           <button
             onClick={handleGitHubSignIn}
             disabled={loading}
-            className="flex w-full items-center justify-center gap-3 rounded-lg bg-white px-4 py-3 font-medium text-gray-900 transition-colors hover:bg-gray-100 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-3 rounded-lg bg-black px-4 py-3 font-medium text-white transition-colors hover:bg-black/80 disabled:opacity-50"
           >
             {loading ? (
               "Loading..."
@@ -62,7 +72,7 @@ export default function Auth() {
           </button>
 
           {error && (
-            <div className="mt-4 rounded-md bg-red-500/10 p-3 text-center text-sm text-red-500">
+            <div className="mt-4 rounded-md bg-red-500/20 p-3 text-center text-sm text-red-200">
               {error}
             </div>
           )}

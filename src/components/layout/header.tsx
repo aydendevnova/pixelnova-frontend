@@ -29,9 +29,9 @@ export default function Header() {
       <div className="flex items-center justify-between">
         {pathname != "/" && (
           <Link className="flex items-center justify-center" href="/">
-            <img src="/logo.png" alt="Pixel Labs" className="h-8 w-8" />
+            <img src="/logo.png" alt="Pixel Nova" className="h-8 w-8" />
             <span className="ml-2 text-lg font-bold text-black">
-              Pixel Labs App
+              Pixel Nova
             </span>
           </Link>
         )}
