@@ -25,6 +25,11 @@ import {
 import { useEditorStore } from "@/store/editorStore";
 import { useUserAgent } from "@/lib/utils/user-agent";
 import { useHistoryStore } from "@/store/historyStore";
+import {
+  resizeLayer,
+  resizeAllLayers,
+  PadDirection,
+} from "@/lib/utils/resizeCanvas";
 
 interface CanvasProps {
   width: number;
@@ -47,11 +52,12 @@ export interface CanvasRef {
   clearCanvas: () => void;
   importImage: (imageData: ImageData) => void;
   getLayerImageData: () => ImageData | null;
+  getAllLayers: () => Layer[];
   deleteSelection: () => void;
   resizeCanvas: (
     newWidth: number,
     newHeight: number,
-    padDirection: "center" | "up" | "down" | "left" | "right",
+    padDirection: PadDirection,
   ) => void;
 }
 
@@ -70,93 +76,6 @@ interface TouchState {
   touchStartTime: number | null;
   lastDrawTime: number | null;
 }
-
-// Add type for pad direction
-type PadDirection = "center" | "up" | "down" | "left" | "right";
-
-// Add utility functions for padding calculations
-const calculatePadding = (
-  currentSize: number,
-  newSize: number,
-  direction: "center" | "start" | "end",
-): { before: number; after: number } => {
-  if (direction === "center") {
-    const padding = Math.max(0, newSize - currentSize);
-    return {
-      before: Math.floor(padding / 2),
-      after: Math.ceil(padding / 2),
-    };
-  } else if (direction === "start") {
-    return {
-      before: Math.max(0, newSize - currentSize),
-      after: 0,
-    };
-  } else {
-    return {
-      before: 0,
-      after: Math.max(0, newSize - currentSize),
-    };
-  }
-};
-
-const resizeLayer = (
-  layer: Layer,
-  newWidth: number,
-  newHeight: number,
-  padDirection: PadDirection,
-): ImageData => {
-  if (!layer.imageData) {
-    return new ImageData(newWidth, newHeight);
-  }
-
-  const tempCanvas = document.createElement("canvas");
-  tempCanvas.width = newWidth;
-  tempCanvas.height = newHeight;
-  const tempCtx = tempCanvas.getContext("2d", { willReadFrequently: true });
-  if (!tempCtx) throw new Error("Failed to get canvas context");
-
-  // Create a temporary canvas for the original image
-  const sourceCanvas = document.createElement("canvas");
-  sourceCanvas.width = layer.imageData.width;
-  sourceCanvas.height = layer.imageData.height;
-  const sourceCtx = sourceCanvas.getContext("2d");
-  if (!sourceCtx) throw new Error("Failed to get source canvas context");
-
-  // Draw the original image data
-  sourceCtx.putImageData(layer.imageData, 0, 0);
-
-  // Calculate position based on padding direction
-  let x = 0;
-  let y = 0;
-
-  switch (padDirection) {
-    case "center":
-      x = Math.floor((newWidth - layer.imageData.width) / 2);
-      y = Math.floor((newHeight - layer.imageData.height) / 2);
-      break;
-    case "right":
-      x = 0;
-      y = 0;
-      break;
-    case "left":
-      x = newWidth - layer.imageData.width;
-      y = 0;
-      break;
-    case "down":
-      x = 0;
-      y = 0;
-      break;
-    case "up":
-      x = 0;
-      y = newHeight - layer.imageData.height;
-      break;
-  }
-
-  // Draw the image at the calculated position
-  tempCtx.drawImage(sourceCanvas, x, y);
-
-  return tempCtx.getImageData(0, 0, newWidth, newHeight);
-};
 
 const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
@@ -668,7 +587,10 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
           // Resize all layers to match the new dimensions
           layers.forEach((layer) => {
-            layer.imageData = resizeLayer(layer, newWidth, newHeight, "center");
+            layer.imageData = resizeLayer(layer, newWidth, newHeight, {
+              width: "center",
+              height: "center",
+            });
           });
         }
 
@@ -718,6 +640,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         );
         return selectedLayer?.imageData ?? null;
       },
+      getAllLayers: () => layers,
       deleteSelection,
       resizeCanvas: (
         newWidth: number,
@@ -731,7 +654,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           drawingCanvas.height = newHeight;
         }
 
-        // Resize all layers
+        // Resize all layers using the utility function
         layers.forEach((layer) => {
           layer.imageData = resizeLayer(
             layer,

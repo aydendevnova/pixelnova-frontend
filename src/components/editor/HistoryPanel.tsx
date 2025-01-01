@@ -16,9 +16,7 @@ interface HistoryPanelProps {
   onClose: () => void;
 }
 
-interface ThumbnailCache {
-  [key: number]: string;
-}
+type ThumbnailCache = Record<number, string>;
 
 export default function HistoryPanel({
   onUndo,
@@ -168,81 +166,27 @@ export default function HistoryPanel({
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="space-y-2 px-2">
-          {/* Hidden canvas for generating thumbnails */}
-          <canvas
-            ref={canvasRef}
-            width={thumbnailSize}
-            height={thumbnailSize}
-            className="hidden"
-          />
+      <div className="overflow-y-auto">
+        <div className="h-[calc(100vh-200px)] flex-1">
+          <div className="space-y-2 px-2">
+            {/* Hidden canvas for generating thumbnails */}
+            <canvas
+              ref={canvasRef}
+              width={thumbnailSize}
+              height={thumbnailSize}
+              className="hidden"
+            />
 
-          {/* Redo stack (future states) */}
-          {redoStack.map((state, index) => (
-            <div
-              key={state.timestamp}
-              className="flex items-center gap-2 rounded-lg bg-gray-800/50 p-2 opacity-50"
-            >
-              <div className="relative h-12 w-12 overflow-hidden rounded border border-gray-700 sm:h-16 sm:w-16">
-                <img
-                  src={
-                    thumbnailCache[state.timestamp] || generateThumbnail(state)
-                  }
-                  alt={`History state ${index}`}
-                  className="h-full w-full object-contain"
-                />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-400">Future state</span>
-                <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <Clock className="h-3 w-3" />
-                  {formatDistanceToNow(state.timestamp, { addSuffix: true })}
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {/* Current state */}
-          {currentState && (
-            <div className="flex items-center gap-2 rounded-lg bg-gray-800 p-2">
-              <div className="relative h-12 w-12 overflow-hidden rounded border border-blue-500 sm:h-16 sm:w-16">
-                <img
-                  src={
-                    thumbnailCache[currentState.timestamp] ||
-                    generateThumbnail(currentState)
-                  }
-                  alt="Current state"
-                  className="h-full w-full object-contain"
-                />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-white">
-                  Current <span className="hidden md:inline">state</span>
-                </span>
-                <div className="hidden items-center gap-1 text-xs text-gray-400 md:flex">
-                  <Clock className="h-3 w-3" />
-                  {formatDistanceToNow(currentState.timestamp, {
-                    addSuffix: true,
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Undo stack (past states) */}
-          {undoStack
-            .slice(0, -1)
-            .reverse()
-            .map((state, index) => (
+            {/* Redo stack (future states) */}
+            {redoStack.map((state, index) => (
               <div
                 key={state.timestamp}
-                className="flex items-center gap-2 rounded-lg bg-gray-800/50 p-2"
+                className="flex items-center gap-2 rounded-lg bg-gray-800/50 p-2 opacity-50"
               >
                 <div className="relative h-12 w-12 overflow-hidden rounded border border-gray-700 sm:h-16 sm:w-16">
                   <img
                     src={
-                      thumbnailCache[state.timestamp] ||
+                      thumbnailCache[state.timestamp] ??
                       generateThumbnail(state)
                     }
                     alt={`History state ${index}`}
@@ -250,18 +194,77 @@ export default function HistoryPanel({
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs text-gray-400">
-                    Previous <span className="hidden md:inline">state</span>
-                  </span>
-                  <div className="hidden items-center gap-1 text-xs text-gray-500 md:flex">
+                  <span className="text-xs text-gray-400">Future state</span>
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
                     <Clock className="h-3 w-3" />
                     {formatDistanceToNow(state.timestamp, { addSuffix: true })}
                   </div>
                 </div>
               </div>
             ))}
+
+            {/* Current state */}
+            {currentState && (
+              <div className="flex items-center gap-2 rounded-lg bg-gray-800 p-2">
+                <div className="relative h-12 w-12 overflow-hidden rounded border border-blue-500 sm:h-16 sm:w-16">
+                  <img
+                    src={
+                      thumbnailCache[currentState.timestamp] ??
+                      generateThumbnail(currentState)
+                    }
+                    alt="Current state"
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-white">
+                    Current <span className="hidden md:inline">state</span>
+                  </span>
+                  <div className="hidden items-center gap-1 text-xs text-gray-400 md:flex">
+                    <Clock className="h-3 w-3" />
+                    {formatDistanceToNow(currentState.timestamp, {
+                      addSuffix: true,
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Undo stack (past states) */}
+            {undoStack
+              .slice(0, -1)
+              .reverse()
+              .map((state, index) => (
+                <div
+                  key={state.timestamp}
+                  className="flex items-center gap-2 rounded-lg bg-gray-800/50 p-2"
+                >
+                  <div className="relative h-12 w-12 overflow-hidden rounded border border-gray-700 sm:h-16 sm:w-16">
+                    <img
+                      src={
+                        thumbnailCache[state.timestamp] ??
+                        generateThumbnail(state)
+                      }
+                      alt={`History state ${index}`}
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-gray-400">
+                      Previous <span className="hidden md:inline">state</span>
+                    </span>
+                    <div className="hidden items-center gap-1 text-xs text-gray-500 md:flex">
+                      <Clock className="h-3 w-3" />
+                      {formatDistanceToNow(state.timestamp, {
+                        addSuffix: true,
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

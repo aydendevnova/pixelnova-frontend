@@ -384,6 +384,7 @@ export default function Editor() {
                 )}
               >
                 <LayersPanel
+                  isHistoryOpen={showHistory}
                   layers={layers}
                   selectedLayerId={selectedLayerId}
                   onLayerSelect={setSelectedLayerId}

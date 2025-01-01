@@ -23,6 +23,7 @@ interface Layer {
 }
 
 interface LayersPanelProps {
+  isHistoryOpen: boolean;
   layers: Layer[];
   selectedLayerId: string;
   onLayerSelect: (layerId: string) => void;
@@ -33,6 +34,7 @@ interface LayersPanelProps {
 }
 
 export default function LayersPanel({
+  isHistoryOpen,
   layers,
   selectedLayerId,
   onLayerSelect,
@@ -178,7 +180,7 @@ export default function LayersPanel({
             />
           </Button>
           <CardTitle className="text-base font-medium text-white">
-            Layers
+            {isCollapsed && isHistoryOpen ? "" : "Layers"}
           </CardTitle>
         </div>
         <Button
@@ -187,7 +189,11 @@ export default function LayersPanel({
           size="icon"
           className="h-8 w-8 text-white hover:bg-gray-700 hover:text-white"
         >
-          <PlusIcon className="h-4 w-4" />
+          {isHistoryOpen && isCollapsed ? (
+            <></>
+          ) : (
+            <PlusIcon className="h-4 w-4" />
+          )}
         </Button>
       </CardHeader>
       {!isCollapsed && (
@@ -205,7 +211,7 @@ export default function LayersPanel({
           <Button
             variant="outline"
             size="icon"
-            className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full border-gray-800 bg-gray-900/90 text-white backdrop-blur"
+            className="fixed bottom-4 right-4 z-20 h-12 w-12 rounded-full border-gray-800 bg-gray-900/90 text-white backdrop-blur"
           >
             <PlusIcon className="h-6 w-6" />
           </Button>
@@ -220,5 +226,14 @@ export default function LayersPanel({
     );
   }
 
-  return <div className="fixed bottom-4 right-4 z-50 w-[300px]">{content}</div>;
+  return (
+    <div
+      className={cn(
+        "fixed bottom-4 right-4 z-50 w-[300px]",
+        isHistoryOpen && isCollapsed && "right-64 w-16",
+      )}
+    >
+      {content}
+    </div>
+  );
 }

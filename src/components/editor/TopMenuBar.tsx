@@ -275,7 +275,7 @@ export default function TopMenuBar({
     return () => {
       document.body.style.pointerEvents = "auto";
     };
-  }, [alertOpen]);
+  }, [alertOpen, isResizeModalOpen]);
 
   return (
     <div className="z-10 flex flex-col border-b border-gray-700 bg-gray-900/50">
@@ -325,6 +325,12 @@ export default function TopMenuBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem
+              className="gap-2"
+              onSelect={() => setIsResizeModalOpen(true)}
+            >
+              <span className="text-black">Resize Canvas</span>
+            </DropdownMenuItem>
             <DropdownMenuItem className="gap-2" onSelect={onToggleGrid}>
               <Grid2X2 className="h-4 w-4" />
               <span className="text-black">Toggle Grid</span>
@@ -378,14 +384,6 @@ export default function TopMenuBar({
             />
           </div>
         </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsResizeModalOpen(true)}
-        >
-          Resize Canvas
-        </Button>
       </div>
 
       {/* Bottom row with editor-specific controls */}
