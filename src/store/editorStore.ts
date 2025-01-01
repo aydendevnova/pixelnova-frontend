@@ -7,6 +7,7 @@ interface EditorState {
   canvasSize: { width: number; height: number };
   viewport: ViewportState;
   showGrid: boolean;
+  showHistory: boolean;
 
   // Tools State
   selectedTool: Tool;
@@ -25,6 +26,7 @@ interface EditorState {
   setCanvasSize: (size: { width: number; height: number }) => void;
   setViewport: (viewport: ViewportState) => void;
   setShowGrid: (show: boolean) => void;
+  setShowHistory: (show: boolean) => void;
   setSelectedTool: (tool: Tool) => void;
   setPrimaryColor: (color: string) => void;
   setSecondaryColor: (color: string) => void;
@@ -42,6 +44,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   canvasSize: { width: 32, height: 32 },
   viewport: { x: 0, y: 0, scale: 4 },
   showGrid: true,
+  showHistory: false,
 
   // Initial Tools State
   selectedTool: PencilTool,
@@ -60,6 +63,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setCanvasSize: (size) => set({ canvasSize: size }),
   setViewport: (viewport) => set({ viewport }),
   setShowGrid: (show) => set({ showGrid: show }),
+  setShowHistory: (show) => set({ showHistory: show }),
   setSelectedTool: (tool) => set({ selectedTool: tool }),
   setPrimaryColor: (color) => set({ primaryColor: color }),
   setSecondaryColor: (color) => set({ secondaryColor: color }),

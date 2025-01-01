@@ -15,6 +15,7 @@ import { createImageData } from "@/lib/utils/canvas";
 import { Layer, ToolType } from "@/types/editor";
 import { PALETTE_INFO } from "@/lib/utils/colorPalletes";
 import { extractColors } from "@/lib/utils/image";
+import HistoryPanel from "@/components/editor/HistoryPanel";
 
 export default function Editor() {
   const {
@@ -32,6 +33,8 @@ export default function Editor() {
     setBucketTolerance,
     showGrid,
     setShowGrid,
+    showHistory,
+    setShowHistory,
     layers,
     setLayers,
     selectedLayerId,
@@ -49,6 +52,7 @@ export default function Editor() {
     if (prevState) {
       setLayers(prevState.layers);
       setSelectedLayerId(prevState.selectedLayerId);
+      setCanvasSize(prevState.canvasSize);
     }
   };
 
@@ -57,6 +61,7 @@ export default function Editor() {
     if (nextState) {
       setLayers(nextState.layers);
       setSelectedLayerId(nextState.selectedLayerId);
+      setCanvasSize(nextState.canvasSize);
     }
   };
 
@@ -76,9 +81,10 @@ export default function Editor() {
             : null,
         })),
         selectedLayerId,
+        canvasSize,
       });
     }
-  }, [layers, selectedLayerId]);
+  }, [layers, selectedLayerId, canvasSize]);
 
   // Add keyboard shortcuts for undo/redo
   useEffect(() => {
@@ -306,6 +312,8 @@ export default function Editor() {
           onBrushSizeChange={setBrushSize}
           showGrid={showGrid}
           onToggleGrid={() => setShowGrid(!showGrid)}
+          showHistory={showHistory}
+          onToggleHistory={() => setShowHistory(!showHistory)}
           layers={layers}
           isValidSelection={isValidSelection}
           onDeleteSelection={onDeleteSelection}
@@ -369,69 +377,90 @@ export default function Editor() {
               />
             </ErrorBoundary>
 
-            <ErrorBoundary
-              fallback={({ error, reset }) => (
-                <ErrorView error={error} reset={reset} />
-              )}
-            >
-              <LayersPanel
-                layers={layers}
-                selectedLayerId={selectedLayerId}
-                onLayerSelect={setSelectedLayerId}
-                onLayerVisibilityToggle={(layerId: string) => {
-                  setLayers((prev) =>
-                    prev.map((layer) =>
-                      layer.id === layerId
-                        ? { ...layer, visible: !layer.visible }
-                        : layer,
-                    ),
-                  );
-                }}
-                onAddLayer={() => {
-                  const newLayer: Layer = {
-                    id: `layer_${Date.now()}`,
-                    name: `Layer ${layers.length + 1}`,
-                    visible: true,
-                    imageData: createImageData(
-                      canvasSize.width,
-                      canvasSize.height,
-                    ),
-                  };
-                  setLayers((prev) => [...prev, newLayer]);
-                  setSelectedLayerId(newLayer.id);
-                }}
-                onDeleteLayer={(layerId: string) => {
-                  setLayers((prev) =>
-                    prev.filter((layer) => layer.id !== layerId),
-                  );
-                  if (selectedLayerId === layerId && layers.length > 1) {
-                    const index = layers.findIndex((l) => l.id === layerId);
-                    if (index !== -1) {
-                      const newIndex = Math.max(0, index - 1);
-                      const layer = layers[newIndex];
-                      if (layer) {
-                        setSelectedLayerId(layer.id);
+            <div className="flex flex-col">
+              <ErrorBoundary
+                fallback={({ error, reset }) => (
+                  <ErrorView error={error} reset={reset} />
+                )}
+              >
+                <LayersPanel
+                  isHistoryOpen={showHistory}
+                  layers={layers}
+                  selectedLayerId={selectedLayerId}
+                  onLayerSelect={setSelectedLayerId}
+                  onLayerVisibilityToggle={(layerId: string) => {
+                    setLayers((prev) =>
+                      prev.map((layer) =>
+                        layer.id === layerId
+                          ? { ...layer, visible: !layer.visible }
+                          : layer,
+                      ),
+                    );
+                  }}
+                  onAddLayer={() => {
+                    const newLayer: Layer = {
+                      id: `layer_${Date.now()}`,
+                      name: `Layer ${layers.length + 1}`,
+                      visible: true,
+                      imageData: createImageData(
+                        canvasSize.width,
+                        canvasSize.height,
+                      ),
+                    };
+                    setLayers((prev) => [...prev, newLayer]);
+                    setSelectedLayerId(newLayer.id);
+                  }}
+                  onDeleteLayer={(layerId: string) => {
+                    setLayers((prev) =>
+                      prev.filter((layer) => layer.id !== layerId),
+                    );
+                    if (selectedLayerId === layerId && layers.length > 1) {
+                      const index = layers.findIndex((l) => l.id === layerId);
+                      if (index !== -1) {
+                        const newIndex = Math.max(0, index - 1);
+                        const layer = layers[newIndex];
+                        if (layer) {
+                          setSelectedLayerId(layer.id);
+                        }
                       }
                     }
-                  }
-                }}
-                onLayerReorder={(fromIndex: number, toIndex: number) => {
-                  setLayers((prev: Layer[]) => {
-                    const newLayers = [...prev];
-                    const [movedLayer] = newLayers.splice(fromIndex, 1);
-                    if (movedLayer) {
-                      newLayers.splice(toIndex, 0, movedLayer);
-                      return newLayers.map((layer, index) => ({
-                        ...layer,
-                        id: `layer_${index}`,
-                        name: `Layer ${index + 1}`,
-                      }));
-                    }
-                    return prev;
-                  });
-                }}
-              />
-            </ErrorBoundary>
+                  }}
+                  onLayerReorder={(fromIndex: number, toIndex: number) => {
+                    setLayers((prev: Layer[]) => {
+                      const newLayers = [...prev];
+                      const [movedLayer] = newLayers.splice(fromIndex, 1);
+                      if (movedLayer) {
+                        newLayers.splice(toIndex, 0, movedLayer);
+                        return newLayers.map((layer, index) => ({
+                          ...layer,
+                          id: `layer_${index}`,
+                          name: `Layer ${index + 1}`,
+                        }));
+                      }
+                      return prev;
+                    });
+                  }}
+                />
+              </ErrorBoundary>
+
+              {showHistory && (
+                <ErrorBoundary
+                  fallback={({ error, reset }) => (
+                    <ErrorView error={error} reset={reset} />
+                  )}
+                >
+                  <div className="md:w-64">
+                    <HistoryPanel
+                      onUndo={handleUndo}
+                      onRedo={handleRedo}
+                      canUndo={canUndo}
+                      canRedo={canRedo}
+                      onClose={() => setShowHistory(false)}
+                    />
+                  </div>
+                </ErrorBoundary>
+              )}
+            </div>
           </div>
         </div>
       </ErrorBoundary>

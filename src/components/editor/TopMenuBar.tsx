@@ -7,7 +7,7 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { Input } from "@/components/ui/input";
-import { Grid2X2, Menu } from "lucide-react";
+import { Grid2X2, HistoryIcon, Menu } from "lucide-react";
 import AiPixelArtModal from "../modals/ai-pixel-art";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -62,6 +62,8 @@ interface TopMenuBarProps {
   width: number;
   height: number;
   onCanvasResize: (newWidth: number, newHeight: number) => void;
+  showHistory: boolean;
+  onToggleHistory: () => void;
 }
 
 export default function TopMenuBar({
@@ -83,6 +85,8 @@ export default function TopMenuBar({
   width,
   height,
   onCanvasResize,
+  showHistory,
+  onToggleHistory,
 }: TopMenuBarProps) {
   const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
   const [showSignInModal, setShowSignInModal] = useState(false);
@@ -271,7 +275,7 @@ export default function TopMenuBar({
     return () => {
       document.body.style.pointerEvents = "auto";
     };
-  }, [alertOpen]);
+  }, [alertOpen, isResizeModalOpen]);
 
   return (
     <div className="z-10 flex flex-col border-b border-gray-700 bg-gray-900/50">
@@ -321,10 +325,21 @@ export default function TopMenuBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem
+              className="gap-2"
+              onSelect={() => setIsResizeModalOpen(true)}
+            >
+              <span className="text-black">Resize Canvas</span>
+            </DropdownMenuItem>
             <DropdownMenuItem className="gap-2" onSelect={onToggleGrid}>
               <Grid2X2 className="h-4 w-4" />
               <span className="text-black">Toggle Grid</span>
               {showGrid && <span className="ml-auto">✓</span>}
+            </DropdownMenuItem>
+            <DropdownMenuItem className="gap-2" onSelect={onToggleHistory}>
+              <HistoryIcon className="h-4 w-4" />
+              <span className="text-black">Visualize History</span>
+              {showHistory && <span className="ml-auto">✓</span>}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -369,14 +384,6 @@ export default function TopMenuBar({
             />
           </div>
         </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsResizeModalOpen(true)}
-        >
-          Resize Canvas
-        </Button>
       </div>
 
       {/* Bottom row with editor-specific controls */}

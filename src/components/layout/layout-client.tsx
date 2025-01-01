@@ -8,6 +8,7 @@ import Header from "./header";
 import { ErrorBoundary } from "../error-boundary";
 import ErrorView from "../error-view";
 import { WasmProvider } from "../wasm-provider";
+import { useEffect } from "react";
 
 // Create a Supabase client
 const supabase = createClient(
@@ -22,11 +23,15 @@ export default function LayoutClient({
 }) {
   const queryClient = new QueryClient();
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  });
+
   return (
     <QueryClientProvider client={queryClient}>
       <SessionContextProvider supabaseClient={supabase}>
         <UserProvider>
-          <div className="relative">
+          <div className="relative flex min-h-screen flex-col overflow-hidden">
             <Header />
             <WasmProvider>
               <ErrorBoundary

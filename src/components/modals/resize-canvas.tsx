@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,8 +18,15 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Plus, Minus } from "lucide-react";
 import { CanvasRef } from "../editor/Canvas";
+import { useHistoryStore } from "@/store/historyStore";
+import {
+  generateResizePreview,
+  PadDirection,
+  WidthPadDirection,
+  HeightPadDirection,
+} from "@/lib/utils/resizeCanvas";
 
 interface ResizeCanvasModalProps {
   isOpen: boolean;
@@ -38,20 +45,58 @@ export function ResizeCanvasModal({
   currentHeight,
   onResize,
 }: ResizeCanvasModalProps) {
+  const { undoStack } = useHistoryStore();
+  const [widthInput, setWidthInput] = useState(currentWidth.toString());
+  const [heightInput, setHeightInput] = useState(currentHeight.toString());
   const [width, setWidth] = useState(currentWidth);
   const [height, setHeight] = useState(currentHeight);
-  const [padDirection, setPadDirection] = useState<
-    "center" | "up" | "down" | "left" | "right"
-  >("center");
+  const [padDirection, setPadDirection] = useState<PadDirection>({
+    width: "center",
+    height: "center",
+  });
+  const [thumbnailCache, setThumbnailCache] = useState<string>("");
 
-  // Reset values when modal opens
+  const generatePreview = useCallback(() => {
+    // Get current state from history
+    const currentState = undoStack[undoStack.length - 1];
+    if (!currentState) return;
+
+    const thumbnail = generateResizePreview(
+      currentState.layers,
+      currentWidth,
+      currentHeight,
+      width,
+      height,
+      padDirection,
+    );
+
+    setThumbnailCache(thumbnail);
+  }, [width, height, padDirection, currentWidth, currentHeight, undoStack]);
+
+  // Validation function
+  const validateNumber = (value: string): number | null => {
+    const numberRegex = /^\d+$/;
+    if (!numberRegex.test(value)) return null;
+    const num = parseInt(value);
+    return num > 0 ? num : null;
+  };
+
+  // Update input handlers
   useEffect(() => {
     if (isOpen) {
+      setWidthInput(currentWidth.toString());
+      setHeightInput(currentHeight.toString());
       setWidth(currentWidth);
       setHeight(currentHeight);
-      setPadDirection("center");
+      setPadDirection({ width: "center", height: "center" });
+      setTimeout(generatePreview, 0);
     }
-  }, [isOpen, currentWidth, currentHeight]);
+  }, [isOpen]);
+
+  // Update preview when values change
+  useEffect(() => {
+    generatePreview();
+  }, [width, height, padDirection]);
 
   const willLosePixels = width < currentWidth || height < currentHeight;
 
@@ -69,70 +114,188 @@ export function ResizeCanvasModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>Resize Canvas</DialogTitle>
           <DialogDescription>
             Enter new dimensions and choose padding direction.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          {willLosePixels && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Warning: Reducing canvas size will crop pixels outside the new
-                dimensions.
-              </AlertDescription>
-            </Alert>
-          )}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="width">Width</Label>
-              <Input
-                id="width"
-                type="number"
-                min="1"
-                value={width}
-                onChange={(e) =>
-                  setWidth(Math.max(1, parseInt(e.target.value) || 1))
-                }
-              />
+        <div>
+          <div className="grid gap-8 md:grid-cols-2">
+            <div>
+              <div className="grid gap-4 py-4">
+                <div className="h-[120px]">
+                  {willLosePixels ? (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        Warning: Reducing canvas size will crop pixels outside
+                        the new dimensions.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <Alert variant="default">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        Choose the padding direction to decide where your
+                        content will go.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="width">Width</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const newValue = Math.max(
+                            1,
+                            parseInt(widthInput) - 1,
+                          );
+                          setWidthInput(newValue.toString());
+                          setWidth(newValue);
+                        }}
+                        className="h-10 w-14"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Input
+                        id="width"
+                        value={widthInput}
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setWidthInput(newValue);
+                          const validNumber = validateNumber(newValue);
+                          if (validNumber !== null) {
+                            setWidth(validNumber);
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const newValue = parseInt(widthInput) + 1;
+                          setWidthInput(newValue.toString());
+                          setWidth(newValue);
+                        }}
+                        className="h-10 w-14"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="height">Height</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const newValue = Math.max(
+                            1,
+                            parseInt(heightInput) - 1,
+                          );
+                          setHeightInput(newValue.toString());
+                          setHeight(newValue);
+                        }}
+                        className="h-10 w-14"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Input
+                        id="height"
+                        value={heightInput}
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setHeightInput(newValue);
+                          const validNumber = validateNumber(newValue);
+                          if (validNumber !== null) {
+                            setHeight(validNumber);
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const newValue = parseInt(heightInput) + 1;
+                          setHeightInput(newValue.toString());
+                          setHeight(newValue);
+                        }}
+                        className="h-10 w-14"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="widthPadDirection">Width Padding</Label>
+                    <Select
+                      value={padDirection.width}
+                      onValueChange={(value: WidthPadDirection) =>
+                        setPadDirection((prev) => ({ ...prev, width: value }))
+                      }
+                    >
+                      <SelectTrigger id="widthPadDirection">
+                        <SelectValue placeholder="Select width padding" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">Left</SelectItem>
+                        <SelectItem value="center">Center</SelectItem>
+                        <SelectItem value="right">Right</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="heightPadDirection">Height Padding</Label>
+                    <Select
+                      value={padDirection.height}
+                      onValueChange={(value: HeightPadDirection) =>
+                        setPadDirection((prev) => ({ ...prev, height: value }))
+                      }
+                    >
+                      <SelectTrigger id="heightPadDirection">
+                        <SelectValue placeholder="Select height padding" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="top">Top</SelectItem>
+                        <SelectItem value="center">Center</SelectItem>
+                        <SelectItem value="bottom">Bottom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="height">Height</Label>
-              <Input
-                id="height"
-                type="number"
-                min="1"
-                value={height}
-                onChange={(e) =>
-                  setHeight(Math.max(1, parseInt(e.target.value) || 1))
-                }
-              />
+              <Label>Preview</Label>
+              <div className="flex h-[300px] items-center justify-center overflow-hidden rounded-lg border border-border bg-background p-4">
+                {/* Display preview image */}
+                <div className="relative h-[300px] w-[300px] overflow-hidden rounded border border-gray-700">
+                  {thumbnailCache && (
+                    <img
+                      src={thumbnailCache}
+                      alt="Preview"
+                      className="h-full w-full object-contain"
+                      style={{
+                        imageRendering: "pixelated",
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="padDirection">Padding Direction</Label>
-            <Select
-              value={padDirection}
-              onValueChange={(
-                value: "center" | "up" | "down" | "left" | "right",
-              ) => setPadDirection(value)}
-            >
-              <SelectTrigger id="padDirection">
-                <SelectValue placeholder="Select padding direction" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="center">Center</SelectItem>
-                <SelectItem value="up">Content Down</SelectItem>
-                <SelectItem value="down">Content Up</SelectItem>
-                <SelectItem value="left">Content Right</SelectItem>
-                <SelectItem value="right">Content Left</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancel
