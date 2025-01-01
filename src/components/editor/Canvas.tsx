@@ -1781,6 +1781,20 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     [selection],
   );
 
+  const handleCut = useCallback(
+    (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "x") {
+        if (selection.selectedImageData) {
+          // First copy the selection to clipboard
+          clipboardDataRef.current = selection.selectedImageData;
+          // Then delete the selection
+          deleteSelection();
+        }
+      }
+    },
+    [selection, deleteSelection],
+  );
+
   const handlePaste = useCallback(
     (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "v") {
@@ -1892,12 +1906,14 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Add keyboard event listeners
   useEffect(() => {
     window.addEventListener("keydown", handleCopy);
+    window.addEventListener("keydown", handleCut);
     window.addEventListener("keydown", handlePaste);
     return () => {
       window.removeEventListener("keydown", handleCopy);
+      window.removeEventListener("keydown", handleCut);
       window.removeEventListener("keydown", handlePaste);
     };
-  }, [handleCopy, handlePaste]);
+  }, [handleCopy, handleCut, handlePaste]);
 
   // Update confirmation handler
   const handleConfirmPaste = useCallback(() => {

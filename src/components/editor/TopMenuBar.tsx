@@ -15,6 +15,7 @@ import {
   Redo2,
   Copy,
   Clipboard,
+  ArrowRight,
 } from "lucide-react";
 import AiPixelArtModal from "../modals/ai-pixel-art";
 import JSZip from "jszip";
@@ -313,6 +314,7 @@ export default function TopMenuBar({
               className="gap-2"
               onSelect={() => setIsResizeModalOpen(true)}
             >
+              <ArrowRight className="h-4 w-4" />
               <span className="text-black">Resize Canvas</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2" onSelect={onToggleGrid}>
@@ -432,7 +434,7 @@ export default function TopMenuBar({
         )}
 
         {selectedTool === "square" && (
-          <div className="mt-4 flex flex-col items-center gap-3 md:flex-row">
+          <div className="flex flex-col items-center gap-3 max-md:mt-4 md:flex-row">
             <Switch
               id="fill-square"
               checked={isSquareFilled}
@@ -445,7 +447,7 @@ export default function TopMenuBar({
         )}
 
         {selectedTool === "circle" && (
-          <div className="mt-4 flex flex-col items-center gap-3 md:flex-row">
+          <div className="flex flex-col items-center gap-3 max-md:mt-4 md:flex-row">
             <Switch
               id="fill-circle"
               checked={isCircleFilled}
@@ -473,7 +475,7 @@ export default function TopMenuBar({
 
         {selectedTool === "select" && (
           <div className="flex items-center gap-3">
-            <div className="mt-4 flex flex-col items-center gap-3 md:flex-row">
+            <div className="flex flex-col items-center gap-3 max-md:mt-4 md:flex-row">
               <Switch
                 id="clear-original"
                 checked={shouldClearOriginal}

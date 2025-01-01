@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Plus, Minus } from "lucide-react";
+import { AlertTriangle, Plus, Minus, ArrowRight } from "lucide-react";
 import { CanvasRef } from "../editor/Canvas";
 import { useHistoryStore } from "@/store/historyStore";
 import {
