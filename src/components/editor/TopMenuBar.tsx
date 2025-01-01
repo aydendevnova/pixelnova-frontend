@@ -47,6 +47,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
@@ -110,6 +111,8 @@ export default function TopMenuBar({
   const [isSquareFilled, setIsSquareFilled] = useState(false);
   const [isCircleFilled, setIsCircleFilled] = useState(false);
 
+  const { toast } = useToast();
+
   const handleToleranceChange = (value: string) => {
     const numValue = Math.max(1, Math.min(10, Number(value) || 1));
     onBucketToleranceChange(numValue);
@@ -137,14 +140,47 @@ export default function TopMenuBar({
           if (!ctx) return;
 
           ctx.drawImage(img, 0, 0);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          onImportImage(imageData);
+          let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-          // Reset and generate new color palette from the image
-          const colors = extractColors(imageData);
-          onGeneratePalette(colors);
+          // Extract initial colors
+          const initialColors = extractColors(imageData);
 
-          // Clear the input value to allow the same file to be selected again
+          if (initialColors.length > 100) {
+            // Convert to basic colors
+            imageData = convertToBasicColors(imageData);
+
+            // Show warning toast
+            toast({
+              title: "Too many colors",
+              description: `Image converted to basic colors for better performance.`,
+              duration: 5000,
+            });
+
+            // Import the converted image
+            onImportImage(imageData);
+
+            // Extract colors from the converted image and generate palette
+            const tempCanvas = document.createElement("canvas");
+            tempCanvas.width = imageData.width;
+            tempCanvas.height = imageData.height;
+            const tempCtx = tempCanvas.getContext("2d");
+            if (tempCtx) {
+              tempCtx.putImageData(imageData, 0, 0);
+              const convertedImageData = tempCtx.getImageData(
+                0,
+                0,
+                imageData.width,
+                imageData.height,
+              );
+              const convertedColors = extractColors(convertedImageData);
+              onGeneratePalette(convertedColors);
+            }
+          } else {
+            onImportImage(imageData);
+            onGeneratePalette(initialColors);
+          }
+
+          // Clear the input value
           e.target.value = "";
         };
         img.src = event.target?.result as string;
@@ -305,6 +341,83 @@ export default function TopMenuBar({
     setIsCircleFilled(checked);
     CircleTool.setFilled(checked);
   }, []);
+
+  const convertToGrayscale = (imageData: ImageData): ImageData => {
+    const newImageData = new ImageData(imageData.width, imageData.height);
+
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      // Calculate grayscale value using luminance formula
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      const a = imageData.data[i + 3];
+
+      const grayscale = Math.round(
+        0.299 * (r ?? 0) + 0.587 * (g ?? 0) + 0.114 * (b ?? 0),
+      );
+
+      // Quantize to 8 levels of gray
+      const level = Math.round(grayscale / 32) * 32;
+
+      newImageData.data[i] = level; // R
+      newImageData.data[i + 1] = level; // G
+      newImageData.data[i + 2] = level; // B
+      newImageData.data[i + 3] = a ?? 0; // A
+    }
+
+    return newImageData;
+  };
+
+  // Update the conversion function to use simple color rounding
+  const convertToBasicColors = (imageData: ImageData): ImageData => {
+    const newImageData = new ImageData(imageData.width, imageData.height);
+
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      const a = imageData.data[i + 3];
+
+      // Round to nearest 255 or 0 for each channel
+      const newR = r ? (r > 127 ? 255 : 0) : 0;
+      const newG = g ? (g > 127 ? 255 : 0) : 0;
+      const newB = b ? (b > 127 ? 255 : 0) : 0;
+
+      // Special case for grays
+      if (
+        Math.abs((r ?? 0) - (g ?? 0)) < 30 &&
+        Math.abs((g ?? 0) - (b ?? 0)) < 30 &&
+        Math.abs((r ?? 0) - (b ?? 0)) < 30
+      ) {
+        // If all channels are similar, convert to gray
+        if ((r ?? 0) > 170) {
+          newImageData.data[i] =
+            newImageData.data[i + 1] =
+            newImageData.data[i + 2] =
+              255; // White
+        } else if (r ?? 0 < 85) {
+          newImageData.data[i] =
+            newImageData.data[i + 1] =
+            newImageData.data[i + 2] =
+              0; // Black
+        } else {
+          newImageData.data[i] =
+            newImageData.data[i + 1] =
+            newImageData.data[i + 2] =
+              128; // Gray
+        }
+      } else {
+        // Use rounded RGB values for colors
+        newImageData.data[i] = newR; // R
+        newImageData.data[i + 1] = newG; // G
+        newImageData.data[i + 2] = newB; // B
+      }
+
+      newImageData.data[i + 3] = a ?? 0; // Keep original alpha
+    }
+
+    return newImageData;
+  };
 
   return (
     <div className="z-10 flex flex-col border-b border-gray-700 bg-gray-900/50">

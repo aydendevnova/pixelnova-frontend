@@ -16,6 +16,7 @@ import { Layer, ToolType } from "@/types/editor";
 import { PALETTE_INFO } from "@/lib/utils/colorPalletes";
 import { extractColors } from "@/lib/utils/image";
 import HistoryPanel from "@/components/editor/HistoryPanel";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Editor() {
   const {
@@ -121,6 +122,8 @@ export default function Editor() {
     }
   }, []);
 
+  const { toast } = useToast();
+
   const handleClearCanvas = () => {
     const blankLayer: Layer = {
       id: "layer_1",
@@ -183,7 +186,7 @@ export default function Editor() {
       setCanvasSize({ width: targetWidth, height: targetHeight });
     }
 
-    // Now create the new layer with the imported image
+    // Create the new layer with the imported image
     const tempCanvas = document.createElement("canvas");
     tempCanvas.width = targetWidth;
     tempCanvas.height = targetHeight;
@@ -217,22 +220,29 @@ export default function Editor() {
   };
 
   const handlePaletteChange = (newPalette: keyof typeof PALETTE_INFO) => {
-    // Get the new palette's colors
     const newPaletteColors = PALETTE_INFO[newPalette]?.colors ?? [];
-
-    // Extract all unique colors from the current pixel art
     const extractedColors = layers.flatMap((layer) =>
       layer.imageData ? extractColors(layer.imageData) : [],
     );
 
-    // For each color in the pixel art
-    extractedColors.forEach((color) => {
-      // If the color is not in the new palette and not already imported
+    // Limit the number of imported colors
+    const maxImportedColors = 100 - newPaletteColors.length;
+    const uniqueExtractedColors = [...new Set(extractedColors)];
+
+    if (uniqueExtractedColors.length > maxImportedColors) {
+      toast({
+        title: "Too many unique colors",
+        description: `Image converted into black and white.`,
+        duration: 5000,
+      });
+    }
+
+    // Only process up to the maximum allowed colors
+    uniqueExtractedColors.slice(0, maxImportedColors).forEach((color) => {
       if (
         !newPaletteColors.includes(color) &&
         !importedColors.includes(color)
       ) {
-        // Add it to imported colors
         addCustomColor(color);
       }
     });
