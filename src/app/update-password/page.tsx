@@ -28,7 +28,7 @@ export default function UpdatePassword() {
       }
     };
 
-    checkSession();
+    void checkSession();
   }, [router]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
