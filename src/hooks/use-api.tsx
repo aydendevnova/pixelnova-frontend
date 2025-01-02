@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { env } from "@/env";
 import { DownscaleResponse, UpdateAccountBody } from "@/shared-types";
 import { useSession } from "@supabase/auth-helpers-react";
+import { useCredits, CREDITS_COST } from "@/hooks/use-credits";
 
 const API_ROUTES = {
   UPDATE_ACCOUNT: "/api/update-account",
@@ -66,6 +67,7 @@ export function useCheckUsername() {
 
 export function useEstimateGridSize() {
   const session = useSession();
+
   return useMutation({
     mutationFn: async () => {
       if (!session) {
@@ -97,10 +99,16 @@ export function useDownscaleImage({
   onSuccess?: (data: DownscaleResponse) => void;
 }) {
   const session = useSession();
+  const { credits } = useCredits();
+
   return useMutation({
     mutationFn: async () => {
       if (!session) {
         throw new Error("No session found");
+      }
+
+      if (!credits || credits < CREDITS_COST.PROCESS_IMAGE) {
+        throw new Error("Insufficient credits");
       }
 
       const response = await axios.post(
@@ -127,13 +135,18 @@ export function useDownscaleImage({
   });
 }
 
-export const useGenerateImage = () => {
+export function useGenerateImage() {
   const session = useSession();
+  const { credits } = useCredits();
 
   return useMutation({
     mutationFn: async (prompt: string) => {
       if (!session) {
         throw new Error("No session found");
+      }
+
+      if (!credits || credits < CREDITS_COST.GENERATE_IMAGE) {
+        throw new Error("Insufficient credits");
       }
 
       const response = await axios.post(
@@ -147,8 +160,9 @@ export const useGenerateImage = () => {
           responseType: "arraybuffer",
         },
       );
-
       return response.data;
     },
+ 
+
   });
-};
+}

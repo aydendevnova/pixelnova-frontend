@@ -119,6 +119,7 @@ export type Database = {
         Row: {
           alpha_tester: boolean;
           avatar_url: string | null;
+          credits: number;
           full_name: string | null;
           id: string;
           updated_at: string | null;
@@ -128,6 +129,7 @@ export type Database = {
         Insert: {
           alpha_tester?: boolean;
           avatar_url?: string | null;
+          credits?: number;
           full_name?: string | null;
           id: string;
           updated_at?: string | null;
@@ -137,6 +139,7 @@ export type Database = {
         Update: {
           alpha_tester?: boolean;
           avatar_url?: string | null;
+          credits?: number;
           full_name?: string | null;
           id?: string;
           updated_at?: string | null;

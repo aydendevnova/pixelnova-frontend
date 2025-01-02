@@ -15,6 +15,7 @@ type UserContextType = {
   isLoading: boolean;
   isSignedIn: boolean;
   invalidateUser: () => Promise<void>;
+  credits: number | null;
 };
 
 const UserContext = createContext<UserContextType>({
@@ -22,6 +23,7 @@ const UserContext = createContext<UserContextType>({
   profile: null,
   isLoading: true,
   isSignedIn: false,
+  credits: null,
   invalidateUser: async () => {
     throw new Error("Invalidate user function not implemented");
   },
@@ -66,7 +68,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
       const { data, error } = await supabaseClient
         .from("profiles")
-        .select("*")
+        .select("*, credits")
         .eq("id", session.user.id)
         .single();
 
@@ -90,6 +92,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     profile: profile ?? null,
     isLoading: workerLoading || profileLoading,
     isSignedIn: !!session?.user && !!workerUser,
+    credits: profile?.credits ?? null,
     invalidateUser,
   };
 
