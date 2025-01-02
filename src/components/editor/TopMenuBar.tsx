@@ -91,6 +91,7 @@ interface TopMenuBarProps {
   onToolSelect: (tool: ToolType) => void;
   onCopy?: () => void;
   onPaste?: () => void;
+  onImportLayers: (layers: { name: string; imageData: ImageData }[]) => void;
 }
 
 export default function TopMenuBar({
@@ -121,6 +122,7 @@ export default function TopMenuBar({
   onToolSelect,
   onCopy,
   onPaste,
+  onImportLayers,
 }: TopMenuBarProps) {
   const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
   const [showSignInModal, setShowSignInModal] = useState(false);
@@ -183,7 +185,9 @@ export default function TopMenuBar({
               console.error("Image data not found");
               return;
             }
-            zip.file(`${layer.name}.png`, imageData.split(",")[1]!, {
+            // convert layer.name from Layer 1 to layer_1
+            const layerName = layer.name.toLowerCase().replace(/ /g, "_");
+            zip.file(`${layerName}.png`, imageData.split(",")[1]!, {
               base64: true,
             });
           }
@@ -582,6 +586,7 @@ export default function TopMenuBar({
         isOpen={showSignInModal}
         onClose={() => setShowSignInModal(false)}
         featureName="AI Pixel Art Generator"
+        onExport={handleExport}
       />
 
       <ResizeCanvasModal
@@ -601,6 +606,7 @@ export default function TopMenuBar({
         onClose={() => setIsUploadModalOpen(false)}
         onImportImage={onImportImage}
         onGeneratePalette={onGeneratePalette}
+        onImportLayers={onImportLayers}
       />
     </div>
   );

@@ -14,16 +14,25 @@ interface SignInModalProps {
   isOpen: boolean;
   onClose: () => void;
   featureName?: string;
+  onExport?: () => Promise<void>;
 }
 
 export function SignInModal({
   isOpen,
   onClose,
   featureName = "this feature",
+  onExport,
 }: SignInModalProps) {
   const router = useRouter();
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
+    if (onExport) {
+      try {
+        await onExport();
+      } catch (error) {
+        console.error("Failed to export:", error);
+      }
+    }
     router.push("/signin");
     onClose();
   };
