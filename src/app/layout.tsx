@@ -35,9 +35,12 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Get the current pathname
+  const pathname = process.env.NEXT_PUBLIC_VERCEL_URL ? "/" : "";
+
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
-      <body className="overflow-hidden">
+      <body>
         <LayoutClient>{children}</LayoutClient>
       </body>
     </html>
