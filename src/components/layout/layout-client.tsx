@@ -11,6 +11,7 @@ import { WasmProvider } from "../wasm-provider";
 import { useEffect } from "react";
 import { Toaster } from "../ui/toaster";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 // Create a Supabase client
 const supabase = createClient(
@@ -25,15 +26,26 @@ export default function LayoutClient({
 }) {
   const queryClient = new QueryClient();
 
+  const pathname = usePathname();
+
   useEffect(() => {
-    window.scrollTo(0, 0);
-  });
+    if (pathname == "/") {
+      window.scrollTo(0, 0);
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+  }, [pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>
       <SessionContextProvider supabaseClient={supabase}>
         <UserProvider>
-          <div className="relative flex min-h-screen flex-col overflow-hidden">
+          <div
+            className={`relative flex min-h-screen flex-col ${
+              pathname == "/" ? "overflow-hidden" : ""
+            }`}
+          >
             <Header />
             <WasmProvider>
               <ErrorBoundary
@@ -43,21 +55,23 @@ export default function LayoutClient({
               >
                 <Toaster />
                 {children}
-                <div className="fixed bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 opacity-50">
-                  <img
-                    src="/logo.png"
-                    alt="Pixel Nova"
-                    width={16}
-                    height={16}
-                    className="rounded-full"
-                  />
-                  <span className="font-semibold text-blue-500">
-                    Pixel Nova
-                  </span>
-                  <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-orange-800">
-                    beta
-                  </span>
-                </div>
+                {pathname == "/" && (
+                  <div className="fixed bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 opacity-50">
+                    <img
+                      src="/logo.png"
+                      alt="Pixel Nova"
+                      width={16}
+                      height={16}
+                      className="rounded-full"
+                    />
+                    <span className="font-semibold text-blue-500">
+                      Pixel Nova
+                    </span>
+                    <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-orange-800">
+                      beta
+                    </span>
+                  </div>
+                )}
               </ErrorBoundary>
             </WasmProvider>
           </div>
