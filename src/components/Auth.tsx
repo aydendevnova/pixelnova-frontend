@@ -27,6 +27,32 @@ export default function Auth() {
       setLoading(true);
       setError(null);
 
+      // Validate passwords match for signup
+      if (mode === "signup" && password !== confirmPassword) {
+        setError("Passwords do not match");
+        return;
+      }
+
+      // Validate password strength for signup
+      if (mode === "signup") {
+        if (password.length < 8) {
+          setError("Password must be at least 8 characters long");
+          return;
+        }
+        if (!/[A-Z]/.test(password)) {
+          setError("Password must contain at least one uppercase letter");
+          return;
+        }
+        if (!/[a-z]/.test(password)) {
+          setError("Password must contain at least one lowercase letter");
+          return;
+        }
+        if (!/[0-9]/.test(password)) {
+          setError("Password must contain at least one number");
+          return;
+        }
+      }
+
       // Clean email by removing content between + and @ if it exists
       const cleanEmail = email.includes("+")
         ? email.replace(/\+[^@]*(?=@)/, "")
@@ -49,7 +75,20 @@ export default function Auth() {
             emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
-        if (error) throw error;
+        if (error) {
+          // Handle specific signup errors
+          if (error.message.includes("already registered")) {
+            setError(
+              "This email is already registered. Please sign in instead.",
+            );
+            return;
+          }
+          if (error.message.includes("valid email")) {
+            setError("Please enter a valid email address");
+            return;
+          }
+          throw error;
+        }
 
         // Show success message for signup
         toast({
@@ -63,10 +102,23 @@ export default function Auth() {
         // Clear the form
         setEmail("");
         setPassword("");
+        setConfirmPassword("");
       }
     } catch (err) {
       console.error("Auth error:", err);
-      setError(err instanceof Error ? err.message : "An error occurred");
+      if (err instanceof Error) {
+        // Handle generic error messages in a user-friendly way
+        const message = err.message.toLowerCase();
+        if (message.includes("network")) {
+          setError("Network error. Please check your internet connection.");
+        } else if (message.includes("invalid")) {
+          setError("Invalid email or password");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

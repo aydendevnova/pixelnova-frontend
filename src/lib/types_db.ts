@@ -4,167 +4,197 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
+  | Json[]
 
 export type Database = {
   public: {
     Tables: {
       image_generation_jobs: {
         Row: {
-          created_at: string | null;
-          id: string;
-          prompt: string;
-          result_url: string | null;
-          status: string;
-          updated_at: string | null;
-          user_id: string;
-        };
+          created_at: string | null
+          id: string
+          prompt: string
+          result_url: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
         Insert: {
-          created_at?: string | null;
-          id?: string;
-          prompt: string;
-          result_url?: string | null;
-          status: string;
-          updated_at?: string | null;
-          user_id: string;
-        };
+          created_at?: string | null
+          id?: string
+          prompt: string
+          result_url?: string | null
+          status: string
+          updated_at?: string | null
+          user_id: string
+        }
         Update: {
-          created_at?: string | null;
-          id?: string;
-          prompt?: string;
-          result_url?: string | null;
-          status?: string;
-          updated_at?: string | null;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string | null
+          id?: string
+          prompt?: string
+          result_url?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       pictures: {
         Row: {
-          created_at: string;
-          id: number;
-          name: string;
-          tags: string[];
-          url: string;
-          user_id: string;
-        };
+          created_at: string
+          id: number
+          name: string
+          tags: string[]
+          url: string
+          user_id: string
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          name?: string;
-          tags: string[];
-          url: string;
-          user_id: string;
-        };
+          created_at?: string
+          id?: number
+          name?: string
+          tags: string[]
+          url: string
+          user_id: string
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          name?: string;
-          tags?: string[];
-          url?: string;
-          user_id?: string;
-        };
+          created_at?: string
+          id?: number
+          name?: string
+          tags?: string[]
+          url?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "pictures_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "pictures_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       pixel_art: {
         Row: {
-          created_at: string;
-          id: number;
-          layer_base64: string[];
-          layer_name: string[];
-          metadata: string;
-          name: string;
-          tags: string[];
-          user_id: string;
-        };
+          created_at: string
+          id: number
+          layer_base64: string[]
+          layer_name: string[]
+          metadata: string
+          name: string
+          tags: string[]
+          user_id: string
+        }
         Insert: {
-          created_at?: string;
-          id?: number;
-          layer_base64?: string[];
-          layer_name?: string[];
-          metadata?: string;
-          name?: string;
-          tags?: string[];
-          user_id: string;
-        };
+          created_at?: string
+          id?: number
+          layer_base64?: string[]
+          layer_name?: string[]
+          metadata?: string
+          name?: string
+          tags?: string[]
+          user_id: string
+        }
         Update: {
-          created_at?: string;
-          id?: number;
-          layer_base64?: string[];
-          layer_name?: string[];
-          metadata?: string;
-          name?: string;
-          tags?: string[];
-          user_id?: string;
-        };
+          created_at?: string
+          id?: number
+          layer_base64?: string[]
+          layer_name?: string[]
+          metadata?: string
+          name?: string
+          tags?: string[]
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "pixel_art_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "pixel_art_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       profiles: {
         Row: {
-          alpha_tester: boolean;
-          avatar_url: string | null;
-          credits: number;
-          full_name: string | null;
-          id: string;
-          updated_at: string | null;
-          username: string | null;
-          website: string | null;
-        };
+          alpha_tester: boolean
+          avatar_url: string | null
+          credits: number
+          full_name: string | null
+          id: string
+          updated_at: string | null
+          username: string | null
+          website: string | null
+        }
         Insert: {
-          alpha_tester?: boolean;
-          avatar_url?: string | null;
-          credits?: number;
-          full_name?: string | null;
-          id: string;
-          updated_at?: string | null;
-          username?: string | null;
-          website?: string | null;
-        };
+          alpha_tester?: boolean
+          avatar_url?: string | null
+          credits?: number
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+          username?: string | null
+          website?: string | null
+        }
         Update: {
-          alpha_tester?: boolean;
-          avatar_url?: string | null;
-          credits?: number;
-          full_name?: string | null;
-          id?: string;
-          updated_at?: string | null;
-          username?: string | null;
-          website?: string | null;
-        };
-        Relationships: [];
-      };
-    };
+          alpha_tester?: boolean
+          avatar_url?: string | null
+          credits?: number
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+          username?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      stripe_customers: {
+        Row: {
+          id: string
+          plan_active: boolean
+          plan_expires: number | null
+          stripe_customer_id: string
+          subscription_id: string | null
+          total_downloads: number | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          plan_active?: boolean
+          plan_expires?: number | null
+          stripe_customer_id: string
+          subscription_id?: string | null
+          total_downloads?: number | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          plan_active?: boolean
+          plan_expires?: number | null
+          stripe_customer_id?: string
+          subscription_id?: string | null
+          total_downloads?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+    }
     Views: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Functions: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Enums: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
-};
+      [_ in never]: never
+    }
+  }
+}
 
-type PublicSchema = Database[Extract<keyof Database, "public">];
+type PublicSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
   PublicTableNameOrOptions extends
@@ -177,7 +207,7 @@ export type Tables<
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R;
+      Row: infer R
     }
     ? R
     : never
@@ -185,11 +215,11 @@ export type Tables<
         PublicSchema["Views"])
     ? (PublicSchema["Tables"] &
         PublicSchema["Views"])[PublicTableNameOrOptions] extends {
-        Row: infer R;
+        Row: infer R
       }
       ? R
       : never
-    : never;
+    : never
 
 export type TablesInsert<
   PublicTableNameOrOptions extends
@@ -200,17 +230,17 @@ export type TablesInsert<
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I;
+      Insert: infer I
     }
     ? I
     : never
   : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
     ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-        Insert: infer I;
+        Insert: infer I
       }
       ? I
       : never
-    : never;
+    : never
 
 export type TablesUpdate<
   PublicTableNameOrOptions extends
@@ -221,17 +251,17 @@ export type TablesUpdate<
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U;
+      Update: infer U
     }
     ? U
     : never
   : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
     ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-        Update: infer U;
+        Update: infer U
       }
       ? U
       : never
-    : never;
+    : never
 
 export type Enums<
   PublicEnumNameOrOptions extends
@@ -244,14 +274,14 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
-    : never;
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof PublicSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database;
+    schema: keyof Database
   }
     ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
@@ -259,4 +289,4 @@ export type CompositeTypes<
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never;
+    : never

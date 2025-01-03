@@ -16,7 +16,6 @@ import {
   Copy,
   Clipboard,
   ArrowRight,
-  Sparkles,
 } from "lucide-react";
 import AiPixelArtModal from "../modals/ai-pixel-art";
 import JSZip from "jszip";
@@ -61,6 +60,7 @@ import { useToast } from "@/hooks/use-toast";
 import UploadImageModal from "../modals/upload-image";
 import { extractColors } from "@/lib/utils/color";
 import { useCredits } from "@/hooks/use-credits";
+import { CreditsDisplay } from "../credits-display";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
@@ -133,9 +133,6 @@ export default function TopMenuBar({
   const [isCircleFilled, setIsCircleFilled] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
-
-  const { toast } = useToast();
-  const { credits, isLoading: isLoadingCredits } = useCredits();
 
   const handleToleranceChange = (value: string) => {
     const numValue = Math.max(1, Math.min(10, Number(value) || 1));
@@ -368,15 +365,8 @@ export default function TopMenuBar({
             />
           </div>
         </div>
-
-        {/* Credits Display */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/50 px-3 py-1.5">
-            <Sparkles className="h-4 w-4 text-yellow-500" />
-            <span className="text-sm font-medium text-white">
-              {isLoadingCredits ? "..." : credits} Credits
-            </span>
-          </div>
+        <div className="hidden md:inline">
+          <CreditsDisplay />
         </div>
       </div>
 

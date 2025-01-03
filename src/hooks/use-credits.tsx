@@ -1,7 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -9,10 +15,19 @@ import useUser from "./use-user";
 
 export const CREDITS_COST = {
   PROCESS_IMAGE: 5,
-  GENERATE_IMAGE: 100,
+  GENERATE_IMAGE: 40,
 };
 
-export function useCredits() {
+interface CreditsContextType {
+  credits: number;
+  isLoading: boolean;
+  updateCredits: (params: { amount: number }) => Promise<any>;
+  optimisticDeductCredits: (amount: number) => void;
+}
+
+const CreditsContext = createContext<CreditsContextType | undefined>(undefined);
+
+export function CreditsProvider({ children }: { children: ReactNode }) {
   const session = useSession();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -57,6 +72,7 @@ export function useCredits() {
   });
 
   const optimisticDeductCredits = (amount: number) => {
+    console.log("optimisticDeductCredits", amount);
     // Immediately update the display credits
     setDisplayCredits((prev) => Math.max(0, prev - amount));
 
@@ -64,10 +80,22 @@ export function useCredits() {
     void queryClient.invalidateQueries({ queryKey: ["user"] });
   };
 
-  return {
+  const value = {
     credits: displayCredits,
     isLoading: false,
     updateCredits,
     optimisticDeductCredits,
   };
+
+  return (
+    <CreditsContext.Provider value={value}>{children}</CreditsContext.Provider>
+  );
+}
+
+export function useCredits() {
+  const context = useContext(CreditsContext);
+  if (context === undefined) {
+    throw new Error("useCredits must be used within a CreditsProvider");
+  }
+  return context;
 }

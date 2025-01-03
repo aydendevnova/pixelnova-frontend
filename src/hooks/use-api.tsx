@@ -13,6 +13,7 @@ const API_ROUTES = {
   ESTIMATE_GRID_SIZE: "/api/estimate-grid-size",
   DOWNSCALE_IMAGE: "/api/downscale-image",
   GENERATE_IMAGE: "/api/generate-image",
+  CHECKOUT: "/api/checkout",
 } as const;
 
 export function useUpdateAccount() {
@@ -162,7 +163,27 @@ export function useGenerateImage() {
       );
       return response.data;
     },
- 
+  });
+}
 
+export function useCheckout() {
+  const session = useSession();
+  return useMutation({
+    mutationFn: async (priceId: string) => {
+      if (!session) {
+        throw new Error("No session found");
+      }
+      const response = await axios.post(
+        `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.CHECKOUT}`,
+        { priceId },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        },
+      );
+      return response.data;
+    },
   });
 }

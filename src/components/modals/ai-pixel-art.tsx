@@ -32,6 +32,7 @@ import { GeneratedImage } from "@/types/types";
 import useUser from "@/hooks/use-user";
 import { CREDITS_COST, useCredits } from "@/hooks/use-credits";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { CreditsDisplay } from "../credits-display";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;
@@ -143,13 +144,13 @@ const StepOne = ({
   };
 
   return (
-    <Tabs defaultValue="ai" className="w-full">
+    <Tabs defaultValue="upload" className="w-full">
       <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="ai" disabled={isGenerating}>
-          AI Generation & History
-        </TabsTrigger>
         <TabsTrigger value="upload" disabled={isGenerating}>
           Manual Upload
+        </TabsTrigger>
+        <TabsTrigger value="ai" disabled={isGenerating}>
+          AI Generation & History
         </TabsTrigger>
       </TabsList>
 
@@ -308,7 +309,7 @@ const StepOne = ({
               </h3>
               <p className="max-w-md text-gray-500">
                 Upload your own images or AI-generated artwork to convert into
-                pixel art. Supported formats: PNG, JPG, JPEG.
+                pixel art. Supported formats: PNG, JPG, WEBP.
               </p>
             </div>
 
@@ -317,7 +318,7 @@ const StepOne = ({
                 type="file"
                 ref={fileInputRef}
                 className="hidden"
-                accept="image/*"
+                accept="image/png, image/jpg, image/jpeg, image/webp"
                 onChange={handleFileUpload}
               />
               <div
@@ -332,9 +333,6 @@ const StepOne = ({
                     <p className="text-sm font-medium text-gray-900">
                       Click to upload or drag and drop
                     </p>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Maximum file size: 10MB
-                    </p>
                   </div>
                 </div>
               </div>
@@ -342,7 +340,7 @@ const StepOne = ({
 
             <div className="text-center text-sm text-gray-500">
               <p>
-                Pro tip: You can use images from Midjourney, DALL-E, or any
+                Pro tip: You can use images from Midjourney, ChatGPT, or any
                 other AI art generator
               </p>
             </div>
@@ -775,14 +773,7 @@ export default function AiPixelArtModal({
             <DialogDescription>{currentStep.description}</DialogDescription>
           </DialogHeader>
 
-          <div className="mb-4 flex items-center justify-end gap-2">
-            <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-black px-3 py-1.5">
-              <Sparkle className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium text-gray-200">
-                {credits} Credits
-              </span>
-            </div>
-          </div>
+          <CreditsDisplay />
 
           <div className="mb-4 flex w-full gap-2">
             {steps.map((_, index) => (
