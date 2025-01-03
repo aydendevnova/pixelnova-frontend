@@ -42,44 +42,58 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     queryFn: async () => {
       if (!session?.access_token) return null;
 
-      const response = await fetch(
-        `${env.NEXT_PUBLIC_EXPRESS_URL}/api/protected`,
-        {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
+      try {
+        const response = await fetch(
+          `${env.NEXT_PUBLIC_EXPRESS_URL}/api/protected`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
           },
-        },
-      );
+        );
 
-      if (!response.ok) {
-        throw new Error("Failed to verify user with worker");
+        if (!response.ok) {
+          throw new Error("Failed to verify user with worker");
+        }
+
+        return response.json();
+      } catch (e) {
+        console.error("Worker verification error:", e);
+        return null;
       }
-
-      return response.json();
     },
     enabled: !!session?.access_token,
+    initialData: null,
   });
 
   // Query for Supabase profile data
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", session?.user?.id],
     queryFn: async () => {
-      if (!session?.user?.id || !workerUser) return null;
+      try {
+        if (!session?.user?.id || !workerUser) {
+          return null;
+        }
 
-      const { data, error } = await supabaseClient
-        .from("profiles")
-        .select("*, credits")
-        .eq("id", session.user.id)
-        .single();
+        const { data, error } = await supabaseClient
+          .from("profiles")
+          .select("*, credits")
+          .eq("id", session.user.id)
+          .single();
 
-      if (error) {
-        console.error("Profile fetch error:", error);
-        throw error;
+        if (error) {
+          console.error("Profile fetch error:", error);
+          throw error;
+        }
+
+        return data;
+      } catch (e) {
+        console.error("Profile fetch error:", e);
+        return null;
       }
-
-      return data;
     },
     enabled: !!session?.user?.id && !!workerUser,
+    initialData: null,
   });
 
   const invalidateUser = async () => {
@@ -90,7 +104,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const value = {
     user: session?.user ?? null,
     profile: profile ?? null,
-    isLoading: workerLoading || profileLoading,
+    isLoading: !!session?.user && (workerLoading || profileLoading),
     isSignedIn: !!session?.user && !!workerUser,
     credits: profile?.credits ?? null,
     invalidateUser,
