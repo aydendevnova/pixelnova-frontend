@@ -32,6 +32,7 @@ import {
 } from "@/lib/utils/resizeCanvas";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useModal } from "@/hooks/use-modal";
 
 interface CanvasProps {
   width: number;
@@ -125,10 +126,20 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const [isDrawing, setIsDrawing] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
-  const [lastDrawPosition, setLastDrawPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
+
+  const {
+    isImageConversionOpen,
+    isImportImageOpen,
+    isClearCanvasWarningOpen,
+    isResizeCanvasOpen,
+  } = useModal();
+
+  const canHandleKeyboardShortcuts =
+    !isImageConversionOpen &&
+    !isImportImageOpen &&
+    !isClearCanvasWarningOpen &&
+    !isResizeCanvasOpen;
+
   const [viewport, setViewport] = useState<ViewportState>({
     x: 0,
     y: 0,
@@ -148,7 +159,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     originalY: undefined,
   });
 
-  const [isPickingColor, setIsPickingColor] = useState(false);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [hoverPosition, setHoverPosition] = useState<{
     x: number;
@@ -446,85 +456,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
     };
   }, [render]);
-
-  // Update drawPixel to draw on the selected layer
-  const drawPixel = useCallback(
-    (x: number, y: number, isRightClick: boolean) => {
-      const selectedLayer = layers.find(
-        (layer) => layer.id === selectedLayerId,
-      );
-      if (!selectedLayer || !selectedLayer.visible) return;
-
-      // Create a new canvas for the layer if it doesn't exist
-      if (!selectedLayer.imageData) {
-        const newImageData = new ImageData(width, height);
-        selectedLayer.imageData = newImageData;
-      }
-
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = width;
-      tempCanvas.height = height;
-      const tempCtx = tempCanvas.getContext("2d");
-      if (!tempCtx) return;
-
-      // Draw existing layer data
-      tempCtx.putImageData(selectedLayer.imageData, 0, 0);
-
-      const size = brushSize;
-      const halfSize = Math.floor(size / 2);
-
-      // Draw new pixels
-      tempCtx.beginPath();
-      for (let offsetY = 0; offsetY < size; offsetY++) {
-        for (let offsetX = 0; offsetX < size; offsetX++) {
-          const pixelX = x - halfSize + offsetX;
-          const pixelY = y - halfSize + offsetY;
-
-          const color = isRightClick ? secondaryColor : primaryColor;
-
-          if (pixelX < 0 || pixelX >= width || pixelY < 0 || pixelY >= height) {
-            continue;
-          }
-
-          if (selectedTool === "eraser") {
-            tempCtx.clearRect(pixelX, pixelY, 1, 1);
-          } else {
-            if (color === "transparent") {
-              tempCtx.clearRect(pixelX, pixelY, 1, 1);
-            } else {
-              if (tempCtx.fillStyle !== color) {
-                tempCtx.fillStyle = color;
-              }
-              tempCtx.fillRect(pixelX, pixelY, 1, 1);
-            }
-          }
-        }
-      }
-
-      // Update layer's imageData
-      selectedLayer.imageData = tempCtx.getImageData(0, 0, width, height);
-
-      // Only render once per frame
-      if (!animationFrameRef.current) {
-        animationFrameRef.current = requestAnimationFrame(() => {
-          render();
-          animationFrameRef.current = undefined;
-        });
-      }
-    },
-    [
-      primaryColor,
-      secondaryColor,
-      render,
-      brushSize,
-      selectedTool,
-      layers,
-      selectedLayerId,
-      width,
-      height,
-      selectedLayerId,
-    ],
-  );
 
   // Helper functions
   const handlePan = useCallback(
@@ -1133,6 +1064,9 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Update keyboard event handler for proper deletion
   useEffect(() => {
+    if (!canHandleKeyboardShortcuts) {
+      return;
+    }
     const handleKeyDown = (e: KeyboardEvent) => {
       // Tool shortcuts (Aseprite-like)
       switch (e.key.toLowerCase()) {
@@ -1179,6 +1113,9 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Event listeners with cleanup
   useEffect(() => {
+    if (!canHandleKeyboardShortcuts) {
+      return;
+    }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" && !e.repeat) {
         setIsSpacePressed(true);

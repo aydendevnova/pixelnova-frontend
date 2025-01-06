@@ -63,7 +63,7 @@ export function SignInModal({
               onClick={handleSignIn}
               className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             >
-              Continue to sign in
+              Export canvas and sign in
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>

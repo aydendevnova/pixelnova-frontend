@@ -33,6 +33,8 @@ import useUser from "@/hooks/use-user";
 import { CREDITS_COST, useCredits } from "@/hooks/use-credits";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { CreditsDisplay } from "../credits-display";
+import { useModal } from "@/hooks/use-modal";
+import { env } from "@/env";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;
@@ -149,12 +151,14 @@ const StepOne = ({
         <TabsTrigger value="upload" disabled={isGenerating}>
           Manual Upload
         </TabsTrigger>
-        <TabsTrigger value="ai" disabled={isGenerating}>
-          AI Generation & History
-        </TabsTrigger>
+        {env.NEXT_PUBLIC_IS_DEVELOPMENT === "true" && (
+          <TabsTrigger value="ai" disabled={isGenerating}>
+            AI Generation & History
+          </TabsTrigger>
+        )}
       </TabsList>
 
-      <TabsContent value="ai" className="space-y-4">
+      <TabsContent value="ai" className="relative space-y-4">
         <div className="flex h-[400px] flex-col gap-8 lg:flex-row lg:items-stretch">
           {/* AI Generation Section */}
           <div className="flex h-full flex-1 flex-col">
@@ -341,7 +345,11 @@ const StepOne = ({
             <div className="text-center text-sm text-gray-500">
               <p>
                 Pro tip: You can use images from Midjourney, ChatGPT, or any
-                other AI art generator
+                other AI art generator.
+              </p>
+              <p>
+                Ask the AI to generate pixel art and upload them here to refine
+                them.
               </p>
             </div>
           </div>
@@ -508,7 +516,7 @@ export default function AiPixelArtModal({
   const { credits, optimisticDeductCredits } = useCredits();
   const { isSignedIn } = useUser();
   const [step, setStep] = useState(1);
-  const [open, setOpen] = useState(false);
+  const { setImageConversionOpen, isImageConversionOpen } = useModal();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
@@ -538,7 +546,7 @@ export default function AiPixelArtModal({
   useEffect(() => {
     const loadImages = async () => {
       try {
-        if (open) {
+        if (isImageConversionOpen) {
           if (searchTerm.trim()) {
             const results = await searchByPrompt(searchTerm);
             setRecentImages(results);
@@ -552,7 +560,7 @@ export default function AiPixelArtModal({
       }
     };
     void loadImages();
-  }, [open, searchTerm, searchByPrompt, getImages]);
+  }, [isImageConversionOpen, searchTerm, searchByPrompt, getImages]);
 
   const handleDeleteImage = async (id: number) => {
     if (typeof id === "undefined") return;
@@ -731,7 +739,11 @@ export default function AiPixelArtModal({
       title: "Preview Image",
       description: "Preview your pixelated image",
       content: (
-        <StepThree results={results} onFinish={onFinish} setOpen={setOpen} />
+        <StepThree
+          results={results}
+          onFinish={onFinish}
+          setOpen={setImageConversionOpen}
+        />
       ),
     },
   ];
@@ -747,9 +759,9 @@ export default function AiPixelArtModal({
         </Button>
       )}
       <Dialog
-        open={open || isGenerating}
+        open={isImageConversionOpen || isGenerating}
         onOpenChange={(open) => {
-          setOpen(open);
+          setImageConversionOpen(open);
           if (open) {
             setStep(1);
             setUploadedImage(null);
@@ -792,8 +804,13 @@ export default function AiPixelArtModal({
             <div className="mt-auto flex w-full flex-1 justify-between">
               <Button
                 variant="outline"
-                onClick={() => setStep((step) => step - 1)}
-                disabled={step === 1}
+                onClick={() => {
+                  if (step === 1) {
+                    setImageConversionOpen(false);
+                  } else {
+                    setStep((step) => step - 1);
+                  }
+                }}
               >
                 Back
               </Button>

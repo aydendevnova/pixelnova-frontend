@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import EditorPage from "./editor/page";
+import { env } from "@/env";
 
 export const metadata: Metadata = {
   title: "Pixel Nova | AI Pixel Art Editor & Generator",

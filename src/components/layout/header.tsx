@@ -12,12 +12,18 @@ import {
 import UserMyAvatar from "./user-my-avatar";
 import Link from "next/link";
 import SignOutButton from "../auth/sign-out-button";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { CreditsDisplay } from "../credits-display";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+import { ArrowRight } from "lucide-react";
 
 export default function Header() {
   const { profile, isSignedIn } = useUser();
   const pathname = usePathname();
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+
+  const router = useRouter();
 
   if (pathname === "/signin" || pathname === "/signup") {
     return <></>;
@@ -31,8 +37,11 @@ export default function Header() {
         {pathname != "/" && (
           <Link className="flex items-center justify-center" href="/">
             <img src="/logo.png" alt="Pixel Nova" className="h-8 w-8" />
-            <span className="ml-2 text-lg font-bold text-black">
+            <span className="mx-2 text-lg font-bold text-black">
               Pixel Nova
+            </span>
+            <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-orange-800">
+              public alpha
             </span>
           </Link>
         )}
@@ -77,11 +86,52 @@ export default function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button asChild>
-            <Link href="/signin" target="_blank" rel="noopener noreferrer">
+          <>
+            <Button
+              variant="default"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              onClick={() => {
+                if (pathname === "/") {
+                  setIsSignInModalOpen(true);
+                } else {
+                  router.push("/signin");
+                }
+              }}
+            >
               Sign in
-            </Link>
-          </Button>
+            </Button>
+            <Dialog
+              open={isSignInModalOpen}
+              onOpenChange={() => setIsSignInModalOpen(false)}
+            >
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-bold">
+                    Save Your Work
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="-mt-2 flex flex-col gap-6 pb-6">
+                  <div className=" flex flex-col gap-4">
+                    <p className="text-sm text-muted-foreground">
+                      You may have unsaved changes in your canvas.
+                    </p>
+                    <p>To save: Go to File → Export </p>
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsSignInModalOpen(false);
+                        router.push("/signin");
+                      }}
+                    >
+                      Continue without saving
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </>
         )}
       </div>
     </div>

@@ -17,6 +17,7 @@ import { PALETTE_INFO } from "@/lib/utils/colorPalletes";
 import { extractColors } from "@/lib/utils/image";
 import HistoryPanel from "@/components/editor/HistoryPanel";
 import { useToast } from "@/hooks/use-toast";
+import { useModal } from "@/hooks/use-modal";
 
 export default function Editor() {
   const {
@@ -46,6 +47,19 @@ export default function Editor() {
   } = useEditorStore();
 
   const { pushHistory, undo, redo, canUndo, canRedo } = useHistoryStore();
+
+  const {
+    isImageConversionOpen,
+    isImportImageOpen,
+    isClearCanvasWarningOpen,
+    isResizeCanvasOpen,
+  } = useModal();
+
+  const canHandleKeyboardShortcuts =
+    !isImageConversionOpen &&
+    !isImportImageOpen &&
+    !isClearCanvasWarningOpen &&
+    !isResizeCanvasOpen;
 
   // Add handlers for undo/redo
   const handleUndo = () => {
@@ -89,6 +103,9 @@ export default function Editor() {
 
   // Add keyboard shortcuts for undo/redo
   useEffect(() => {
+    if (!canHandleKeyboardShortcuts) {
+      return;
+    }
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "z") {
         if (e.shiftKey) {
@@ -489,6 +506,7 @@ export default function Editor() {
 
   // Update the copy handler to set clipboard state
   const handleCopy = useCallback(() => {
+    if (!canHandleKeyboardShortcuts) return;
     const copyEvent = new KeyboardEvent("keydown", {
       key: "c",
       ctrlKey: true,
@@ -501,6 +519,7 @@ export default function Editor() {
   // Update the paste handler
   const handlePaste = useCallback(() => {
     if (!hasClipboardData) return;
+    if (!canHandleKeyboardShortcuts) return;
     const pasteEvent = new KeyboardEvent("keydown", {
       key: "v",
       ctrlKey: true,
@@ -675,7 +694,7 @@ export default function Editor() {
                   <ErrorView error={error} reset={reset} />
                 )}
               >
-                <div className="md:w-64">
+                <div className="absolute right-0 top-0 md:w-64">
                   <HistoryPanel
                     onUndo={handleUndo}
                     onRedo={handleRedo}

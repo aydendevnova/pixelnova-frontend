@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,6 +34,17 @@ export default function UploadImageModal({
 }: UploadImageModalProps) {
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
+
+  const buttonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      const timeoutId = setTimeout(() => {
+        buttonRef.current?.focus();
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [open]);
 
   const processImageFile = useCallback(
     async (file: File) => {
@@ -315,7 +326,11 @@ export default function UploadImageModal({
               />
               <label htmlFor="upload-file-input">
                 <Button variant="outline" className="cursor-pointer" asChild>
-                  <div>
+                  <div
+                    ref={buttonRef}
+                    tabIndex={0}
+                    className="flex items-center"
+                  >
                     <Upload className="mr-2 h-4 w-4" />
                     Choose File
                   </div>

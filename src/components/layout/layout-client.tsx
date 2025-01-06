@@ -31,9 +31,25 @@ export default function LayoutClient({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname == "/") {
+    if (pathname == "/" && env.NEXT_PUBLIC_IS_DEVELOPMENT !== "true") {
       window.scrollTo(0, 0);
       document.body.classList.add("overflow-hidden");
+
+      // Add beforeunload event listener
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        // This message might not be shown in some browsers, as they use their own default messages
+        e.returnValue =
+          "You have unsaved changes. Are you sure you want to leave?";
+        return e.returnValue;
+      };
+
+      window.addEventListener("beforeunload", handleBeforeUnload);
+
+      // Cleanup function to remove the event listener
+      return () => {
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+      };
     } else {
       document.body.classList.remove("overflow-hidden");
     }
@@ -72,7 +88,7 @@ export default function LayoutClient({
                         Pixel Nova
                       </span>
                       <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-orange-800">
-                        beta
+                        public alpha
                       </span>
                     </div>
                   )}

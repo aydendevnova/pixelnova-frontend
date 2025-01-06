@@ -58,7 +58,7 @@ export default function BuyPage() {
             Power Up Your Creativity
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300">
-            Transform your ideas into pixel-perfect art with PixelNova Credits
+            Transform your ideas into pixel-perfect art with Pixel Nova Credits
           </p>
         </div>
 
@@ -75,7 +75,10 @@ export default function BuyPage() {
                   <Zap className="h-6 w-6 text-blue-500" />
                 </div>
                 <h3 className="mb-2 text-xl font-bold">Starter Pack</h3>
-                <div className="mb-1 text-3xl font-bold">$9.99</div>
+                <div className="mb-1 text-3xl font-bold">
+                  <span className="line-through">$12.99</span>{" "}
+                  <span className="text-blue-500">$9.99</span>
+                </div>
                 <div className="mb-4">
                   <span className="text-sm font-medium text-blue-500">
                     One-time payment
@@ -86,9 +89,15 @@ export default function BuyPage() {
                     <Sparkles className="h-4 w-4 text-blue-500" />
                     <span>2000 Credits</span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    Perfect for getting started
-                  </p>
+
+                  <ul className="list-inside list-disc">
+                    <li className="text-sm text-gray-600 dark:text-gray-300">
+                      Perfect for getting started
+                    </li>
+                    <li className="text-sm text-gray-600 dark:text-gray-300">
+                      Up to 400 processing operations
+                    </li>
+                  </ul>
                 </div>
                 <Button
                   className="w-full bg-blue-500 text-white hover:bg-blue-600"
@@ -117,7 +126,10 @@ export default function BuyPage() {
                   <Crown className="h-6 w-6 text-yellow-400" />
                 </div>
                 <h3 className="mb-2 text-xl font-bold">Pro Pack</h3>
-                <div className="mb-1 text-3xl font-bold">$19.99</div>
+                <div className="mb-1 text-3xl font-bold">
+                  <span className="line-through">$24.99</span>{" "}
+                  <span className="text-purple-500">$19.99</span>
+                </div>
                 <div className="mb-4">
                   <span className="text-sm font-medium text-purple-500">
                     One-time payment
@@ -129,9 +141,14 @@ export default function BuyPage() {
                     <span>5000 Credits</span>
                   </div>
 
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    20% More Value!
-                  </p>
+                  <ul className="list-inside list-disc">
+                    <li className="text-sm text-gray-600 dark:text-gray-300">
+                      20% more value
+                    </li>
+                    <li className="text-sm text-gray-600 dark:text-gray-300">
+                      Up to 1000 processing operations
+                    </li>
+                  </ul>
                 </div>
                 <Button
                   className="w-full bg-purple-500 text-white hover:bg-purple-600"

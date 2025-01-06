@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FolderOpenIcon,
   ArrowDownTrayIcon,
   TrashIcon,
+  ArchiveBoxIcon,
 } from "@heroicons/react/24/outline";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +17,7 @@ import {
   Copy,
   Clipboard,
   ArrowRight,
+  ImageIcon,
 } from "lucide-react";
 import AiPixelArtModal from "../modals/ai-pixel-art";
 import JSZip from "jszip";
@@ -61,6 +63,14 @@ import UploadImageModal from "../modals/upload-image";
 import { extractColors } from "@/lib/utils/color";
 import { useCredits } from "@/hooks/use-credits";
 import { CreditsDisplay } from "../credits-display";
+import { useModal } from "@/hooks/use-modal";
+import {
+  Dialog,
+  DialogDescription,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { DialogFooter, DialogHeader } from "../ui/dialog";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
@@ -94,6 +104,7 @@ interface TopMenuBarProps {
   onCopy?: () => void;
   onPaste?: () => void;
   onImportLayers: (layers: { name: string; imageData: ImageData }[]) => void;
+  onExportPNG?: () => void;
 }
 
 export default function TopMenuBar({
@@ -121,18 +132,27 @@ export default function TopMenuBar({
   canRedo = false,
   onUndo,
   onRedo,
-  onToolSelect,
   onCopy,
   onPaste,
   onImportLayers,
+  onExportPNG,
 }: TopMenuBarProps) {
+  const { isExportModalOpen, setIsExportModalOpen } = useModal();
   const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
   const [showSignInModal, setShowSignInModal] = useState(false);
-  const [isResizeModalOpen, setIsResizeModalOpen] = useState(false);
   const [isSquareFilled, setIsSquareFilled] = useState(false);
   const [isCircleFilled, setIsCircleFilled] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [alertOpen, setAlertOpen] = useState(false);
+
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const {
+    isResizeCanvasOpen,
+    setResizeCanvasOpen,
+    isClearCanvasWarningOpen,
+    setClearCanvasWarningOpen,
+    isImportImageOpen,
+    setImportImageOpen,
+  } = useModal();
 
   const handleToleranceChange = (value: string) => {
     const numValue = Math.max(1, Math.min(10, Number(value) || 1));
@@ -145,96 +165,104 @@ export default function TopMenuBar({
   };
 
   // Function to handle file export
-  const handleExport = useCallback(async () => {
-    const zip = new JSZip();
+  const handleExport = useCallback(
+    async (type: "zip" | "png") => {
+      if (type === "png") {
+        onExportPNG?.();
+        return;
+      }
 
-    // Get the drawing canvas
-    const drawingCanvas = document.querySelector(
-      'canvas[data-canvas="drawing"]',
-    ) as HTMLCanvasElement | null;
+      const zip = new JSZip();
 
-    if (!drawingCanvas) {
-      console.error("Drawing canvas not found");
-      return;
-    }
+      // Get the drawing canvas
+      const drawingCanvas = document.querySelector(
+        'canvas[data-canvas="drawing"]',
+      ) as HTMLCanvasElement | null;
 
-    try {
-      // Export each layer individually
-      layers.forEach((layer, index) => {
-        if (!layer.imageData) return;
+      if (!drawingCanvas) {
+        console.error("Drawing canvas not found");
+        return;
+      }
 
-        // Create a temporary canvas for this layer
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = drawingCanvas.width;
-        tempCanvas.height = drawingCanvas.height;
-        const tempCtx = tempCanvas.getContext("2d", {
+      try {
+        // Export each layer individually
+        layers.forEach((layer, index) => {
+          if (!layer.imageData) return;
+
+          // Create a temporary canvas for this layer
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = drawingCanvas.width;
+          tempCanvas.height = drawingCanvas.height;
+          const tempCtx = tempCanvas.getContext("2d", {
+            willReadFrequently: true,
+          });
+
+          if (tempCtx) {
+            // Set composite operation to ensure proper transparency
+            tempCtx.globalCompositeOperation = "source-over";
+
+            // Only export if layer is visible
+            if (layer.visible) {
+              tempCtx.putImageData(layer.imageData, 0, 0);
+
+              // Convert to base64 and add to zip
+              const imageData = tempCanvas.toDataURL("image/png");
+              if (!imageData) {
+                console.error("Image data not found");
+                return;
+              }
+              // convert layer.name from Layer 1 to layer_1
+              const layerName = layer.name.toLowerCase().replace(/ /g, "_");
+              zip.file(`${layerName}.png`, imageData.split(",")[1]!, {
+                base64: true,
+              });
+            }
+          }
+        });
+
+        // For combined image, create a new canvas and compose all visible layers
+        const combinedCanvas = document.createElement("canvas");
+        combinedCanvas.width = drawingCanvas.width;
+        combinedCanvas.height = drawingCanvas.height;
+        const combinedCtx = combinedCanvas.getContext("2d", {
           willReadFrequently: true,
         });
 
-        if (tempCtx) {
-          // Set composite operation to ensure proper transparency
-          tempCtx.globalCompositeOperation = "source-over";
+        if (combinedCtx) {
+          // Draw all visible layers in order
+          layers.forEach((layer) => {
+            if (layer.visible && layer.imageData) {
+              const layerCanvas = document.createElement("canvas");
+              layerCanvas.width = drawingCanvas.width;
+              layerCanvas.height = drawingCanvas.height;
+              const layerCtx = layerCanvas.getContext("2d");
 
-          // Only export if layer is visible
-          if (layer.visible) {
-            tempCtx.putImageData(layer.imageData, 0, 0);
-
-            // Convert to base64 and add to zip
-            const imageData = tempCanvas.toDataURL("image/png");
-            if (!imageData) {
-              console.error("Image data not found");
-              return;
+              if (layerCtx) {
+                layerCtx.putImageData(layer.imageData, 0, 0);
+                combinedCtx.drawImage(layerCanvas, 0, 0);
+              }
             }
-            // convert layer.name from Layer 1 to layer_1
-            const layerName = layer.name.toLowerCase().replace(/ /g, "_");
-            zip.file(`${layerName}.png`, imageData.split(",")[1]!, {
-              base64: true,
-            });
+          });
+
+          const combinedImageData = combinedCanvas.toDataURL("image/png");
+          if (!combinedImageData) {
+            console.error("Combined image data not found");
+            return;
           }
+          zip.file("combined_image.png", combinedImageData.split(",")[1]!, {
+            base64: true,
+          });
         }
-      });
 
-      // For combined image, create a new canvas and compose all visible layers
-      const combinedCanvas = document.createElement("canvas");
-      combinedCanvas.width = drawingCanvas.width;
-      combinedCanvas.height = drawingCanvas.height;
-      const combinedCtx = combinedCanvas.getContext("2d", {
-        willReadFrequently: true,
-      });
-
-      if (combinedCtx) {
-        // Draw all visible layers in order
-        layers.forEach((layer) => {
-          if (layer.visible && layer.imageData) {
-            const layerCanvas = document.createElement("canvas");
-            layerCanvas.width = drawingCanvas.width;
-            layerCanvas.height = drawingCanvas.height;
-            const layerCtx = layerCanvas.getContext("2d");
-
-            if (layerCtx) {
-              layerCtx.putImageData(layer.imageData, 0, 0);
-              combinedCtx.drawImage(layerCanvas, 0, 0);
-            }
-          }
-        });
-
-        const combinedImageData = combinedCanvas.toDataURL("image/png");
-        if (!combinedImageData) {
-          console.error("Combined image data not found");
-          return;
-        }
-        zip.file("combined_image.png", combinedImageData.split(",")[1]!, {
-          base64: true,
-        });
+        // Generate and save zip file
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, `pixel_art_layers_${Date.now()}.zip`);
+      } catch (error) {
+        console.error("Export failed:", error);
       }
-
-      // Generate and save zip file
-      const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, `pixel_art_layers_${Date.now()}.zip`);
-    } catch (error) {
-      console.error("Export failed:", error);
-    }
-  }, [layers]);
+    },
+    [layers, onExportPNG],
+  );
 
   // Add handler for square fill toggle
   const handleSquareFillToggle = useCallback((checked: boolean) => {
@@ -247,9 +275,23 @@ export default function TopMenuBar({
     CircleTool.setFilled(checked);
   }, []);
 
+  useEffect(() => {
+    if (isClearCanvasWarningOpen) {
+      const timeoutId = setTimeout(() => {
+        buttonRef.current?.focus();
+      }, 1);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isClearCanvasWarningOpen]);
+
   // Thanks Radix UI for your garbage cleanup in your Dialogs
   useEffect(() => {
-    if (!alertOpen) {
+    if (
+      !isClearCanvasWarningOpen &&
+      !isResizeCanvasOpen &&
+      !isImportImageOpen &&
+      !isExportModalOpen
+    ) {
       // Remove the Radix UI class and pointer-events style
       document.body.classList.remove(
         "radix-themes-custom-disable-pointer-events",
@@ -264,7 +306,12 @@ export default function TopMenuBar({
     return () => {
       document.body.style.pointerEvents = "auto";
     };
-  }, [alertOpen, isResizeModalOpen, isUploadModalOpen]);
+  }, [
+    isClearCanvasWarningOpen,
+    isResizeCanvasOpen,
+    isImportImageOpen,
+    isExportModalOpen,
+  ]);
 
   return (
     <div className="z-10 flex flex-col border-b border-gray-700 bg-gray-900/50">
@@ -284,18 +331,21 @@ export default function TopMenuBar({
           <DropdownMenuContent align="start" className="w-48">
             <DropdownMenuItem
               className="gap-2 bg-white"
-              onSelect={() => setIsUploadModalOpen(true)}
+              onSelect={() => setImportImageOpen(true)}
             >
               <FolderOpenIcon className="h-4 w-4 text-black" />
               <span className="text-black">Open</span>
             </DropdownMenuItem>
-            <DropdownMenuItem className="my-2 gap-2 " onSelect={handleExport}>
+            <DropdownMenuItem
+              className="my-2 gap-2"
+              onSelect={() => setIsExportModalOpen(true)}
+            >
               <ArrowDownTrayIcon className="h-4 w-4 text-black" />
               <span className="text-black">Export</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               className="gap-2"
-              onSelect={() => setAlertOpen(true)}
+              onSelect={() => setClearCanvasWarningOpen(true)}
             >
               <TrashIcon className="h-4 w-4" />
               Clear
@@ -316,7 +366,7 @@ export default function TopMenuBar({
           <DropdownMenuContent align="start" className="w-48">
             <DropdownMenuItem
               className="gap-2"
-              onSelect={() => setIsResizeModalOpen(true)}
+              onSelect={() => setResizeCanvasOpen(true)}
             >
               <ArrowRight className="h-4 w-4" />
               <span className="text-black">Resize Canvas</span>
@@ -555,62 +605,134 @@ export default function TopMenuBar({
         )}
       </div>
 
-      {/* Alert Dialog */}
-      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Are you sure you want to clear the canvas?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your
-              current artwork.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col items-center gap-4 md:flex-row">
-            <AlertDialogCancel className="bg-gray-500 text-white hover:bg-gray-600">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                onClearCanvas();
-                setAlertOpen(false);
-              }}
-              className="bg-red-500 text-white hover:bg-red-600"
-            >
-              Clear Canvas
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Sign In Modal */}
       <SignInModal
         isOpen={showSignInModal}
         onClose={() => setShowSignInModal(false)}
         featureName="AI Pixel Art Generator"
-        onExport={handleExport}
+        onExport={() => handleExport("zip")}
       />
 
       <ResizeCanvasModal
-        isOpen={isResizeModalOpen}
-        onClose={() => setIsResizeModalOpen(false)}
+        isOpen={isResizeCanvasOpen}
+        onClose={() => setResizeCanvasOpen(false)}
         canvasRef={canvasRef}
         currentWidth={width}
         currentHeight={height}
         onResize={(newWidth, newHeight) => {
           onCanvasResize(newWidth, newHeight);
-          setIsResizeModalOpen(false);
+          setResizeCanvasOpen(false);
         }}
       />
 
       <UploadImageModal
-        open={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
+        open={isImportImageOpen}
+        onClose={() => setImportImageOpen(false)}
         onImportImage={onImportImage}
         onGeneratePalette={onGeneratePalette}
         onImportLayers={onImportLayers}
       />
+
+      {/* Alert Dialog */}
+      <Dialog
+        open={isClearCanvasWarningOpen}
+        onOpenChange={setClearCanvasWarningOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Are you sure you want to clear the canvas?
+            </DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete your
+              current artwork.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col items-center gap-4 md:flex-row">
+            <Button
+              variant="secondary"
+              className="bg-gray-500 text-white hover:bg-gray-300"
+              onClick={() => setClearCanvasWarningOpen(false)}
+              autoFocus
+              ref={buttonRef}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                onClearCanvas();
+                setClearCanvasWarningOpen(false);
+              }}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              Clear Canvas
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+      />
     </div>
+  );
+}
+
+interface ExportModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onExport: (type: "zip" | "png") => void;
+}
+
+export function ExportModal({ isOpen, onClose, onExport }: ExportModalProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Export Artwork</DialogTitle>
+          <DialogDescription>
+            Choose how you want to export your artwork
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 py-4">
+          <Button
+            variant="outline"
+            className="flex items-center justify-start gap-3 p-6"
+            onClick={() => {
+              onExport("zip");
+              onClose();
+            }}
+          >
+            <ArchiveBoxIcon className="h-12 w-12" />
+            <div className="flex flex-col items-start">
+              <span className="font-semibold">ZIP Archive</span>
+              <span className="text-sm text-gray-500">
+                Export all layers separately and combined
+              </span>
+            </div>
+          </Button>
+          <Button
+            variant="outline"
+            className="flex items-center justify-start gap-3 p-6"
+            onClick={() => {
+              onExport("png");
+              onClose();
+            }}
+          >
+            <ImageIcon className="h-12 w-12" />
+            <div className="flex flex-col items-start">
+              <span className="font-semibold">PNG Image</span>
+              <span className="text-sm text-gray-500">
+                Export as a single flattened image
+              </span>
+            </div>
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
