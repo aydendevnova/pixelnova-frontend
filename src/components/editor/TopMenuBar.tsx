@@ -104,7 +104,6 @@ interface TopMenuBarProps {
   onCopy?: () => void;
   onPaste?: () => void;
   onImportLayers: (layers: { name: string; imageData: ImageData }[]) => void;
-  onExportPNG?: () => void;
 }
 
 export default function TopMenuBar({
@@ -135,7 +134,6 @@ export default function TopMenuBar({
   onCopy,
   onPaste,
   onImportLayers,
-  onExportPNG,
 }: TopMenuBarProps) {
   const { isExportModalOpen, setIsExportModalOpen } = useModal();
   const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
@@ -167,13 +165,6 @@ export default function TopMenuBar({
   // Function to handle file export
   const handleExport = useCallback(
     async (type: "zip" | "png") => {
-      if (type === "png") {
-        onExportPNG?.();
-        return;
-      }
-
-      const zip = new JSZip();
-
       // Get the drawing canvas
       const drawingCanvas = document.querySelector(
         'canvas[data-canvas="drawing"]',
@@ -184,43 +175,8 @@ export default function TopMenuBar({
         return;
       }
 
-      try {
-        // Export each layer individually
-        layers.forEach((layer, index) => {
-          if (!layer.imageData) return;
-
-          // Create a temporary canvas for this layer
-          const tempCanvas = document.createElement("canvas");
-          tempCanvas.width = drawingCanvas.width;
-          tempCanvas.height = drawingCanvas.height;
-          const tempCtx = tempCanvas.getContext("2d", {
-            willReadFrequently: true,
-          });
-
-          if (tempCtx) {
-            // Set composite operation to ensure proper transparency
-            tempCtx.globalCompositeOperation = "source-over";
-
-            // Only export if layer is visible
-            if (layer.visible) {
-              tempCtx.putImageData(layer.imageData, 0, 0);
-
-              // Convert to base64 and add to zip
-              const imageData = tempCanvas.toDataURL("image/png");
-              if (!imageData) {
-                console.error("Image data not found");
-                return;
-              }
-              // convert layer.name from Layer 1 to layer_1
-              const layerName = layer.name.toLowerCase().replace(/ /g, "_");
-              zip.file(`${layerName}.png`, imageData.split(",")[1]!, {
-                base64: true,
-              });
-            }
-          }
-        });
-
-        // For combined image, create a new canvas and compose all visible layers
+      if (type === "png") {
+        // Create a new canvas for the combined image
         const combinedCanvas = document.createElement("canvas");
         combinedCanvas.width = drawingCanvas.width;
         combinedCanvas.height = drawingCanvas.height;
@@ -244,24 +200,93 @@ export default function TopMenuBar({
             }
           });
 
-          const combinedImageData = combinedCanvas.toDataURL("image/png");
-          if (!combinedImageData) {
-            console.error("Combined image data not found");
-            return;
-          }
-          zip.file("combined_image.png", combinedImageData.split(",")[1]!, {
-            base64: true,
-          });
+          // Convert to blob and download
+          combinedCanvas.toBlob((blob) => {
+            if (blob) {
+              saveAs(blob, `pixel_art_${Date.now()}.png`);
+            }
+          }, "image/png");
+          return;
         }
-
-        // Generate and save zip file
-        const content = await zip.generateAsync({ type: "blob" });
-        saveAs(content, `pixel_art_layers_${Date.now()}.zip`);
-      } catch (error) {
-        console.error("Export failed:", error);
       }
+
+      // ZIP export logic
+      const zip = new JSZip();
+
+      // Export each layer individually
+      layers.forEach((layer, index) => {
+        if (!layer.imageData) return;
+
+        // Create a temporary canvas for this layer
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = drawingCanvas.width;
+        tempCanvas.height = drawingCanvas.height;
+        const tempCtx = tempCanvas.getContext("2d", {
+          willReadFrequently: true,
+        });
+
+        if (tempCtx) {
+          // Set composite operation to ensure proper transparency
+          tempCtx.globalCompositeOperation = "source-over";
+
+          // Only export if layer is visible
+          if (layer.visible) {
+            tempCtx.putImageData(layer.imageData, 0, 0);
+
+            // Convert to base64 and add to zip
+            const imageData = tempCanvas.toDataURL("image/png");
+            if (!imageData) {
+              console.error("Image data not found");
+              return;
+            }
+            // convert layer.name from Layer 1 to layer_1
+            const layerName = layer.name.toLowerCase().replace(/ /g, "_");
+            zip.file(`${layerName}.png`, imageData.split(",")[1]!, {
+              base64: true,
+            });
+          }
+        }
+      });
+
+      // For combined image, create a new canvas and compose all visible layers
+      const combinedCanvas = document.createElement("canvas");
+      combinedCanvas.width = drawingCanvas.width;
+      combinedCanvas.height = drawingCanvas.height;
+      const combinedCtx = combinedCanvas.getContext("2d", {
+        willReadFrequently: true,
+      });
+
+      if (combinedCtx) {
+        // Draw all visible layers in order
+        layers.forEach((layer) => {
+          if (layer.visible && layer.imageData) {
+            const layerCanvas = document.createElement("canvas");
+            layerCanvas.width = drawingCanvas.width;
+            layerCanvas.height = drawingCanvas.height;
+            const layerCtx = layerCanvas.getContext("2d");
+
+            if (layerCtx) {
+              layerCtx.putImageData(layer.imageData, 0, 0);
+              combinedCtx.drawImage(layerCanvas, 0, 0);
+            }
+          }
+        });
+
+        const combinedImageData = combinedCanvas.toDataURL("image/png");
+        if (!combinedImageData) {
+          console.error("Combined image data not found");
+          return;
+        }
+        zip.file("combined_image.png", combinedImageData.split(",")[1]!, {
+          base64: true,
+        });
+      }
+
+      // Generate and save zip file
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `pixel_art_layers_${Date.now()}.zip`);
     },
-    [layers, onExportPNG],
+    [layers],
   );
 
   // Add handler for square fill toggle
