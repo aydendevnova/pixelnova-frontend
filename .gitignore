@@ -46,3 +46,7 @@ yarn-error.log*
 .idea
 
 .wrangler
+
+# CPP Build
+/wasm/build
+/wasm/tmp

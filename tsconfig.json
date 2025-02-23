@@ -47,6 +47,7 @@
     "node_modules",
     "public/wasm_exec.js",
     "src/workers/image.worker.js",
+    "./wasm/build",
     "public/**/*.js",
     "out",
     "next.config.js"

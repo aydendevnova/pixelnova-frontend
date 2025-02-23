@@ -36,6 +36,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   console.log("session", session);
 
+
+
   // Query for worker-verified user data
   const { data: workerUser, isLoading: workerLoading } = useQuery({
     queryKey: ["worker-user", session?.access_token],
@@ -71,10 +73,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     queryKey: ["profile", session?.user?.id],
     queryFn: async () => {
       try {
-        if (!session?.user?.id || !workerUser) {
+        if (!session?.user?.id) {
+          console.log("No user session for profile fetch");
           return null;
         }
 
+        console.log("Fetching profile for user:", session.user.id);
         const { data, error } = await supabaseClient
           .from("profiles")
           .select("*, credits")
@@ -86,15 +90,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
 
+        console.log("Profile fetch successful:", data);
         return data;
       } catch (e) {
         console.error("Profile fetch error:", e);
         return null;
       }
     },
-    enabled: !!session?.user?.id && !!workerUser,
+    enabled: !!session?.user?.id,
     initialData: null,
   });
+
+  console.log("profile", profile);
 
   const invalidateUser = async () => {
     await queryClient.invalidateQueries({ queryKey: ["worker-user"] });
@@ -104,7 +111,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const value = {
     user: session?.user ?? null,
     profile: profile ?? null,
-    isLoading: !!session?.user && (workerLoading || profileLoading),
+    isLoading: !!session?.user && (profileLoading || workerLoading),
     isSignedIn: !!session?.user && !!workerUser,
     credits: profile?.credits ?? null,
     invalidateUser,

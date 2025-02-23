@@ -26,6 +26,7 @@ import { DownscaleImageWASMResponse, DownscaleResponse } from "@/shared-types";
 import {
   estimateGridSizeWASM,
   downscaleImageWASM,
+  convertToPng,
 } from "@/lib/image-processing";
 import { useIndexedDB } from "@/hooks/use-indexed-db";
 import { GeneratedImage } from "@/types/types";
@@ -584,59 +585,71 @@ export default function AiPixelArtModal({
       setError("Please login to use this feature");
       return;
     }
-    const img = new Image();
-    img.onload = async () => {
-      setImageDimensions({ width: img.width, height: img.height });
-      setUploadedImage(imageUrl);
-      setUploadedFile(file);
 
-      if (prompt) {
-        try {
-          await saveImage({
-            url: imageUrl,
-            prompt,
-            timestamp: new Date().toISOString(),
-          });
-          const updatedImages = await getImages();
-          setRecentImages(updatedImages);
-        } catch (error) {
-          console.error("Failed to save generated image:", error);
+    try {
+      // Convert to PNG format first
+      const pngImage = await convertToPng(imageUrl);
+      
+      const img = new Image();
+      img.onload = async () => {
+        setImageDimensions({ width: img.width, height: img.height });
+        setUploadedImage(pngImage);
+        setUploadedFile(file);
+
+        if (prompt) {
+          try {
+            await saveImage({
+              url: pngImage,
+              prompt,
+              timestamp: new Date().toISOString(),
+            });
+            const updatedImages = await getImages();
+            setRecentImages(updatedImages);
+          } catch (error) {
+            console.error("Failed to save generated image:", error);
+          }
         }
-      }
 
-      setStep(2);
-      setOriginalGridSizeEstimate(null);
-      void handleEstimateGridSize(imageUrl, user.id);
-    };
-    img.src = imageUrl;
+        setStep(2);
+        setOriginalGridSizeEstimate(null);
+        void handleEstimateGridSize(pngImage, user.id);
+      };
+      img.src = pngImage;
+    } catch (error) {
+      console.error("Failed to convert image:", error);
+      setError("Failed to process image. Please try again.");
+    }
   };
 
-  const handleHistoryImageSelect = (imageUrl: string) => {
+  const handleHistoryImageSelect = async (imageUrl: string) => {
     if (!user?.id) {
       setError("Please login to use this feature");
       return;
     }
-    const img = new Image();
-    img.onload = () => {
-      setImageDimensions({ width: img.width, height: img.height });
-      fetch(imageUrl)
-        .then((res) => res.blob())
-        .then((blob) => {
-          const file = new File([blob], "history-image.png", {
-            type: "image/png",
-          });
-          setUploadedImage(imageUrl);
-          setUploadedFile(file);
-          setOriginalGridSizeEstimate(null);
-          void handleEstimateGridSize(imageUrl, user.id);
-          setStep(2);
-        })
-        .catch((error) => {
-          console.error("Failed to process history image:", error);
-          setError("Failed to load image from history. Please try again.");
+
+    try {
+      // Convert to PNG format first
+      const pngImage = await convertToPng(imageUrl);
+      
+      const img = new Image();
+      img.onload = async () => {
+        setImageDimensions({ width: img.width, height: img.height });
+        const response = await fetch(pngImage);
+        const blob = await response.blob();
+        const file = new File([blob], "history-image.png", {
+          type: "image/png",
         });
-    };
-    img.src = imageUrl;
+        setUploadedImage(pngImage);
+        setUploadedFile(file);
+        setOriginalGridSizeEstimate(null);
+        void handleEstimateGridSize(pngImage, user.id);
+        setStep(2);
+      };
+      img.src = pngImage;
+    } catch (error) {
+      console.error("Failed to process history image:", error);
+      setError("Failed to load image from history. Please try again.");
+    }
   };
 
   const { mutateAsync: downscaleImage, isLoading: isDownscalingKey } =

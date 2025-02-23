@@ -3,3 +3,4 @@ src/workers/image.worker.js
 
 # Ignore wasm exec file
 public/wasm_exec.js 
+build/
