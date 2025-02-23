@@ -6,6 +6,7 @@
 #include <ctime>
 #include <regex>
 #include <memory>
+#include <array>
 #include "main.hpp"
 #include "estimate-grid.hpp"
 
@@ -15,6 +16,39 @@ using namespace emscripten;
 void debug_log(const std::string& message) {
     val console = val::global("console");
     console.call<void>("log", std::string("[WASM] ") + message);
+}
+
+namespace {
+    // Internal validation function - matches server implementation exactly
+    bool validateRequest(const std::string& userId, int64_t timestamp, const std::string& serverNonce, const std::string& key) {
+        // Basic validation
+        if (userId.empty() || serverNonce.empty() || key.empty()) {
+            debug_log("Empty parameters");
+            return false;
+        }
+        
+        // Get current time and validate timestamp
+        auto currentTime = std::time(nullptr);
+        if (std::abs(currentTime - timestamp) > 30) {
+            return false;
+        }
+        
+        // Recreate the key using the exact same logic as the server
+        std::string data = userId + ":" + std::to_string(timestamp) + ":" + serverNonce;
+        
+        int32_t hash = 0;
+        for (char c : data) {
+            hash = ((hash << 5) - hash) + c;
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+        
+        // Convert to hex string, padded to 8 characters
+        char hashStr[9];
+        snprintf(hashStr, sizeof(hashStr), "%08x", std::abs(hash));
+        std::string generatedKey(hashStr);
+        
+        return key == generatedKey;
+    }
 }
 
 // Helper function to validate image format and extract base64 data
@@ -44,21 +78,14 @@ val downscaleImage(std::string base64Image, int gridSize,
                   std::string key, std::string userId, 
                   int64_t timestamp, std::string serverNonce) {
     try {
-        debug_log("Starting downscaleImage");
-        debug_log("Grid size: " + std::to_string(gridSize));
-        
-        // Validate timestamp
-        auto currentTime = std::time(nullptr);
-        debug_log("Current time: " + std::to_string(currentTime));
-        debug_log("Timestamp: " + std::to_string(timestamp));
-        
-        if (currentTime - timestamp > 20) {
-            debug_log("Error: Timestamp is too old");
+        // Validate request with the key
+        if (!validateRequest(userId, timestamp, serverNonce, key)) {
+            debug_log("Error: Invalid request validation");
             val error = val::object();
-            error.set("error", std::string("Timestamp is too old"));
+            error.set("error", std::string("Invalid request"));
             return error;
         }
-
+        
         // Parse and validate base64 image
         auto [format, imageData] = parseBase64Image(base64Image);
         
@@ -94,15 +121,11 @@ val estimateGridSize(std::string base64Image, std::string key,
     try {
         debug_log("Starting estimateGridSize");
         
-        // Validate timestamp
-        auto currentTime = std::time(nullptr);
-        debug_log("Current time: " + std::to_string(currentTime));
-        debug_log("Timestamp: " + std::to_string(timestamp));
-        
-        if (currentTime - timestamp > 20) {
-            debug_log("Error: Timestamp is too old");
+        // Validate request with the key
+        if (!validateRequest(userId, timestamp, serverNonce, key)) {
+            debug_log("Error: Invalid request validation");
             val error = val::object();
-            error.set("error", std::string("Timestamp is too old"));
+            error.set("error", std::string("Invalid request"));
             return error;
         }
 
