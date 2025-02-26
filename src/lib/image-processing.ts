@@ -5,18 +5,69 @@ import {
   DownscaleImageWASMResponse,
 } from "../shared-types";
 
+// Helper function to convert any image to PNG format
+export const convertToPng = async (imageUrl: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    console.log("Start c")
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = imageUrl;
+    console.log("End c")
+  });
+};
+
 let worker: Worker | null = null;
 
 function getWorker() {
   if (!worker) {
-    console.log("[Image Processing] Creating new worker");
-    worker = new Worker(
-      new URL("../workers/image.worker.js", import.meta.url),
-      {
-        type: "module",
-      },
-    );
-    console.log("[Image Processing] Worker created successfully");
+    console.log("[Image Processing] Creating new C++ worker");
+    try {
+      // Create worker from a blob to ensure correct MIME type
+      const workerCode = `
+        importScripts('${window.location.origin}/workers/cpp.worker.js');
+      `;
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      worker = new Worker(URL.createObjectURL(blob));
+      console.log("[Image Processing] C++ worker created successfully");
+
+      // Add error handler
+      worker.onerror = (error) => {
+        console.error("[Image Processing] Worker error:", {
+          message: error.message,
+          filename: error.filename,
+          lineno: error.lineno,
+          colno: error.colno
+        });
+      };
+
+      // Add message error handler
+      worker.onmessageerror = (error) => {
+        console.error("[Image Processing] Worker message error:", error);
+      };
+
+    } catch (error: any) {
+      console.error("[Image Processing] Failed to create worker:", {
+        message: error.message,
+        stack: error.stack,
+        type: typeof error
+      });
+      throw error;
+    }
+  } else {
+    console.log("[Image Processing] Using existing C++ worker");
   }
   return worker;
 }
@@ -30,16 +81,24 @@ export async function estimateGridSizeWASM(
 ): Promise<EstimateGridSizeWASMResponse> {
   console.log("[Image Processing] Starting estimateGridSize with params:", {
     base64Length: base64Image?.length,
-    key,
-    userId,
+    hasKey: !!key,
+    hasUserId: !!userId,
     timestamp,
-    nonce,
+    hasNonce: !!nonce
   });
 
   return new Promise((resolve, reject) => {
     const worker = getWorker();
+    console.log("[Image Processing] Worker ready for estimateGridSize");
 
     worker.onmessage = (e) => {
+      console.log("[Image Processing] Received estimateGridSize response:", {
+        success: e.data.success,
+        hasError: !!e.data.error,
+        hasResult: !!e.data.result,
+        gridSize: e.data.result?.gridSize
+      });
+
       if (e.data.success) {
         resolve({ gridSize: e.data.result.gridSize });
       } else {
@@ -48,14 +107,15 @@ export async function estimateGridSizeWASM(
       }
     };
 
+    console.log("[Image Processing] Sending estimateGridSize request to worker");
     worker.postMessage({
       type: "estimateGridSize",
       payload: {
-        a: base64Image,
-        b: key,
-        c: userId,
-        d: timestamp,
-        e: nonce,
+        base64Image,
+        key,
+        userId,
+        timestamp,
+        serverNonce: nonce,
       },
     });
   });
@@ -69,11 +129,27 @@ export async function downscaleImageWASM(
   timestamp: number,
   nonce: string,
 ): Promise<DownscaleImageWASMResponse> {
-  console.log("[Image Processing] Starting downscaleImage");
+  console.log("[Image Processing] Starting downscaleImage with params:", {
+    base64Length: base64Image?.length,
+    grid,
+    hasKey: !!key,
+    hasUserId: !!userId,
+    timestamp,
+    hasNonce: !!nonce
+  });
+
   return new Promise((resolve, reject) => {
     const worker = getWorker();
+    console.log("[Image Processing] Worker ready for downscaleImage");
 
     worker.onmessage = (e) => {
+      console.log("[Image Processing] Received downscaleImage response:", {
+        success: e.data.success,
+        hasError: !!e.data.error,
+        hasResult: !!e.data.result,
+        resultsLength: e.data.result?.results?.length
+      });
+
       if (e.data.success) {
         resolve(e.data.result);
       } else {
@@ -82,16 +158,16 @@ export async function downscaleImageWASM(
       }
     };
 
+    console.log("[Image Processing] Sending downscaleImage request to worker");
     worker.postMessage({
       type: "downscaleImage",
-
       payload: {
-        a: base64Image,
-        b: grid,
-        c: key,
-        d: userId,
-        e: timestamp,
-        f: nonce,
+        base64Image,
+        gridSize: grid,
+        key,
+        userId,
+        timestamp,
+        serverNonce: nonce,
       },
     });
   });

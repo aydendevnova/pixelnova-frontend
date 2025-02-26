@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "npx serve@latest out",
-    "build:fast": "npm run build:fastwasm && next build && cp -r public/* out/",
-    "build": "npm run build:wasm && next build && cp -r public/* out/",
+    "build": "next build && cp -r public/* out/",
     "check": "next lint && tsc --noEmit",
     "dev": "next dev --turbo",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
@@ -15,8 +14,7 @@
     "lint:fix": "next lint --fix",
     "preview": "wrangler dev",
     "typecheck": "tsc --noEmit",
-    "build:wasm": "bash ./build-wasm-garble.sh",
-    "build:fastwasm": "bash ./build-wasm-fast.sh",
+    "build:wasm": "cd wasm && ./build.sh",
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {

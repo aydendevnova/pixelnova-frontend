@@ -529,7 +529,7 @@ export default function Editor() {
   }, [hasClipboardData]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-900">
+    <div className="flex min-h-screen flex-col bg-gray-900 animate-in fade-in duration-700">
       <ErrorBoundary
         fallback={({ error, reset }) => (
           <ErrorView error={error} reset={reset} />

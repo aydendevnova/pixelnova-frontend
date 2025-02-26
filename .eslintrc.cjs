@@ -12,6 +12,7 @@ const config = {
   ],
   ignorePatterns: [
     "public/wasm_exec.js",
+    "build/",
     "src/workers/image.worker.js",
     "public/*.js",
     "**/image.worker.js",
