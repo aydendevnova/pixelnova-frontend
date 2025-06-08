@@ -398,7 +398,6 @@ export default function ConvertToPixelArtModal({
   const { credits, optimisticDeductCredits } = useCredits();
   const { isSignedIn } = useUser();
   const [step, setStep] = useState(1);
-  const { setImageConversionOpen, isImageConversionOpen } = useModal();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
@@ -424,11 +423,12 @@ export default function ConvertToPixelArtModal({
   const { saveImage, getImages, deleteImage, searchByPrompt } = useIndexedDB();
 
   const { user } = useUser();
+  const { isConvertToPixelArtOpen, setConvertToPixelArtOpen } = useModal();
 
   useEffect(() => {
     const loadImages = async () => {
       try {
-        if (isImageConversionOpen) {
+        if (isConvertToPixelArtOpen) {
           if (searchTerm.trim()) {
             const results = await searchByPrompt(searchTerm);
             setRecentImages(results);
@@ -442,7 +442,7 @@ export default function ConvertToPixelArtModal({
       }
     };
     void loadImages();
-  }, [isImageConversionOpen, searchTerm, searchByPrompt, getImages]);
+  }, [isConvertToPixelArtOpen, searchTerm, searchByPrompt, getImages]);
 
   const handleDeleteImage = async (id: number) => {
     if (typeof id === "undefined") return;
@@ -636,15 +636,13 @@ export default function ConvertToPixelArtModal({
         <StepThree
           results={results}
           onFinish={onFinish}
-          setOpen={setImageConversionOpen}
+          setOpen={setConvertToPixelArtOpen}
         />
       ),
     },
   ];
 
   const currentStep = steps[step - 1] ?? steps[0]!;
-
-  const { isConvertToPixelArtOpen, setConvertToPixelArtOpen } = useModal();
 
   return (
     <>
@@ -688,7 +686,7 @@ export default function ConvertToPixelArtModal({
                 variant="outline"
                 onClick={() => {
                   if (step === 1) {
-                    setImageConversionOpen(false);
+                    setConvertToPixelArtOpen(false);
                   } else {
                     setStep((step) => step - 1);
                   }

@@ -48,22 +48,7 @@ export default function Editor() {
 
   const { pushHistory, undo, redo, canUndo, canRedo } = useHistoryStore();
 
-  const {
-    isImageConversionOpen,
-    isImportImageOpen,
-    isClearCanvasWarningOpen,
-    isResizeCanvasOpen,
-    isAIPixelArtOpen,
-    isAIColorizerOpen,
-  } = useModal();
-
-  const canHandleKeyboardShortcuts =
-    !isImageConversionOpen &&
-    !isImportImageOpen &&
-    !isClearCanvasWarningOpen &&
-    !isResizeCanvasOpen &&
-    !isAIPixelArtOpen &&
-    !isAIColorizerOpen;
+  const { canHandleKeyboardShortcuts } = useModal();
 
   // Add handlers for undo/redo
   const handleUndo = () => {

@@ -1,10 +1,6 @@
 import { create } from "zustand";
 
 interface ModalStore {
-  // Image Conversion Modal
-  isImageConversionOpen: boolean;
-  setImageConversionOpen: (open: boolean) => void;
-
   // Resize Canvas Modal
   isResizeCanvasOpen: boolean;
   setResizeCanvasOpen: (open: boolean) => void;
@@ -30,15 +26,18 @@ interface ModalStore {
   setAIPixelArtOpen: (open: boolean) => void;
 
   // AI Colorizer Modal
-  isAIColorizerOpen: boolean;
-  setAIColorizerOpen: (open: boolean) => void;
+  isSmartColorizerOpen: boolean;
+  setSmartColorizerOpen: (open: boolean) => void;
+
+  // Skin Colors Modal
+  isSkinColorsOpen: boolean;
+  setSkinColorsOpen: (open: boolean) => void;
+
+  // Helper to check if any modal is open
+  canHandleKeyboardShortcuts: () => boolean;
 }
 
-export const useModal = create<ModalStore>((set) => ({
-  // Image Conversion Modal
-  isImageConversionOpen: false,
-  setImageConversionOpen: (open) => set({ isImageConversionOpen: open }),
-
+export const useModal = create<ModalStore>((set, get) => ({
   // Resize Canvas Modal
   isResizeCanvasOpen: false,
   setResizeCanvasOpen: (open) => set({ isResizeCanvasOpen: open }),
@@ -63,7 +62,26 @@ export const useModal = create<ModalStore>((set) => ({
   isAIPixelArtOpen: false,
   setAIPixelArtOpen: (open) => set({ isAIPixelArtOpen: open }),
 
-  // AI Colorizer Modal
-  isAIColorizerOpen: false,
-  setAIColorizerOpen: (open) => set({ isAIColorizerOpen: open }),
+  // Colorizer Modal
+  isSmartColorizerOpen: false,
+  setSmartColorizerOpen: (open) => set({ isSmartColorizerOpen: open }),
+
+  // Skin Colors Modal
+  isSkinColorsOpen: false,
+  setSkinColorsOpen: (open) => set({ isSkinColorsOpen: open }),
+
+  // Returns true if no modals are open
+  canHandleKeyboardShortcuts: () => {
+    const state = get();
+    return !(
+      state.isResizeCanvasOpen ||
+      state.isClearCanvasWarningOpen ||
+      state.isImportImageOpen ||
+      state.isExportModalOpen ||
+      state.isConvertToPixelArtOpen ||
+      state.isAIPixelArtOpen ||
+      state.isSmartColorizerOpen ||
+      state.isSkinColorsOpen
+    );
+  },
 }));

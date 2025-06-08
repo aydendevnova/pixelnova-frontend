@@ -65,6 +65,7 @@ import { DialogFooter, DialogHeader } from "../ui/dialog";
 import NextImage from "next/image";
 import AIPixelArtModal from "../modals/ai-pixel-art";
 import ColorizerModal from "../modals/colorizer";
+import SkinColorModal from "../modals/skin-colors";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
@@ -136,16 +137,16 @@ export default function TopMenuBar({
     setConvertToPixelArtOpen,
     isAIPixelArtOpen,
     setAIPixelArtOpen,
-    isAIColorizerOpen,
-    setAIColorizerOpen,
+    isSmartColorizerOpen: isAIColorizerOpen,
+    setSmartColorizerOpen: setAIColorizerOpen,
     isResizeCanvasOpen,
     setResizeCanvasOpen,
     isClearCanvasWarningOpen,
     setClearCanvasWarningOpen,
     isImportImageOpen,
     setImportImageOpen,
-    isImageConversionOpen,
-    setImageConversionOpen,
+    isSkinColorsOpen,
+    setSkinColorsOpen,
   } = useModal();
   const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
   const [showSignInModal, setShowSignInModal] = useState(false);
@@ -312,6 +313,7 @@ export default function TopMenuBar({
   }, [isClearCanvasWarningOpen]);
 
   // Thanks Radix UI for your garbage cleanup in your Dialogs
+  // keywords for search: raxid stupid cleanup annoying dialog close
   useEffect(() => {
     if (
       !isClearCanvasWarningOpen &&
@@ -320,7 +322,8 @@ export default function TopMenuBar({
       !isExportModalOpen &&
       !isConvertToPixelArtOpen &&
       !isAIPixelArtOpen &&
-      !isAIColorizerOpen
+      !isAIColorizerOpen &&
+      !isSkinColorsOpen
     ) {
       // Remove the Radix UI class and pointer-events style
       document.body.classList.remove(
@@ -344,6 +347,7 @@ export default function TopMenuBar({
     isConvertToPixelArtOpen,
     isAIPixelArtOpen,
     isAIColorizerOpen,
+    isSkinColorsOpen,
   ]);
 
   return (
@@ -454,6 +458,13 @@ export default function TopMenuBar({
             >
               <Palette className="h-4 w-4" />
               <span className="text-black">Smart Colorizer</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="gap-2"
+              onSelect={() => setSkinColorsOpen(true)}
+            >
+              <Palette className="h-4 w-4" />
+              <span className="text-black">Generate Skin Colors</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -741,6 +752,12 @@ export default function TopMenuBar({
       <ColorizerModal
         open={isAIColorizerOpen}
         onClose={() => setAIColorizerOpen(false)}
+        layers={layers}
+        onImportImage={onImportImage}
+      />
+      <SkinColorModal
+        open={isSkinColorsOpen}
+        onClose={() => setSkinColorsOpen(false)}
         layers={layers}
         onImportImage={onImportImage}
       />

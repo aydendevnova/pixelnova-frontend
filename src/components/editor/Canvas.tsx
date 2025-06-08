@@ -127,18 +127,7 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const [isPanning, setIsPanning] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
 
-  const {
-    isImageConversionOpen,
-    isImportImageOpen,
-    isClearCanvasWarningOpen,
-    isResizeCanvasOpen,
-  } = useModal();
-
-  const canHandleKeyboardShortcuts =
-    !isImageConversionOpen &&
-    !isImportImageOpen &&
-    !isClearCanvasWarningOpen &&
-    !isResizeCanvasOpen;
+  const { canHandleKeyboardShortcuts } = useModal();
 
   const [viewport, setViewport] = useState<ViewportState>({
     x: 0,
