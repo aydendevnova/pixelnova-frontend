@@ -14,7 +14,7 @@ export function CreditsDisplay() {
       <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/50 px-3 py-1.5">
         <Sparkles className="h-4 w-4 text-yellow-500" />
         <span className="text-sm font-medium text-white">
-          {isLoading ? "..." : credits} Credits
+          {isLoading ? "..." : credits} Uses
         </span>
       </div>
     </Link>

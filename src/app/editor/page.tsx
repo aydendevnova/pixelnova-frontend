@@ -53,13 +53,17 @@ export default function Editor() {
     isImportImageOpen,
     isClearCanvasWarningOpen,
     isResizeCanvasOpen,
+    isAIPixelArtOpen,
+    isAIColorizerOpen,
   } = useModal();
 
   const canHandleKeyboardShortcuts =
     !isImageConversionOpen &&
     !isImportImageOpen &&
     !isClearCanvasWarningOpen &&
-    !isResizeCanvasOpen;
+    !isResizeCanvasOpen &&
+    !isAIPixelArtOpen &&
+    !isAIColorizerOpen;
 
   // Add handlers for undo/redo
   const handleUndo = () => {
@@ -529,7 +533,7 @@ export default function Editor() {
   }, [hasClipboardData]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-900 animate-in fade-in duration-700">
+    <div className="flex min-h-screen flex-col bg-gray-900 duration-700 animate-in fade-in">
       <ErrorBoundary
         fallback={({ error, reset }) => (
           <ErrorView error={error} reset={reset} />

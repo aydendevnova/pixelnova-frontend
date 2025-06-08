@@ -18,8 +18,10 @@ import {
   Clipboard,
   ArrowRight,
   ImageIcon,
+  Sparkle,
+  Palette,
 } from "lucide-react";
-import AiPixelArtModal from "../modals/ai-pixel-art";
+import ConvertToPixelArtModal from "../modals/convert-to-pixel-art";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { Layer, ToolType } from "@/types/editor";
@@ -37,17 +39,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { ResizeCanvasModal } from "../modals/resize-canvas";
 import { CanvasRef } from "./Canvas";
 import { SquareTool } from "@/lib/tools/square";
@@ -71,6 +62,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DialogFooter, DialogHeader } from "../ui/dialog";
+import NextImage from "next/image";
+import AIPixelArtModal from "../modals/ai-pixel-art";
+import ColorizerModal from "../modals/colorizer";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
@@ -135,22 +129,30 @@ export default function TopMenuBar({
   onPaste,
   onImportLayers,
 }: TopMenuBarProps) {
-  const { isExportModalOpen, setIsExportModalOpen } = useModal();
-  const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
-  const [showSignInModal, setShowSignInModal] = useState(false);
-  const [isSquareFilled, setIsSquareFilled] = useState(false);
-  const [isCircleFilled, setIsCircleFilled] = useState(false);
-
-  const buttonRef = useRef<HTMLButtonElement>(null);
-
   const {
+    isExportModalOpen,
+    setIsExportModalOpen,
+    isConvertToPixelArtOpen,
+    setConvertToPixelArtOpen,
+    isAIPixelArtOpen,
+    setAIPixelArtOpen,
+    isAIColorizerOpen,
+    setAIColorizerOpen,
     isResizeCanvasOpen,
     setResizeCanvasOpen,
     isClearCanvasWarningOpen,
     setClearCanvasWarningOpen,
     isImportImageOpen,
     setImportImageOpen,
+    isImageConversionOpen,
+    setImageConversionOpen,
   } = useModal();
+  const { shouldClearOriginal, setShouldClearOriginal } = useEditorStore();
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const [isSquareFilled, setIsSquareFilled] = useState(false);
+  const [isCircleFilled, setIsCircleFilled] = useState(false);
+
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const handleToleranceChange = (value: string) => {
     const numValue = Math.max(1, Math.min(10, Number(value) || 1));
@@ -315,7 +317,10 @@ export default function TopMenuBar({
       !isClearCanvasWarningOpen &&
       !isResizeCanvasOpen &&
       !isImportImageOpen &&
-      !isExportModalOpen
+      !isExportModalOpen &&
+      !isConvertToPixelArtOpen &&
+      !isAIPixelArtOpen &&
+      !isAIColorizerOpen
     ) {
       // Remove the Radix UI class and pointer-events style
       document.body.classList.remove(
@@ -336,12 +341,18 @@ export default function TopMenuBar({
     isResizeCanvasOpen,
     isImportImageOpen,
     isExportModalOpen,
+    isConvertToPixelArtOpen,
+    isAIPixelArtOpen,
+    isAIColorizerOpen,
   ]);
 
   return (
     <div className="z-10 flex flex-col border-b border-gray-700 bg-gray-900/50">
       {/* Top row with main controls */}
       <div className="flex h-[64px] items-center gap-4 px-4 py-2">
+        <NextImage src="/logo-og.png" alt="Pixel Nova" width={32} height={32} />
+        <div className="hidden text-white md:inline">Pixel Nova</div>
+
         {/* File Menu Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -409,42 +420,44 @@ export default function TopMenuBar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* AI Pixel Art Generator */}
-        <div>
-          <div className="sm:block">
-            <AiPixelArtModal
-              onSignInRequired={() => setShowSignInModal(true)}
-              onFinish={(img) => {
-                const image = new Image();
-                image.onload = () => {
-                  const canvas = document.createElement("canvas");
-                  canvas.width = image.width;
-                  canvas.height = image.height;
-                  const ctx = canvas.getContext("2d");
-                  if (!ctx) return;
-
-                  ctx.drawImage(image, 0, 0);
-                  const imageData = ctx.getImageData(
-                    0,
-                    0,
-                    canvas.width,
-                    canvas.height,
-                  );
-                  onImportImage(imageData);
-
-                  const colors = extractColors(imageData);
-                  onGeneratePalette(colors);
-                };
-                image.src = img;
-              }}
-            />
-          </div>
-        </div>
-        <div className="hidden md:inline">
-          <CreditsDisplay />
-        </div>
+        {/* Tools section */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="flex items-center gap-2 hover:bg-gray-700"
+            >
+              {SelectedToolIcon && (
+                <SelectedToolIcon className="h-4 w-4 text-white" />
+              )}
+              <span className="text-white">Tools</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem
+              className="gap-2"
+              onSelect={() => setConvertToPixelArtOpen(true)}
+            >
+              <Sparkle className="h-4 w-4" />
+              <span className="text-black">Convert to Pixel Art</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="gap-2"
+              onSelect={() => setAIPixelArtOpen(true)}
+            >
+              <Sparkle className="h-4 w-4" />
+              <span className="text-black">AI Pixel Art</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="gap-2"
+              onSelect={() => setAIColorizerOpen(true)}
+            >
+              <Palette className="h-4 w-4" />
+              <span className="text-black">Smart Colorizer</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-
       {/* Bottom row with editor-specific controls */}
       <div className="flex h-[70px] items-center gap-4 border-b border-t border-gray-700 py-4 pl-4 pr-8">
         {/* Undo/Redo Controls */}
@@ -629,7 +642,6 @@ export default function TopMenuBar({
           </div>
         )}
       </div>
-
       {/* Sign In Modal */}
       <SignInModal
         isOpen={showSignInModal}
@@ -637,7 +649,6 @@ export default function TopMenuBar({
         featureName="AI Pixel Art Generator"
         onExport={() => handleExport("zip")}
       />
-
       <ResizeCanvasModal
         isOpen={isResizeCanvasOpen}
         onClose={() => setResizeCanvasOpen(false)}
@@ -649,7 +660,6 @@ export default function TopMenuBar({
           setResizeCanvasOpen(false);
         }}
       />
-
       <UploadImageModal
         open={isImportImageOpen}
         onClose={() => setImportImageOpen(false)}
@@ -657,7 +667,6 @@ export default function TopMenuBar({
         onGeneratePalette={onGeneratePalette}
         onImportLayers={onImportLayers}
       />
-
       {/* Alert Dialog */}
       <Dialog
         open={isClearCanvasWarningOpen}
@@ -696,12 +705,44 @@ export default function TopMenuBar({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Add Export Modal */}
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         onExport={handleExport}
+      />
+      <ConvertToPixelArtModal
+        onSignInRequired={() => setShowSignInModal(true)}
+        onFinish={(img) => {
+          const image = new Image();
+          image.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return;
+
+            ctx.drawImage(image, 0, 0);
+            const imageData = ctx.getImageData(
+              0,
+              0,
+              canvas.width,
+              canvas.height,
+            );
+            onImportImage(imageData);
+          };
+          image.src = img;
+        }}
+      />{" "}
+      <AIPixelArtModal
+        open={isAIPixelArtOpen}
+        onClose={() => setAIPixelArtOpen(false)}
+      />
+      <ColorizerModal
+        open={isAIColorizerOpen}
+        onClose={() => setAIColorizerOpen(false)}
+        layers={layers}
+        onImportImage={onImportImage}
       />
     </div>
   );

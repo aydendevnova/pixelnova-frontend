@@ -20,6 +20,18 @@ interface ModalStore {
   // Export Modal
   isExportModalOpen: boolean;
   setIsExportModalOpen: (open: boolean) => void;
+
+  // Convert to Pixel Art Modal
+  isConvertToPixelArtOpen: boolean;
+  setConvertToPixelArtOpen: (open: boolean) => void;
+
+  // AI Pixel Art Modal
+  isAIPixelArtOpen: boolean;
+  setAIPixelArtOpen: (open: boolean) => void;
+
+  // AI Colorizer Modal
+  isAIColorizerOpen: boolean;
+  setAIColorizerOpen: (open: boolean) => void;
 }
 
 export const useModal = create<ModalStore>((set) => ({
@@ -42,4 +54,16 @@ export const useModal = create<ModalStore>((set) => ({
   // Export Modal
   isExportModalOpen: false,
   setIsExportModalOpen: (open) => set({ isExportModalOpen: open }),
+
+  // Convert to Pixel Art Modal
+  isConvertToPixelArtOpen: false,
+  setConvertToPixelArtOpen: (open) => set({ isConvertToPixelArtOpen: open }),
+
+  // AI Pixel Art Modal
+  isAIPixelArtOpen: false,
+  setAIPixelArtOpen: (open) => set({ isAIPixelArtOpen: open }),
+
+  // AI Colorizer Modal
+  isAIColorizerOpen: false,
+  setAIColorizerOpen: (open) => set({ isAIColorizerOpen: open }),
 }));

@@ -2,6 +2,19 @@
 
 A professional-grade pixel art creation environment with a focus on performance and usability.
 
+# Web Assembly Module
+
+## C++ and EM SDK Windows Instructions
+
+Install CMake, MingW, Visual Studio C/C++ Tools
+
+Install EM SDK
+https://emscripten.org/docs/getting_started/downloads.html
+
+And add emsdk to your path "..."\emsdk with variable name as `EMSDK`
+
+Use build.bat
+
 ## Features
 
 ### Drawing Tools

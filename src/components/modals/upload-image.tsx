@@ -282,10 +282,7 @@ export default function UploadImageModal({
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Upload Image or Layers</DialogTitle>
-          <DialogDescription>
-            Upload a single image or a zip file containing layers (named
-            layer_1, layer_2, etc.)
-          </DialogDescription>
+          <DialogDescription></DialogDescription>
         </DialogHeader>
 
         <Alert>
