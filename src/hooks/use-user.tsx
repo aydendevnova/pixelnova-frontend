@@ -1,5 +1,11 @@
 "use client";
-import { createContext, useContext } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import {
   useSupabaseClient,
   useSession,
@@ -15,7 +21,8 @@ type UserContextType = {
   isLoading: boolean;
   isSignedIn: boolean;
   invalidateUser: () => Promise<void>;
-  credits: number | null;
+  optimisticGenerations: number;
+  incrementOptimisticGenerations: () => void;
 };
 
 const UserContext = createContext<UserContextType>({
@@ -23,7 +30,12 @@ const UserContext = createContext<UserContextType>({
   profile: null,
   isLoading: true,
   isSignedIn: false,
-  credits: null,
+  optimisticGenerations: 0,
+  incrementOptimisticGenerations: () => {
+    throw new Error(
+      "Increment optimistic generations function not implemented",
+    );
+  },
   invalidateUser: async () => {
     throw new Error("Invalidate user function not implemented");
   },
@@ -33,10 +45,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const supabaseClient = useSupabaseClient<Database>();
   const session = useSession();
   const queryClient = useQueryClient();
+  const [optimisticGenerations, setOptimisticGenerations] = useState(0);
 
   console.log("session", session);
-
-
 
   // Query for worker-verified user data
   const { data: workerUser, isLoading: workerLoading } = useQuery({
@@ -81,7 +92,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         console.log("Fetching profile for user:", session.user.id);
         const { data, error } = await supabaseClient
           .from("profiles")
-          .select("*, credits")
+          .select("*")
           .eq("id", session.user.id)
           .single();
 
@@ -101,6 +112,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     initialData: null,
   });
 
+  useEffect(() => {
+    if (profile?.generation_count) {
+      setOptimisticGenerations(profile.generation_count);
+    }
+  }, [profile?.generation_count]);
+
   console.log("profile", profile);
 
   const invalidateUser = async () => {
@@ -108,13 +125,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await queryClient.invalidateQueries({ queryKey: ["profile"] });
   };
 
+  const incrementOptimisticGenerations = useCallback(() => {
+    setOptimisticGenerations((prev) => prev + 1);
+  }, []);
+
   const value = {
     user: session?.user ?? null,
     profile: profile ?? null,
     isLoading: !!session?.user && (profileLoading || workerLoading),
     isSignedIn: !!session?.user && !!workerUser,
-    credits: profile?.credits ?? null,
     invalidateUser,
+    optimisticGenerations,
+    incrementOptimisticGenerations,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

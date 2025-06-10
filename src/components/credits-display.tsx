@@ -1,9 +1,9 @@
-import { useCredits } from "@/hooks/use-credits";
+import useUser from "@/hooks/use-user";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export function CreditsDisplay() {
-  const { credits, isLoading } = useCredits();
+  const { profile, isLoading, optimisticGenerations } = useUser();
   return (
     <Link
       href="/buy"
@@ -14,7 +14,10 @@ export function CreditsDisplay() {
       <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/50 px-3 py-1.5">
         <Sparkles className="h-4 w-4 text-yellow-500" />
         <span className="text-sm font-medium text-white">
-          {isLoading ? "..." : credits} Uses
+          {isLoading || profile?.generation_count == null
+            ? "..."
+            : optimisticGenerations}{" "}
+          Generations
         </span>
       </div>
     </Link>

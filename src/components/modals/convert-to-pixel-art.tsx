@@ -31,8 +31,7 @@ import {
 import { useIndexedDB } from "@/hooks/use-indexed-db";
 import { GeneratedImage } from "@/types/types";
 import useUser from "@/hooks/use-user";
-import { CREDITS_COST, useCredits } from "@/hooks/use-credits";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+
 import { CreditsDisplay } from "../credits-display";
 import { useModal } from "@/hooks/use-modal";
 import { env } from "@/env";
@@ -65,7 +64,7 @@ const StepOne = ({
   const [error, setError] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { optimisticDeductCredits } = useCredits();
+
   const { mutate: generateImage, isLoading: isGenerating } = useGenerateImage();
   const [generationStep, setGenerationStep] = useState(0);
 
@@ -395,8 +394,7 @@ export default function ConvertToPixelArtModal({
   onFinish: (image: string) => void;
   onSignInRequired: () => void;
 }) {
-  const { credits, optimisticDeductCredits } = useCredits();
-  const { isSignedIn } = useUser();
+  const { profile, incrementOptimisticGenerations } = useUser();
   const [step, setStep] = useState(1);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -547,7 +545,7 @@ export default function ConvertToPixelArtModal({
         throw new Error("Failed to get key!");
       }
       setIsDownscaling(true);
-      optimisticDeductCredits(CREDITS_COST.PROCESS_IMAGE);
+      incrementOptimisticGenerations();
       const result = await downscaleImageWASM(
         uploadedImage,
         gridSize,

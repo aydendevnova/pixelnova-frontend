@@ -49,11 +49,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useToast } from "@/hooks/use-toast";
 import UploadImageModal from "../modals/upload-image";
-import { extractColors } from "@/lib/utils/color";
-import { useCredits } from "@/hooks/use-credits";
-import { CreditsDisplay } from "../credits-display";
+
 import { useModal } from "@/hooks/use-modal";
 import {
   Dialog,
@@ -440,13 +437,6 @@ export default function TopMenuBar({
           <DropdownMenuContent align="start" className="w-48">
             <DropdownMenuItem
               className="gap-2"
-              onSelect={() => setConvertToPixelArtOpen(true)}
-            >
-              <Sparkle className="h-4 w-4" />
-              <span className="text-black">Convert to Pixel Art</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="gap-2"
               onSelect={() => setAIPixelArtOpen(true)}
             >
               <Sparkle className="h-4 w-4" />
@@ -468,6 +458,14 @@ export default function TopMenuBar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2 bg-black text-white hover:bg-purple-700 hover:text-white"
+          onClick={() => setConvertToPixelArtOpen(true)}
+        >
+          <Sparkle className="h-4 w-4" />
+          <span className="text-white">Convert AI to Pixel Art</span>
+        </Button>
       </div>
       {/* Bottom row with editor-specific controls */}
       <div className="flex h-[70px] items-center gap-4 border-b border-t border-gray-700 py-4 pl-4 pr-8">

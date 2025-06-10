@@ -108,10 +108,6 @@ export function useDownscaleImage({
         throw new Error("No session found");
       }
 
-      if (!credits || credits < CREDITS_COST.PROCESS_IMAGE) {
-        throw new Error("Insufficient credits");
-      }
-
       const response = await axios.post(
         `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.DOWNSCALE_IMAGE}`,
         {},
@@ -144,10 +140,6 @@ export function useGenerateImage() {
     mutationFn: async (prompt: string) => {
       if (!session) {
         throw new Error("No session found");
-      }
-
-      if (!credits || credits < CREDITS_COST.GENERATE_IMAGE) {
-        throw new Error("Insufficient credits");
       }
 
       const response = await axios.post(
