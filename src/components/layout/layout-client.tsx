@@ -76,7 +76,7 @@ export default function LayoutClient({
                 <ToasterHotToast />
 
                 {children}
-                {pathname == "/" && (
+                {pathname == "/editor" && (
                   <div className="fixed bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 opacity-50">
                     <img
                       src="/logo.png"
