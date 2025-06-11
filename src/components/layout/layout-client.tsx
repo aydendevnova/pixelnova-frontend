@@ -62,38 +62,38 @@ export default function LayoutClient({
           <CreditsProvider>
             <div
               className={`relative flex min-h-screen flex-col ${
-                pathname == "/" ? "overflow-hidden" : ""
+                pathname == "/editor" ? "overflow-hidden" : "dark"
               }`}
             >
               <Header />
-              <WasmProvider>
-                <ErrorBoundary
-                  fallback={({ error, reset }) => (
-                    <ErrorView error={error} reset={reset} />
-                  )}
-                >
-                  <ToasterRadixUI />
-                  <ToasterHotToast />
-                  {children}
-                  {pathname == "/" && (
-                    <div className="fixed bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 opacity-50">
-                      <img
-                        src="/logo.png"
-                        alt="Pixel Nova"
-                        width={16}
-                        height={16}
-                        className="rounded-full"
-                      />
-                      <span className="font-semibold text-blue-500">
-                        Pixel Nova
-                      </span>
-                      <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-orange-800">
-                        public alpha
-                      </span>
-                    </div>
-                  )}
-                </ErrorBoundary>
-              </WasmProvider>
+
+              <ErrorBoundary
+                fallback={({ error, reset }) => (
+                  <ErrorView error={error} reset={reset} />
+                )}
+              >
+                <ToasterRadixUI />
+                <ToasterHotToast />
+
+                {children}
+                {pathname == "/" && (
+                  <div className="fixed bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 opacity-50">
+                    <img
+                      src="/logo.png"
+                      alt="Pixel Nova"
+                      width={16}
+                      height={16}
+                      className="rounded-full"
+                    />
+                    <span className="font-semibold text-blue-500">
+                      Pixel Nova
+                    </span>
+                    <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-orange-800">
+                      public alpha
+                    </span>
+                  </div>
+                )}
+              </ErrorBoundary>
             </div>
           </CreditsProvider>
         </UserProvider>

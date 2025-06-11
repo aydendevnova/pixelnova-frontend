@@ -40,7 +40,7 @@ export default function RootLayout({
 
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
-      <body className="overflow-y-hidden">
+      <body>
         <LayoutClient>{children}</LayoutClient>
       </body>
     </html>

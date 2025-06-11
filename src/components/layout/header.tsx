@@ -31,17 +31,18 @@ export default function Header() {
 
   return (
     <div
-      className={pathname === "/" ? "absolute right-2 top-2 z-40" : "px-4 py-2"}
+      className={
+        pathname === "/editor"
+          ? "absolute right-0 top-0"
+          : "absolute left-0 right-0 top-0"
+      }
     >
-      <div className="flex items-center justify-between">
-        {pathname != "/" && (
+      <div className=" flex items-center justify-between p-4">
+        {pathname != "/editor" && (
           <Link className="flex items-center justify-center" href="/">
-            <img src="/logo.png" alt="Pixel Nova" className="h-8 w-8" />
-            <span className="mx-2 text-lg font-bold text-black">
+            <img src="/logo-og.png" alt="Pixel Nova" className="h-8 w-8" />
+            <span className="mx-2 text-lg font-bold text-white">
               Pixel Nova
-            </span>
-            <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-orange-800">
-              public alpha
             </span>
           </Link>
         )}
@@ -53,7 +54,7 @@ export default function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="flex w-56 flex-col gap-2 bg-white dark:bg-black"
+              className="flex w-56 flex-col gap-2 bg-white"
               align="end"
               forceMount
             >

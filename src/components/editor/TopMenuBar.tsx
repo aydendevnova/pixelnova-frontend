@@ -63,6 +63,7 @@ import NextImage from "next/image";
 import AIPixelArtModal from "../modals/ai-pixel-art";
 import ColorizerModal from "../modals/colorizer";
 import SkinColorModal from "../modals/skin-colors";
+import Link from "next/link";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
@@ -351,8 +352,18 @@ export default function TopMenuBar({
     <div className="z-10 flex flex-col border-b border-gray-700 bg-gray-900/50">
       {/* Top row with main controls */}
       <div className="flex h-[64px] items-center gap-4 px-4 py-2">
-        <NextImage src="/logo-og.png" alt="Pixel Nova" width={32} height={32} />
-        <div className="hidden text-white md:inline">Pixel Nova</div>
+        <Link href="/" className="flex items-center gap-2">
+          <NextImage
+            src="/logo-og.png"
+            alt="Pixel Nova"
+            width={32}
+            height={32}
+          />
+          <div className="hidden text-white md:inline">Pixel Nova</div>
+          <span className="rounded-full  px-1.5 py-0.5 text-xs font-medium text-orange-800">
+            public alpha
+          </span>
+        </Link>
 
         {/* File Menu Dropdown */}
         <DropdownMenu>

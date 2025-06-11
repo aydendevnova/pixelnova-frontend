@@ -58,6 +58,7 @@ const config = {
     "@typescript-eslint/no-explicit-any": "off",
     "@next/next/no-assign-module-variable": "warn",
     "react/no-unescaped-entities": "off",
+    "@typescript-eslint/no-empty-interface": "off",
   },
   overrides: [
     {

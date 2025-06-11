@@ -8,24 +8,24 @@ import {
 // Helper function to convert any image to PNG format
 export const convertToPng = async (imageUrl: string): Promise<string> => {
   return new Promise((resolve, reject) => {
-    console.log("Start c")
+    console.log("Start c");
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    img.crossOrigin = "anonymous";
     img.onload = () => {
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = img.width;
       canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (!ctx) {
-        reject(new Error('Failed to get canvas context'));
+        reject(new Error("Failed to get canvas context"));
         return;
       }
       ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL('image/png'));
+      resolve(canvas.toDataURL("image/png"));
     };
-    img.onerror = () => reject(new Error('Failed to load image'));
+    img.onerror = () => reject(new Error("Failed to load image"));
     img.src = imageUrl;
-    console.log("End c")
+    console.log("End c");
   });
 };
 
@@ -39,7 +39,7 @@ function getWorker() {
       const workerCode = `
         importScripts('${window.location.origin}/workers/cpp.worker.js');
       `;
-      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      const blob = new Blob([workerCode], { type: "application/javascript" });
       worker = new Worker(URL.createObjectURL(blob));
       console.log("[Image Processing] C++ worker created successfully");
 
@@ -49,7 +49,7 @@ function getWorker() {
           message: error.message,
           filename: error.filename,
           lineno: error.lineno,
-          colno: error.colno
+          colno: error.colno,
         });
       };
 
@@ -57,12 +57,11 @@ function getWorker() {
       worker.onmessageerror = (error) => {
         console.error("[Image Processing] Worker message error:", error);
       };
-
     } catch (error: any) {
       console.error("[Image Processing] Failed to create worker:", {
         message: error.message,
         stack: error.stack,
-        type: typeof error
+        type: typeof error,
       });
       throw error;
     }
@@ -84,7 +83,7 @@ export async function estimateGridSizeWASM(
     hasKey: !!key,
     hasUserId: !!userId,
     timestamp,
-    hasNonce: !!nonce
+    hasNonce: !!nonce,
   });
 
   return new Promise((resolve, reject) => {
@@ -96,7 +95,7 @@ export async function estimateGridSizeWASM(
         success: e.data.success,
         hasError: !!e.data.error,
         hasResult: !!e.data.result,
-        gridSize: e.data.result?.gridSize
+        gridSize: e.data.result?.gridSize,
       });
 
       if (e.data.success) {
@@ -107,7 +106,9 @@ export async function estimateGridSizeWASM(
       }
     };
 
-    console.log("[Image Processing] Sending estimateGridSize request to worker");
+    console.log(
+      "[Image Processing] Sending estimateGridSize request to worker",
+    );
     worker.postMessage({
       type: "estimateGridSize",
       payload: {
@@ -135,7 +136,7 @@ export async function downscaleImageWASM(
     hasKey: !!key,
     hasUserId: !!userId,
     timestamp,
-    hasNonce: !!nonce
+    hasNonce: !!nonce,
   });
 
   return new Promise((resolve, reject) => {
@@ -147,7 +148,7 @@ export async function downscaleImageWASM(
         success: e.data.success,
         hasError: !!e.data.error,
         hasResult: !!e.data.result,
-        resultsLength: e.data.result?.results?.length
+        resultsLength: e.data.result?.results?.length,
       });
 
       if (e.data.success) {
@@ -182,3 +183,15 @@ export const fileToBase64 = (file: File): Promise<string> => {
     reader.onerror = (error) => reject(error);
   });
 };
+
+export function sortByLuminance(colors: string[]): string[] {
+  return [...colors].sort((a, b) => {
+    const getLuminance = (color: string) => {
+      const r = parseInt(color.slice(1, 3), 16);
+      const g = parseInt(color.slice(3, 5), 16);
+      const b = parseInt(color.slice(5, 7), 16);
+      return 0.299 * r + 0.587 * g + 0.114 * b;
+    };
+    return getLuminance(a) - getLuminance(b);
+  });
+}

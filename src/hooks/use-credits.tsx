@@ -31,13 +31,15 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
   const session = useSession();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { credits: queryCredits, invalidateUser } = useUser();
-  const [displayCredits, setDisplayCredits] = useState(queryCredits ?? 0);
+  const { user, profile, invalidateUser } = useUser();
+  const [displayGenerations, setDisplayGenerations] = useState(
+    profile?.generation_count ?? 0,
+  );
 
   // Sync displayCredits with queryCredits when they change
   useEffect(() => {
-    setDisplayCredits(queryCredits ?? 0);
-  }, [queryCredits]);
+    setDisplayGenerations(profile?.generation_count ?? 0);
+  }, [profile?.generation_count]);
 
   const { mutateAsync: updateCredits } = useMutation({
     mutationFn: async ({ amount }: { amount: number }) => {
@@ -74,14 +76,14 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
   const optimisticDeductCredits = (amount: number) => {
     console.log("optimisticDeductCredits", amount);
     // Immediately update the display credits
-    setDisplayCredits((prev) => Math.max(0, prev - amount));
+    setDisplayGenerations((prev) => Math.max(0, prev - amount));
 
     // Still invalidate the query to get the real server state
     void queryClient.invalidateQueries({ queryKey: ["user"] });
   };
 
   const value = {
-    credits: displayCredits,
+    credits: displayGenerations,
     isLoading: false,
     updateCredits,
     optimisticDeductCredits,

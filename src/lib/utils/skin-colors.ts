@@ -1,9 +1,9 @@
-import { interpolateColor, generateColorRange } from "./colorizer";
+import { generateColorRange } from "./colorizer";
 
 export const SKIN_TONE_RANGES = [
-  ["#FFE4C8", "#D4B292"],
+  ["#FFD4B0", "#E89E6C"],
   ["#F1C27D", "#8D5524"],
-  ["#E5B887", "#8B5E34"],
+  ["#E8B98C", "#966B4D"],
   ["#C68642", "#4A3728"],
   ["#8D5524", "#291807"],
 ] as const;
