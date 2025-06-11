@@ -33,7 +33,7 @@ export default function Header() {
     <div
       className={
         pathname === "/editor"
-          ? "absolute right-0 top-0"
+          ? "absolute right-0 top-0 z-30"
           : "absolute left-0 right-0 top-0"
       }
     >
@@ -92,7 +92,7 @@ export default function Header() {
               variant="default"
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
               onClick={() => {
-                if (pathname === "/") {
+                if (pathname === "/editor") {
                   setIsSignInModalOpen(true);
                 } else {
                   router.push("/signin");

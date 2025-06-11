@@ -48,7 +48,7 @@ export const metadata: Metadata = {
 
 export default async function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
+    <div className="min-h-screen overflow-y-auto bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
       {/* Hero Section - AI Generator */}
       <section className="px-4 pb-8 pt-16">
         <div className="mx-auto max-w-7xl">

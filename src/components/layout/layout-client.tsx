@@ -31,7 +31,7 @@ export default function LayoutClient({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname == "/" && env.NEXT_PUBLIC_IS_DEVELOPMENT !== "true") {
+    if (pathname == "/editor" && env.NEXT_PUBLIC_IS_DEVELOPMENT !== "true") {
       window.scrollTo(0, 0);
       document.body.classList.add("overflow-hidden");
 
