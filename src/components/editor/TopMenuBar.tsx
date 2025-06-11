@@ -358,9 +358,10 @@ export default function TopMenuBar({
             alt="Pixel Nova"
             width={32}
             height={32}
+            className="shrink-0 rounded-full"
           />
           <div className="hidden text-white md:inline">Pixel Nova</div>
-          <span className="rounded-full  px-1.5 py-0.5 text-xs font-medium text-orange-800">
+          <span className="hidden rounded-full px-1.5 py-0.5 text-xs font-medium text-orange-800 md:inline">
             public alpha
           </span>
         </Link>
@@ -447,6 +448,13 @@ export default function TopMenuBar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48">
             <DropdownMenuItem
+              className="gap-2 bg-purple-300 lg:hidden"
+              onSelect={() => setConvertToPixelArtOpen(true)}
+            >
+              <Sparkle className="h-4 w-4" />
+              <span className="text-black">Convert to Pixel Art</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
               className="gap-2"
               onSelect={() => setAIPixelArtOpen(true)}
             >
@@ -471,11 +479,11 @@ export default function TopMenuBar({
         </DropdownMenu>
         <Button
           variant="ghost"
-          className="flex items-center gap-2 bg-black text-white hover:bg-purple-700 hover:text-white"
+          className="hidden items-center gap-2 bg-black text-white hover:bg-purple-700 hover:text-white md:flex"
           onClick={() => setConvertToPixelArtOpen(true)}
         >
           <Sparkle className="h-4 w-4" />
-          <span className="text-white">Convert AI to Pixel Art</span>
+          <span className=" text-white md:inline">Convert AI to Pixel Art</span>
         </Button>
       </div>
       {/* Bottom row with editor-specific controls */}

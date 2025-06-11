@@ -19,7 +19,7 @@ export default function GeneratePage() {
   >([]);
 
   return (
-    <div className="min-h-screen rounded-2xl bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20">
       <div className="">
         <div className="flex flex-col gap-4 lg:flex-row">
           {/* Input Section */}
@@ -110,7 +110,7 @@ export default function GeneratePage() {
                   key={variant.id}
                   className="flex flex-col items-center rounded-xl border border-slate-600 bg-slate-700/20 p-4"
                 >
-                  <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-[url(/transparent-bg.png)] bg-contain">
+                  <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-contain">
                     <img
                       src={variant.image}
                       alt={variant.name}

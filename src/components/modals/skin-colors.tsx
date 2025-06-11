@@ -373,7 +373,7 @@ export default function SkinColorModal({
                       setSelectedResults(newSelected);
                     }}
                   >
-                    <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-[url(/transparent-bg.png)] bg-contain">
+                    <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-contain">
                       <img
                         src={(() => {
                           const canvas = document.createElement("canvas");

@@ -100,7 +100,7 @@ export default function CanvasOverlay({
   const scaledHeight = height * scale;
 
   return (
-    <div className="relative flex h-full max-w-[500px] items-center justify-center">
+    <div className="relative mx-auto flex h-full max-w-[500px] items-center justify-center">
       <canvas
         ref={canvasRef}
         style={{

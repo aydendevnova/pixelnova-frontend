@@ -39,6 +39,7 @@ import { sortByLuminance } from "@/lib/image-processing";
 import {
   generateSkinTones,
   downloadVariations,
+  downloadAsSpritesheet,
   type GeneratedVariant,
 } from "@/lib/skin-tone-processing";
 import {
@@ -53,6 +54,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MouseEvent } from "react";
 
 interface SkinToneColor {
   id: string;
@@ -95,6 +98,9 @@ export default function ClientComponent() {
     width: 0,
     height: 0,
   });
+  const [selectedVariants, setSelectedVariants] = useState<Set<number>>(
+    new Set(),
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -301,8 +307,14 @@ export default function ClientComponent() {
     if (!variants.length) return;
 
     try {
+      const selectedVariantsArray = Array.from(selectedVariants)
+        .map((index) => variants[index])
+        .filter(
+          (variant): variant is GeneratedVariant => variant !== undefined,
+        );
+
       const blob = await downloadVariations(
-        variants.map(({ name, image }) => ({
+        selectedVariantsArray.map(({ name, image }) => ({
           name,
           image,
         })),
@@ -321,6 +333,27 @@ export default function ClientComponent() {
       document.body.removeChild(a);
     } catch (error) {
       console.error("Error downloading variations:", error);
+    }
+  };
+
+  const handleDownloadSpritesheet = async () => {
+    if (!variants.length) return;
+
+    try {
+      const selectedVariantsArray = Array.from(selectedVariants)
+        .map((index) => variants[index])
+        .filter(
+          (variant): variant is GeneratedVariant => variant !== undefined,
+        );
+
+      await downloadAsSpritesheet(
+        selectedVariantsArray.map(({ name, image }) => ({
+          name,
+          image,
+        })),
+      );
+    } catch (error) {
+      console.error("Error downloading spritesheet:", error);
     }
   };
 
@@ -359,8 +392,15 @@ export default function ClientComponent() {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, []);
 
+  // Add effect to auto-select all new variants when they are generated
+  useEffect(() => {
+    if (variants.length > 0) {
+      setSelectedVariants(new Set(variants.map((_, i) => i)));
+    }
+  }, [variants]);
+
   return (
-    <div className="min-h-screen rounded-2xl bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20">
       <div className="">
         <div className="flex flex-col gap-4 lg:flex-row ">
           {/* Column Sections */}
@@ -571,7 +611,7 @@ export default function ClientComponent() {
                             variant="outline"
                             size="sm"
                             onClick={autoSortColors}
-                            className="gap-2 border-slate-600 bg-slate-700/50 text-slate-300 hover:bg-slate-600"
+                            className="gap-2 border-purple-600 bg-purple-500/50 text-slate-300 hover:bg-purple-500"
                           >
                             <ArrowDownUp className="h-4 w-4" />
                             Auto Sort
@@ -674,7 +714,7 @@ export default function ClientComponent() {
                       size="sm"
                     >
                       <Download className="mr-1 h-4 w-4" />
-                      Download ({variants.length})
+                      Download ({selectedVariants.size})
                       <ChevronDown className="ml-1 h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -683,12 +723,7 @@ export default function ClientComponent() {
                       <Package className="mr-2 h-4 w-4" />
                       Download as ZIP
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        // TODO: Implement spritesheet download
-                        console.log("Spritesheet download not implemented yet");
-                      }}
-                    >
+                    <DropdownMenuItem onClick={handleDownloadSpritesheet}>
                       <Grid className="mr-2 h-4 w-4" />
                       Download as Spritesheet
                     </DropdownMenuItem>
@@ -697,12 +732,43 @@ export default function ClientComponent() {
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-3">
-                {variants.map((variant) => (
+                {variants.map((variant, index) => (
                   <div
                     key={variant.id}
-                    className="flex flex-col items-center rounded-xl border border-slate-600 bg-slate-700/20 p-4"
+                    className={`flex cursor-pointer flex-col items-center rounded-xl border p-4 ${
+                      selectedVariants.has(index)
+                        ? "border-amber-400 bg-amber-500/10"
+                        : "border-slate-600 bg-slate-700/20"
+                    }`}
+                    onClick={() => {
+                      const newSelected = new Set(selectedVariants);
+                      if (selectedVariants.has(index)) {
+                        newSelected.delete(index);
+                      } else {
+                        newSelected.add(index);
+                      }
+                      setSelectedVariants(newSelected);
+                    }}
                   >
-                    <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-[url(/transparent-bg.png)] bg-contain">
+                    <div className="mb-2 flex w-full items-center justify-between">
+                      <span className="text-sm font-medium text-white">
+                        {variant.name}
+                      </span>
+                      <Checkbox
+                        checked={selectedVariants.has(index)}
+                        onCheckedChange={() => {
+                          const newSelected = new Set(selectedVariants);
+                          if (selectedVariants.has(index)) {
+                            newSelected.delete(index);
+                          } else {
+                            newSelected.add(index);
+                          }
+                          setSelectedVariants(newSelected);
+                        }}
+                        onClick={(e: MouseEvent) => e.stopPropagation()}
+                      />
+                    </div>
+                    <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-contain">
                       <img
                         src={variant.image}
                         alt={`${variant.name} skin tone variation`}
@@ -710,9 +776,6 @@ export default function ClientComponent() {
                         style={{ imageRendering: "pixelated" }}
                       />
                     </div>
-                    <span className="mt-2 text-sm font-medium text-white">
-                      {variant.name}
-                    </span>
                   </div>
                 ))}
               </div>

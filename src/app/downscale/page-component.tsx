@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Alert } from "@/components/ui/alert";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import { WasmProvider } from "@/components/wasm-provider";
 import { useRouter } from "next/navigation";
 import {
@@ -213,6 +213,7 @@ const StepTwo = ({
   isEstimatingGridSizeKey,
   handleDownscaleImage,
   userId,
+  isEstimatingGridSizeError,
 }: StepTwoProps & {
   results: DownscaleImageWASMResponse | null;
   isDownscaling: boolean;
@@ -221,6 +222,7 @@ const StepTwo = ({
   isEstimatingGridSizeKey: boolean;
   handleDownscaleImage: (userId: string) => void;
   userId: string;
+  isEstimatingGridSizeError: boolean;
 }) => {
   const [aspectRatio, setAspectRatio] = useState(1);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -461,6 +463,8 @@ const StepTwo = ({
                   >
                     {!originalGridSizeEstimate ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : isEstimatingGridSizeError ? (
+                      <AlertCircle className="h-4 w-4 text-red-500" />
                     ) : (
                       <UndoIcon className="h-4 w-4" size="icon" />
                     )}
@@ -473,7 +477,7 @@ const StepTwo = ({
 
               <div className="space-y-2">
                 <label className="text-sm text-slate-200">
-                  Zoom Factor: {zoomFactor.toFixed(1)}x
+                  Hover Zoom Factor: {zoomFactor.toFixed(1)}x
                 </label>
                 <input
                   type="range"
@@ -548,7 +552,7 @@ const StepTwo = ({
               <h3 className="mb-4 text-lg font-medium text-white">
                 Image Preview
               </h3>
-              <div className="grid h-[400px] grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {/* Original Image */}
                 <div className="group relative rounded-xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur">
                   <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-600/20 via-teal-600/20 to-cyan-600/20 opacity-75 blur-xl"></div>
@@ -671,7 +675,7 @@ const StepTwo = ({
                 originalGridSizeEstimate &&
                 compositeImage && (
                   <div
-                    className="pointer-events-none absolute -top-36 left-32 z-50 h-[30vh] w-[30vh] -translate-x-1/2 overflow-hidden rounded-lg border-2 border-white shadow-2xl"
+                    className="pointer-events-none absolute -top-44 left-20 z-50 h-[30vh] w-[30vh] -translate-x-1/2 overflow-hidden rounded-lg border-2 border-white shadow-2xl"
                     style={{
                       backgroundColor: "#1e293b",
                     }}
@@ -729,6 +733,12 @@ export default function DownscalePageComponent() {
   const [isEstimatingGridSize, setIsEstimatingGridSize] = useState(false);
   const [recentImages, setRecentImages] = useState<GeneratedImage[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [estimateGridError, setEstimateGridError] = useState<string | null>(
+    null,
+  );
+  const [processImageError, setProcessImageError] = useState<string | null>(
+    null,
+  );
 
   const { saveImage, getImages, deleteImage, searchByPrompt } = useIndexedDB();
   const { user } = useUser();
@@ -873,6 +883,7 @@ export default function DownscalePageComponent() {
     if (!uploadedImage) return;
 
     try {
+      setProcessImageError(null);
       const { a, b, c } = await downscaleImage();
       if (!a) {
         throw new Error("Failed to get key!");
@@ -888,19 +899,32 @@ export default function DownscalePageComponent() {
         c,
       );
 
+      if (!result || !result.results || result.results.length === 0) {
+        throw new Error("Failed to process image - no results returned");
+      }
+
       setResults(result);
       setIsDownscaling(false);
-      // setStep(3);
     } catch (error) {
       console.error("Failed to downscale image:", error);
+      setProcessImageError(
+        error instanceof Error
+          ? error.message
+          : "Failed to process image. Please try again.",
+      );
+      setIsDownscaling(false);
     }
   };
 
-  const { mutateAsync: estimateGridSize, isLoading: isEstimatingGridSizeKey } =
-    useEstimateGridSize();
+  const {
+    mutateAsync: estimateGridSize,
+    isLoading: isEstimatingGridSizeKey,
+    isError: isEstimateGridSizeError,
+  } = useEstimateGridSize();
 
   const handleEstimateGridSize = async (imageUrl: string, userId: string) => {
     try {
+      setEstimateGridError(null);
       setIsEstimatingGridSize(true);
       const { a, b, c } = await estimateGridSize();
       if (!a) {
@@ -912,11 +936,16 @@ export default function DownscalePageComponent() {
         setGridSize(result.gridSize);
         setOriginalGridSizeEstimate(result.gridSize);
       } else {
-        console.error("Failed to estimate grid size:", result);
-        throw new Error("Failed to estimate grid size");
+        throw new Error("Failed to estimate grid size - invalid response");
       }
     } catch (error) {
       console.error("Failed to estimate grid size:", error);
+      setEstimateGridError(
+        error instanceof Error
+          ? error.message
+          : "Failed to estimate grid size. Please try again.",
+      );
+      setOriginalGridSizeEstimate(null);
     } finally {
       setIsEstimatingGridSize(false);
     }
@@ -929,8 +958,6 @@ export default function DownscalePageComponent() {
         "Generate with AI or upload an image to convert to pixel art",
       content: (
         <div className="space-y-4">
-          {error && <Alert variant="destructive">{error}</Alert>}
-
           <StepOne
             onImageGenerated={handleImageGenerated}
             recentImages={recentImages}
@@ -964,6 +991,7 @@ export default function DownscalePageComponent() {
           isEstimatingGridSizeKey={isEstimatingGridSizeKey}
           handleDownscaleImage={handleDownscaleImage}
           userId={user?.id ?? ""}
+          isEstimatingGridSizeError={isEstimateGridSizeError}
         />
       ),
     },
@@ -972,10 +1000,8 @@ export default function DownscalePageComponent() {
   const currentStep = steps[step - 1] ?? steps[0]!;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-8 duration-500 animate-in fade-in">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-8 duration-500 animate-in fade-in max-md:pt-20">
       <div className="mx-auto max-w-7xl">
-        {error && <Alert variant="destructive">{error}</Alert>}
-
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold">
             <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
@@ -1015,6 +1041,25 @@ export default function DownscalePageComponent() {
           </Alert>
         )}
 
+        {error && (
+          <Alert variant="destructive" className="mb-4 flex items-center gap-2">
+            <AlertCircle className="mr-2 h-4 w-4" />
+            <AlertTitle>{error}</AlertTitle>
+          </Alert>
+        )}
+        {estimateGridError && (
+          <Alert variant="destructive" className="mb-4 flex items-center gap-2">
+            <AlertCircle className="mr-2 h-4 w-4" />
+            <AlertTitle>{estimateGridError}</AlertTitle>
+          </Alert>
+        )}
+        {processImageError && (
+          <Alert variant="destructive" className="mb-4 flex items-center gap-2">
+            <AlertCircle className="mr-2 h-4 w-4" />
+            <AlertTitle>{processImageError}</AlertTitle>
+          </Alert>
+        )}
+
         <div className="mb-4 flex items-center gap-4">
           {/* Buttons */}
           <div className="flex justify-between">
@@ -1024,6 +1069,10 @@ export default function DownscalePageComponent() {
                 onClick={() => {
                   if (step > 1) {
                     setStep((step) => step - 1);
+                    setError(null);
+                    setEstimateGridError(null);
+                    setProcessImageError(null);
+                    setShowSmallImageWarning(false);
                   }
                 }}
                 className="border-slate-600 bg-slate-800/50 px-8 text-slate-300 hover:bg-slate-700"

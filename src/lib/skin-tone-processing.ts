@@ -1,5 +1,6 @@
 import { generateColorRange } from "@/lib/utils/colorizer";
 import { SKIN_TONE_RANGES } from "@/lib/utils/skin-colors";
+import JSZip from "jszip";
 
 export interface GeneratedVariant {
   id: string;
@@ -200,16 +201,78 @@ export async function generateSkinTones(
 export async function downloadVariations(
   variations: { name: string; image: string }[],
 ): Promise<Blob> {
-  // Since we can't use JSZip or similar libraries without adding dependencies,
-  // we'll create a simple download approach by creating a multi-part file
-  // For now, let's just download the first image as a fallback
-  // In a real implementation, you'd want to add JSZip as a dependency
+  const zip = new JSZip();
 
-  if (variations.length === 0) {
-    throw new Error("No variations to download");
+  // Add each image to the zip
+  for (const variation of variations) {
+    const response = await fetch(variation.image);
+    const blob = await response.blob();
+    const filename = `${variation.name.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.png`;
+    zip.file(filename, blob);
   }
 
-  // Convert the first image to blob for download
-  const response = await fetch(variations[0]!.image);
-  return response.blob();
+  // Generate and download the zip
+  return zip.generateAsync({ type: "blob" });
+}
+
+export async function downloadAsSpritesheet(
+  variations: { name: string; image: string }[],
+): Promise<void> {
+  if (variations.length === 0) return;
+
+  // Load the first image to get dimensions
+  const firstImage = await new Promise<HTMLImageElement>((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.src = variations[0]!.image;
+  });
+
+  const imageWidth = firstImage.width;
+  const imageHeight = firstImage.height;
+
+  // Calculate grid dimensions (3 columns, as many rows as needed)
+  const cols = 3;
+  const rows = Math.ceil(variations.length / cols);
+
+  // Create spritesheet canvas
+  const spritesheetCanvas = document.createElement("canvas");
+  spritesheetCanvas.width = imageWidth * cols;
+  spritesheetCanvas.height = imageHeight * rows;
+  const ctx = spritesheetCanvas.getContext("2d");
+
+  if (!ctx) return;
+
+  // Fill background with transparent
+  ctx.clearRect(0, 0, spritesheetCanvas.width, spritesheetCanvas.height);
+
+  // Load and place each image in the grid
+  await Promise.all(
+    variations.map(async (variation, index) => {
+      const img = await new Promise<HTMLImageElement>((resolve) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.src = variation.image;
+      });
+
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const x = col * imageWidth;
+      const y = row * imageHeight;
+
+      ctx.drawImage(img, x, y);
+    }),
+  );
+
+  // Download the spritesheet
+  spritesheetCanvas.toBlob((blob) => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "skin_tone_spritesheet.png";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
 }
