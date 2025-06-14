@@ -454,13 +454,13 @@ export default function TopMenuBar({
               <Sparkle className="h-4 w-4" />
               <span className="text-black">Convert to Pixel Art</span>
             </DropdownMenuItem>
-            <DropdownMenuItem
+            {/* <DropdownMenuItem
               className="gap-2"
               onSelect={() => setAIPixelArtOpen(true)}
             >
               <Sparkle className="h-4 w-4" />
               <span className="text-black">AI Pixel Art</span>
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
             <DropdownMenuItem
               className="gap-2"
               onSelect={() => setAIColorizerOpen(true)}
@@ -477,14 +477,14 @@ export default function TopMenuBar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button
-          variant="ghost"
-          className="hidden items-center gap-2 bg-black text-white hover:bg-purple-700 hover:text-white md:flex"
-          onClick={() => setConvertToPixelArtOpen(true)}
-        >
-          <Sparkle className="h-4 w-4" />
-          <span className=" text-white md:inline">Convert AI to Pixel Art</span>
-        </Button>
+        <Link href="/convert" target="_blank" rel="noopener noreferrer">
+          <Button className="hidden items-center gap-2 bg-black text-white hover:bg-purple-700 hover:text-white md:flex">
+            <Sparkle className="h-4 w-4" />
+            <span className=" text-white md:inline">
+              Convert AI to Pixel Art
+            </span>
+          </Button>
+        </Link>
       </div>
       {/* Bottom row with editor-specific controls */}
       <div className="flex h-[70px] items-center gap-4 border-b border-t border-gray-700 py-4 pl-4 pr-8">
