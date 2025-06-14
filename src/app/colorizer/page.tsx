@@ -196,7 +196,7 @@ export default function ColorizerPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20">
-      <div className="">
+      <div className="duration-500 animate-in fade-in">
         <div className="flex flex-col gap-4 lg:flex-row">
           {/* Left Column - Upload and Controls */}
           <div
@@ -268,7 +268,7 @@ export default function ColorizerPage() {
                       pixels and may not be pixel art. Expect longer processing
                       times. <br />
                       Convert to pixel art{" "}
-                      <Link href="/downscale" className="text-blue-500">
+                      <Link href="/convert" className="text-blue-500">
                         here
                       </Link>
                       .

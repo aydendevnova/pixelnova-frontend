@@ -135,7 +135,7 @@ const StepOne = ({
       reader.readAsDataURL(file);
     } catch (error) {
       setError(
-        "Failed to load image from URL. Please check the URL and try again.",
+        "This website's URL does not allow direct importing. Please download and import the image directly.",
       );
     }
   };
@@ -527,7 +527,9 @@ export default function ConvertToPixelArtModal({
       img.src = pngImage;
     } catch (error) {
       console.error("Failed to process history image:", error);
-      setError("Failed to load image from history. Please try again.");
+      setError(
+        "This website's URL does not allow direct importing. Please download and import the image directly.",
+      );
     }
   };
 
@@ -538,16 +540,16 @@ export default function ConvertToPixelArtModal({
 
   const handleDownscaleImage = async (userId: string) => {
     if (!uploadedImage) return;
-
+    if (!uploadedFile) return;
     try {
-      const { a, b, c } = await downscaleImage();
+      const { a, b, c, image } = await downscaleImage(uploadedFile);
       if (!a) {
         throw new Error("Failed to get key!");
       }
       setIsDownscaling(true);
       incrementOptimisticGenerations();
       const result = await downscaleImageWASM(
-        uploadedImage,
+        !!image ? image : uploadedImage,
         gridSize,
         a,
         userId,

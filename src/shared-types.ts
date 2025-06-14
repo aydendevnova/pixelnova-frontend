@@ -62,4 +62,5 @@ export type DownscaleResponse = {
   a: string;
   b: number;
   c: string;
+  image: string;
 };

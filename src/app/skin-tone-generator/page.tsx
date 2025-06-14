@@ -34,7 +34,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import CanvasOverlay from "@/app/skin-tones/canvas-overlay";
+import CanvasOverlay from "@/app/skin-tone-generator/canvas-overlay";
 import { sortByLuminance } from "@/lib/image-processing";
 import {
   generateSkinTones,
@@ -400,8 +400,8 @@ export default function ClientComponent() {
   }, [variants]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20">
-      <div className="">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20 ">
+      <div className="duration-500 animate-in fade-in">
         <div className="flex flex-col gap-4 lg:flex-row ">
           {/* Column Sections */}
 
@@ -474,7 +474,7 @@ export default function ClientComponent() {
                       and may not be pixel art. Expect longer processing times.{" "}
                       <br />
                       Convert to pixel art{" "}
-                      <Link href="/downscale" className="text-blue-500">
+                      <Link href="/convert" className="text-blue-500">
                         here
                       </Link>
                       .

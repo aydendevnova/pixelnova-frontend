@@ -14,6 +14,7 @@ const API_ROUTES = {
   DOWNSCALE_IMAGE: "/api/downscale-image",
   GENERATE_IMAGE: "/api/generate-image",
   CHECKOUT: "/api/checkout",
+  GENERATE_PIXEL_ART: "/api/generate-pixel-art",
 } as const;
 
 export function useUpdateAccount() {
@@ -103,17 +104,20 @@ export function useDownscaleImage({
   const { credits } = useCredits();
 
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (imageFile: File) => {
       if (!session) {
         throw new Error("No session found");
       }
 
+      const formData = new FormData();
+      formData.append("image", imageFile);
+
       const response = await axios.post(
         `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.DOWNSCALE_IMAGE}`,
-        {},
+        formData,
         {
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${session.access_token}`,
           },
         },
@@ -122,6 +126,7 @@ export function useDownscaleImage({
         a: response.data.a,
         b: response.data.b,
         c: response.data.c,
+        image: response.data.image,
       };
     },
     onSuccess: (data) => {
@@ -176,6 +181,45 @@ export function useCheckout() {
         },
       );
       return response.data;
+    },
+  });
+}
+
+export function useGeneratePixelArt() {
+  const session = useSession();
+
+  return useMutation({
+    mutationFn: async ({
+      prompt,
+      useOpenAI,
+    }: {
+      prompt: string;
+      useOpenAI: boolean;
+    }) => {
+      if (!session) {
+        throw new Error("No session found");
+      }
+
+      const response = await axios.post(
+        `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.GENERATE_PIXEL_ART}`,
+        { prompt, useOpenAI },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          responseType: "arraybuffer",
+        },
+      );
+
+      // Convert array buffer to base64
+      const base64 = btoa(
+        new Uint8Array(response.data).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          "",
+        ),
+      );
+      return `data:image/png;base64,${base64}`;
     },
   });
 }

@@ -47,8 +47,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [optimisticGenerations, setOptimisticGenerations] = useState(0);
 
-  console.log("session", session);
-
   // Query for worker-verified user data
   const { data: workerUser, isLoading: workerLoading } = useQuery({
     queryKey: ["worker-user", session?.access_token],
@@ -117,8 +115,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setOptimisticGenerations(profile.generation_count);
     }
   }, [profile?.generation_count]);
-
-  console.log("profile", profile);
 
   const invalidateUser = async () => {
     await queryClient.invalidateQueries({ queryKey: ["worker-user"] });

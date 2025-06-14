@@ -16,7 +16,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { CreditsDisplay } from "../credits-display";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 
 export default function Header() {
   const { profile, isSignedIn } = useUser();
@@ -25,9 +25,9 @@ export default function Header() {
 
   const router = useRouter();
 
-  if (pathname === "/signin" || pathname === "/signup") {
-    return <></>;
-  }
+  // if (pathname === "/signin" || pathname === "/signup") {
+  //   return <></>;
+  // }
 
   return (
     <div
@@ -37,14 +37,51 @@ export default function Header() {
           : "absolute left-0 right-0 top-0"
       }
     >
-      <div className=" flex items-center justify-between p-4">
+      <div className="relative z-20 flex items-center justify-between p-4">
         {pathname != "/editor" && (
-          <Link className="flex items-center justify-center" href="/">
-            <img src="/logo-og.png" alt="Pixel Nova" className="h-8 w-8" />
-            <span className="mx-2 text-lg font-bold text-white">
-              Pixel Nova
-            </span>
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link className="flex items-center justify-center" href="/">
+              <img src="/logo-og.png" alt="Pixel Nova" className="h-8 w-8" />
+              <span className="mx-2 text-lg font-bold text-white">
+                Pixel Nova
+              </span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/ai-pixel-art"
+                className="text-sm text-white hover:text-gray-200"
+              >
+                AI Pixel Art
+              </Link>
+              <Link
+                href="/convert"
+                className="text-sm text-white hover:text-gray-200"
+              >
+                Convert to Pixel Art
+              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-1 text-sm text-white hover:text-gray-200"
+                  >
+                    More <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48 bg-white" align="start">
+                  <DropdownMenuItem asChild>
+                    <Link href="/colorizer">Colorizer</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/skin-tone-generator">Skin Tone Generator</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/editor">Pixel Art Editor</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         )}
         {isSignedIn ? (
           <DropdownMenu>
@@ -72,7 +109,7 @@ export default function Header() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/buy" target="_blank" rel="noopener noreferrer">
+                <Link href="/pricing" target="_blank" rel="noopener noreferrer">
                   Buy Credits
                 </Link>
               </DropdownMenuItem>

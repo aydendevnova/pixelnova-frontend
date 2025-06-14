@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
 interface SignInModalProps {
@@ -24,9 +24,11 @@ export function SignInModal({
   onExport,
 }: SignInModalProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isEditorRoute = pathname === "/editor";
 
   const handleSignIn = async () => {
-    if (onExport) {
+    if (onExport && isEditorRoute) {
       try {
         await onExport();
       } catch (error) {
@@ -39,33 +41,40 @@ export function SignInModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            Sign in required
-          </DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-6 py-6">
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Please sign in to use {featureName}. It only takes a few seconds
-              and all your work will be saved automatically.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Join our creative community today!
-            </p>
-          </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="ghost" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSignIn}
-              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-            >
-              Export canvas and sign in
-              <ArrowRight className="h-4 w-4" />
-            </Button>
+      <DialogContent className="border-slate-700/50 bg-slate-800/50 backdrop-blur sm:max-w-[425px]">
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 opacity-75 blur-xl"></div>
+        <div className="relative">
+          <DialogHeader>
+            <DialogTitle className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-2xl font-bold text-transparent">
+              Sign in for free to continue
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-6 py-6">
+            <div className="space-y-4">
+              <p className="text-base text-slate-300">
+                Please sign in to use the {featureName}. It only takes a few
+                seconds and all your work will be saved automatically.
+              </p>
+              <p className="text-base text-slate-300">
+                Join our creative community today!
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="ghost"
+                onClick={onClose}
+                className="text-slate-300 hover:bg-slate-700/50 hover:text-white"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSignIn}
+                className="gap-2 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 px-8 font-semibold text-white shadow-lg transition-all duration-200 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 hover:shadow-xl"
+              >
+                {isEditorRoute ? "Export canvas and sign in" : "Sign in"}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

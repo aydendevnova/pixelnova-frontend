@@ -43,7 +43,7 @@ export const downloadAsZip = async (
   const url = URL.createObjectURL(zipBlob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "colorized_images.zip";
+  a.download = `pixelart_images_${new Date().toISOString().split("T")[0]}.zip`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

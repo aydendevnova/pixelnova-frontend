@@ -40,7 +40,7 @@ export default function CancelPage() {
         className="flex gap-4"
       >
         <Button asChild size="lg" variant="outline">
-          <Link href="/buy">Try Again</Link>
+          <Link href="/pricing">Try Again</Link>
         </Button>
         <Button asChild size="lg" className="bg-purple-600 hover:bg-purple-700">
           <Link href="/">Return Home</Link>

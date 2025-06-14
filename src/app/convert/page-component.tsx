@@ -31,6 +31,7 @@ import { useIndexedDB } from "@/hooks/use-indexed-db";
 import { GeneratedImage } from "@/types/types";
 import useUser from "@/hooks/use-user";
 import { CreditsDisplay } from "@/components/credits-display";
+import { SignInModal } from "@/components/modals/signin-modal";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;
@@ -243,6 +244,7 @@ const StepTwo = ({
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const gridCanvasRef = useRef<HTMLCanvasElement>(null);
   const keyboardTipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [displayedDimensions, setDisplayedDimensions] = useState({
     width: 0,
@@ -251,12 +253,7 @@ const StepTwo = ({
 
   // Create composite image when grid or image changes
   useEffect(() => {
-    if (
-      !uploadedImage ||
-      !showGrid ||
-      !originalGridSizeEstimate ||
-      !imageRef.current
-    )
+    if (!uploadedImage || !originalGridSizeEstimate || !imageRef.current)
       return;
 
     const timeoutId = setTimeout(() => {
@@ -276,30 +273,32 @@ const StepTwo = ({
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        // Draw grid
-        ctx.strokeStyle = "rgba(0,0,0,0.4)";
-        ctx.lineWidth = 1;
+        if (showGrid) {
+          // Draw grid
+          ctx.strokeStyle = "rgba(0,0,0,0.4)";
+          ctx.lineWidth = 1;
 
-        // Calculate grid dimensions based on aspect ratio
-        const horizontalLines = gridSize;
-        const verticalLines = Math.round(gridSize * aspectRatio);
+          // Calculate grid dimensions based on aspect ratio
+          const horizontalLines = gridSize;
+          const verticalLines = Math.round(gridSize * aspectRatio);
 
-        // Draw vertical lines
-        for (let i = 0; i <= verticalLines; i++) {
-          const x = (i / verticalLines) * canvas.width;
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, canvas.height);
-          ctx.stroke();
-        }
+          // Draw vertical lines
+          for (let i = 0; i <= verticalLines; i++) {
+            const x = Math.round((i / verticalLines) * canvas.width);
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+          }
 
-        // Draw horizontal lines
-        for (let i = 0; i <= horizontalLines; i++) {
-          const y = (i / horizontalLines) * canvas.height;
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(canvas.width, y);
-          ctx.stroke();
+          // Draw horizontal lines
+          for (let i = 0; i <= horizontalLines; i++) {
+            const y = Math.round((i / horizontalLines) * canvas.height);
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+          }
         }
 
         setCompositeImage(canvas.toDataURL());
@@ -364,7 +363,8 @@ const StepTwo = ({
       e.preventDefault();
       const increment = e.key === "ArrowUp" ? 1 : -1;
       setGridSize((prevGridSize) => {
-        return Math.max(1, Math.min(256, prevGridSize + increment));
+        const newSize = prevGridSize + increment;
+        return Math.max(1, Math.min(256, newSize));
       });
 
       // Keep tooltip visible and reset the hide timer when using keyboard
@@ -387,8 +387,6 @@ const StepTwo = ({
   const handleMouseEnter = () => {
     setIsZooming(true);
     setShowKeyboardTip(true);
-    // Add keyboard event listener when hovering
-    document.addEventListener("keydown", handleKeyDown);
 
     // Clear any existing timeout
     if (keyboardTipTimeoutRef.current) {
@@ -403,8 +401,7 @@ const StepTwo = ({
   const handleMouseLeave = () => {
     setIsZooming(false);
     setShowKeyboardTip(false);
-    // Remove keyboard event listener when not hovering
-    document.removeEventListener("keydown", handleKeyDown);
+
     // Clear timeout
     if (keyboardTipTimeoutRef.current) {
       clearTimeout(keyboardTipTimeoutRef.current);
@@ -412,8 +409,9 @@ const StepTwo = ({
     }
   };
 
-  // Cleanup event listeners on unmount
+  // Add event listener once on mount
   useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       if (keyboardTipTimeoutRef.current) {
@@ -421,6 +419,56 @@ const StepTwo = ({
       }
     };
   }, []);
+
+  // Add this new useEffect for grid canvas
+  useEffect(() => {
+    if (
+      !gridCanvasRef.current ||
+      !imageRef.current ||
+      !showGrid ||
+      !originalGridSizeEstimate ||
+      !imageLoaded
+    )
+      return;
+
+    const canvas = gridCanvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Set canvas size to match the image container
+    const rect = imageRef.current.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    // Clear previous grid
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw grid
+    ctx.strokeStyle = "rgba(0,0,0,0.4)";
+    ctx.lineWidth = 1;
+
+    // Calculate grid dimensions based on aspect ratio
+    const horizontalLines = gridSize;
+    const verticalLines = Math.round(gridSize * aspectRatio);
+
+    // Draw vertical lines
+    for (let i = 0; i <= verticalLines; i++) {
+      const x = Math.round((i / verticalLines) * canvas.width);
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+
+    // Draw horizontal lines
+    for (let i = 0; i <= horizontalLines; i++) {
+      const y = Math.round((i / horizontalLines) * canvas.height);
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+  }, [showGrid, gridSize, aspectRatio, originalGridSizeEstimate, imageLoaded]);
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
@@ -598,27 +646,10 @@ const StepTwo = ({
                         }}
                       />
                       {showGrid && originalGridSizeEstimate && imageLoaded && (
-                        <div
+                        <canvas
+                          ref={gridCanvasRef}
                           className="pointer-events-none absolute inset-0"
                           style={{
-                            backgroundImage: `
-                              repeating-linear-gradient(
-                                to right,
-                                rgba(0,0,0,0.4) 0%,
-                                rgba(0,0,0,0.4) 1px,
-                                transparent 1px,
-                                transparent calc(100% / ${Math.round(gridSize * aspectRatio)})
-                              ),
-                              repeating-linear-gradient(
-                                to bottom,
-                                rgba(0,0,0,0.4) 0%,
-                                rgba(0,0,0,0.4) 1px,
-                                transparent 1px,
-                                transparent calc(100% / ${gridSize})
-                              )
-                            `,
-                            backgroundSize: "100% 100%",
-                            backgroundPosition: "center",
                             width: "100%",
                             height: "100%",
                           }}
@@ -670,36 +701,33 @@ const StepTwo = ({
               </div>
 
               {/* Zoom View */}
-              {isZooming &&
-                showGrid &&
-                originalGridSizeEstimate &&
-                compositeImage && (
+              {isZooming && originalGridSizeEstimate && compositeImage && (
+                <div
+                  className="pointer-events-none absolute -top-44 left-20 z-50 h-[30vh] w-[30vh] -translate-x-1/2 overflow-hidden rounded-lg border-2 border-white shadow-2xl"
+                  style={{
+                    backgroundColor: "#1e293b",
+                  }}
+                >
                   <div
-                    className="pointer-events-none absolute -top-44 left-20 z-50 h-[30vh] w-[30vh] -translate-x-1/2 overflow-hidden rounded-lg border-2 border-white shadow-2xl"
+                    className="absolute inset-0"
                     style={{
-                      backgroundColor: "#1e293b",
+                      backgroundImage: `url(${compositeImage})`,
+                      backgroundPosition: `-${zoomOffset.x * zoomFactor - 18 * 8}px -${
+                        zoomOffset.y * zoomFactor - 18 * 8
+                      }px`,
+                      backgroundSize: `${imageDimensions.width * zoomFactor}px ${
+                        imageDimensions.height * zoomFactor
+                      }px`,
+                      imageRendering: "pixelated",
+                      width: "100%",
+                      height: "100%",
                     }}
-                  >
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        backgroundImage: `url(${compositeImage})`,
-                        backgroundPosition: `-${zoomOffset.x * zoomFactor - 18 * 8}px -${
-                          zoomOffset.y * zoomFactor - 18 * 8
-                        }px`,
-                        backgroundSize: `${imageDimensions.width * zoomFactor}px ${
-                          imageDimensions.height * zoomFactor
-                        }px`,
-                        imageRendering: "pixelated",
-                        width: "100%",
-                        height: "100%",
-                      }}
-                    />
-                    {/* Center crosshair */}
-                    <div className="absolute left-1/2 top-1/2 h-px w-10 -translate-x-1/2 -translate-y-1/2 bg-red-400 opacity-80"></div>
-                    <div className="absolute left-1/2 top-1/2 h-10 w-px -translate-x-1/2 -translate-y-1/2 bg-red-400 opacity-80"></div>
-                  </div>
-                )}
+                  />
+                  {/* Center crosshair */}
+                  <div className="absolute left-1/2 top-1/2 h-px w-10 -translate-x-1/2 -translate-y-1/2 bg-red-400 opacity-80"></div>
+                  <div className="absolute left-1/2 top-1/2 h-10 w-px -translate-x-1/2 -translate-y-1/2 bg-red-400 opacity-80"></div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -716,6 +744,13 @@ export default function DownscalePageComponent() {
   const [showGrid, setShowGrid] = useState(true);
   const [gridSize, setGridSize] = useState(16);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const [pendingImageAction, setPendingImageAction] = useState<{
+    type: "upload" | "url";
+    file?: File;
+    imageUrl?: string;
+    prompt?: string;
+  } | null>(null);
   const [imageDimensions, setImageDimensions] = useState({
     width: 0,
     height: 0,
@@ -780,8 +815,8 @@ export default function DownscalePageComponent() {
     prompt: string,
   ) => {
     if (!user?.id) {
-      setError("Please login to use this feature");
-      router.push("/sign-in");
+      setPendingImageAction({ type: "upload", file, imageUrl, prompt });
+      setShowSignInModal(true);
       return;
     }
 
@@ -833,8 +868,8 @@ export default function DownscalePageComponent() {
 
   const handleHistoryImageSelect = async (imageUrl: string) => {
     if (!user?.id) {
-      setError("Please login to use this feature");
-      router.push("/sign-in");
+      setPendingImageAction({ type: "url", imageUrl });
+      setShowSignInModal(true);
       return;
     }
 
@@ -870,7 +905,9 @@ export default function DownscalePageComponent() {
       img.src = pngImage;
     } catch (error) {
       console.error("Failed to process history image:", error);
-      setError("Failed to load image from history. Please try again.");
+      setError(
+        "This website's URL may not allow direct importing. Please download and import the image directly.",
+      );
     }
   };
 
@@ -880,18 +917,20 @@ export default function DownscalePageComponent() {
     });
 
   const handleDownscaleImage = async (userId: string) => {
-    if (!uploadedImage) return;
+    if (!uploadedImage || !uploadedFile) return;
 
     try {
       setProcessImageError(null);
-      const { a, b, c } = await downscaleImage();
+      const { a, b, c, image } = await downscaleImage(uploadedFile);
       if (!a) {
         throw new Error("Failed to get key!");
       }
       setIsDownscaling(true);
       incrementOptimisticGenerations();
+
+      // Use the pre-processed image from the server as input to WASM
       const result = await downscaleImageWASM(
-        uploadedImage,
+        !!image ? image : uploadedImage, // Use server processed image if available, otherwise fallback to original
         gridSize,
         a,
         userId,
@@ -1000,8 +1039,34 @@ export default function DownscalePageComponent() {
   const currentStep = steps[step - 1] ?? steps[0]!;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-8 duration-500 animate-in fade-in max-md:pt-20">
-      <div className="mx-auto max-w-7xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-8  max-md:pt-20">
+      <div className="mx-auto max-w-7xl duration-500 animate-in fade-in">
+        <SignInModal
+          isOpen={showSignInModal}
+          onClose={() => setShowSignInModal(false)}
+          featureName="image conversion"
+          onExport={async () => {
+            if (pendingImageAction) {
+              if (
+                pendingImageAction.type === "upload" &&
+                pendingImageAction.file &&
+                pendingImageAction.imageUrl
+              ) {
+                await handleImageGenerated(
+                  pendingImageAction.file,
+                  pendingImageAction.imageUrl,
+                  pendingImageAction.prompt ?? "",
+                );
+              } else if (
+                pendingImageAction.type === "url" &&
+                pendingImageAction.imageUrl
+              ) {
+                await handleHistoryImageSelect(pendingImageAction.imageUrl);
+              }
+              setPendingImageAction(null);
+            }
+          }}
+        />
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold">
             <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
