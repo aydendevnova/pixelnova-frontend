@@ -143,7 +143,7 @@ export function WasmProvider({ children }: { children: React.ReactNode }) {
           {/* Loading Text */}
           <div className="flex flex-col items-center space-y-2">
             <h3 className="text-xl font-bold text-primary">
-              Loading PixelNova Downscaler
+              Loading Pixel Nova Downscaler
             </h3>
             <p className="animate-pulse text-sm text-muted-foreground">
               Downloading Required Tools...

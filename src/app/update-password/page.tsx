@@ -24,7 +24,7 @@ export default function UpdatePassword() {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) {
-        router.push("/signin");
+        router.push("/login");
       }
     };
 
@@ -60,7 +60,7 @@ export default function UpdatePassword() {
       // Clear form and redirect to sign in
       setPassword("");
       setConfirmPassword("");
-      router.push("/signin");
+      router.push("/login");
     } catch (err) {
       console.error("Update password error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");

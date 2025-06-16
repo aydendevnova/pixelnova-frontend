@@ -69,33 +69,44 @@ export default function Auth() {
         // Redirect to home page after successful sign in
         router.push("/");
       } else {
-        const { error, data } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
-        if (error) {
+        const { error: signUpError, data: signUpData } =
+          await supabase.auth.signUp({
+            email: cleanEmail,
+            password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback`,
+            },
+          });
+        if (signUpError) {
           // Handle specific signup errors
-          if (error.message.includes("already registered")) {
+          if (signUpError.message.includes("already registered")) {
             setError(
               "This email is already registered. Please sign in instead.",
             );
             return;
           }
-          if (error.message.includes("valid email")) {
+          if (signUpError.message.includes("valid email")) {
             setError("Please enter a valid email address");
             return;
           }
-          throw error;
+          throw signUpError;
+        }
+
+        // Automatically sign in after successful signup
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
+
+        if (signInError) {
+          throw signInError;
         }
 
         // Show success message for signup
         toast({
-          title: "Check your email",
+          title: "Welcome to Pixel Nova!",
           description:
-            "We sent you a confirmation link. Please check your email to complete your registration.",
+            "Your account has been created and you're now signed in.",
           duration: 6000,
           className: "bg-black border border-white/10",
         });
@@ -104,6 +115,9 @@ export default function Auth() {
         setEmail("");
         setPassword("");
         setConfirmPassword("");
+
+        // Redirect to home page
+        router.push("/");
       }
     } catch (err) {
       console.error("Auth error:", err);
@@ -153,16 +167,16 @@ export default function Auth() {
   return (
     <>
       <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
-        <div className="flex min-h-[85vh] w-full max-w-xl flex-col items-center justify-center p-4">
+        <div className="flex min-h-[85vh] w-full max-w-xl flex-col items-center justify-center p-4 pt-20">
           <div className="w-full max-w-md">
             {/* Logo and Branding */}
             <div className="mb-8 text-center">
-              <h1 className="mb-4 flex items-center justify-center gap-4 text-5xl font-bold">
+              <h1 className="mb-4 flex items-center justify-center gap-4 text-4xl font-bold">
                 <Image
                   src="/logo-og.png"
                   alt="Pixel Nova Logo"
-                  width={74}
-                  height={74}
+                  width={64}
+                  height={64}
                   style={{
                     imageRendering: "pixelated",
                   }}
@@ -171,9 +185,6 @@ export default function Auth() {
                   Pixel Nova
                 </span>
               </h1>
-              <p className="text-xl text-slate-400">
-                AI-Powered Pixel Art Creation Suite
-              </p>
             </div>
 
             {/* Auth Card */}
@@ -188,6 +199,27 @@ export default function Auth() {
                     {mode === "signin"
                       ? "Continue your pixel art journey"
                       : "Start creating amazing pixel art with AI"}
+                  </p>
+                </div>
+
+                {/* Terms and Privacy Alert */}
+                <div className="mb-6 rounded-lg border border-purple-500/20 bg-purple-500/10 p-4 text-center text-sm text-slate-300">
+                  <p>
+                    By signing in or signing up, you agree to our
+                    <br />
+                    <Link
+                      href="/terms-of-service"
+                      className="text-purple-400 transition-colors hover:text-purple-300"
+                    >
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      href="/privacy-policy"
+                      className="text-purple-400 transition-colors hover:text-purple-300"
+                    >
+                      Privacy Policy
+                    </Link>
                   </p>
                 </div>
 
@@ -220,7 +252,7 @@ export default function Auth() {
                   )}
                   {mode === "signup" && (
                     <Input
-                      type="confirm-password"
+                      type="password"
                       placeholder="Confirm Password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
@@ -232,8 +264,8 @@ export default function Auth() {
                     type="submit"
                     disabled={
                       mode === "signin"
-                        ? loading
-                        : loading || !password || password !== confirmPassword
+                        ? loading || !email || !password
+                        : loading || !email || !password || !confirmPassword
                     }
                     className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 px-8 font-semibold text-white shadow-lg transition-all duration-200 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 hover:shadow-xl"
                   >
@@ -289,22 +321,6 @@ export default function Auth() {
                     {error}
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Features List */}
-            <div className="mt-8 grid grid-cols-1 gap-4 text-center text-sm text-slate-400 sm:grid-cols-3">
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-purple-400" />
-                <span>AI-Powered Tools</span>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-pink-400" />
-                <span>Free to Start</span>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-orange-400" />
-                <span>Instant Access</span>
               </div>
             </div>
           </div>

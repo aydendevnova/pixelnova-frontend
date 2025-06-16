@@ -16,9 +16,14 @@ import { useCheckout } from "@/hooks/use-api";
 import Image from "next/image";
 
 export default function BuyPage() {
-  const { user, isLoading: isLoadingUser } = useUser();
+  const { user, profile, isLoading: isLoadingUser } = useUser();
   const router = useRouter();
   const checkout = useCheckout();
+
+  async function handleManageSubscription() {
+    // TODO: Implement Stripe billing portal redirect
+    toast("Billing portal integration coming soon!");
+  }
 
   async function handleCheckout(priceId: string) {
     if (!user) {
@@ -51,9 +56,9 @@ export default function BuyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 px-4 py-12 pt-20">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-12 text-center">
+        <div className="mb-8 text-center">
           <h1 className="mb-4 flex items-center justify-center gap-4 text-2xl font-bold">
             <Image
               src="/logo-og.png"
@@ -117,7 +122,7 @@ export default function BuyPage() {
                         <Sparkles className="h-4 w-4 text-purple-400" />
                       </div>
                       <span className="text-slate-300">
-                        150 AI Pixel Art Generations per month
+                        175 AI Pixel Art Generations per month
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -147,14 +152,18 @@ export default function BuyPage() {
                   <Button
                     className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 px-8 font-semibold text-white shadow-lg transition-all duration-200 "
                     onClick={() =>
-                      handleCheckout(env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO)
+                      profile?.tier === "PRO"
+                        ? handleManageSubscription()
+                        : handleCheckout(env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO)
                     }
                     disabled={checkout.isLoading}
                   >
                     {checkout.isLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : null}
-                    Get Started Now
+                    {profile?.tier === "PRO"
+                      ? "Manage Subscription"
+                      : "Get Started Now"}
                   </Button>
 
                   <p className="mt-4 text-center text-sm text-slate-400">
@@ -212,9 +221,9 @@ export default function BuyPage() {
           </div> */}
         </div>
 
-        <div className="mt-12 text-center">
+        <div className="mt-4 text-center">
           <div className="mb-2 flex items-center justify-center gap-2">
-            {user ? <CreditsDisplay /> : <></>}
+            {!!user ? <CreditsDisplay /> : <></>}
           </div>
         </div>
       </div>

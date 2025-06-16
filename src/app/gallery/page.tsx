@@ -37,7 +37,7 @@ const EXAMPLE_IMAGES = [
   {
     src: "images/example-5.png",
     alt: "Pixel Art Example 5",
-    title: "PixelNova New Years 2025",
+    title: "Pixel Nova New Years 2025",
   },
   {
     src: "images/example-6.png",
@@ -308,7 +308,7 @@ export default function GalleryPage() {
                     Sign in to view and manage your pixel art creations
                   </p>
                   <Link
-                    href="/signin"
+                    href="/login"
                     className="inline-flex items-center justify-center rounded-md bg-gradient-to-r from-purple-400 to-pink-400 px-4 py-2 text-sm font-medium text-white hover:from-purple-500 hover:to-pink-500"
                   >
                     Sign In

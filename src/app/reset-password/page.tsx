@@ -80,7 +80,7 @@ export default function ResetPassword() {
 
             <div className="text-center">
               <Link
-                href="/signin"
+                href="/login"
                 className="text-sm text-white/80 hover:text-white"
               >
                 Back to Sign In

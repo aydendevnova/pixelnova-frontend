@@ -35,7 +35,7 @@ export function SignInModal({
         console.error("Failed to export:", error);
       }
     }
-    router.push("/signin");
+    router.push("/login");
     onClose();
   };
 

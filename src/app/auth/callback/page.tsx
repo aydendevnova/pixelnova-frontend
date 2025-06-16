@@ -20,7 +20,7 @@ function AuthCallbackContent() {
         router.push("/");
       } catch (error) {
         console.error("Error:", error);
-        router.push("/signin?error=Authentication failed");
+        router.push("/login?error=Authentication failed");
       }
     };
 

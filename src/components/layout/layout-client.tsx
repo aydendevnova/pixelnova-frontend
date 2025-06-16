@@ -14,6 +14,7 @@ import { Toaster as ToasterHotToast } from "react-hot-toast";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { CreditsProvider } from "@/hooks/use-credits";
+import Footer from "./footer";
 
 // Create a Supabase client
 const supabase = createClient(
@@ -58,8 +59,8 @@ export default function LayoutClient({
   return (
     <QueryClientProvider client={queryClient}>
       <SessionContextProvider supabaseClient={supabase}>
-        <UserProvider>
-          <CreditsProvider>
+        <CreditsProvider>
+          <UserProvider>
             <div
               className={`relative flex min-h-screen flex-col ${
                 pathname == "/editor" ? "overflow-hidden" : "dark"
@@ -94,9 +95,10 @@ export default function LayoutClient({
                   </div>
                 )}
               </ErrorBoundary>
+              <Footer />
             </div>
-          </CreditsProvider>
-        </UserProvider>
+          </UserProvider>
+        </CreditsProvider>
       </SessionContextProvider>
     </QueryClientProvider>
   );

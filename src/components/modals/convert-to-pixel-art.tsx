@@ -35,6 +35,7 @@ import useUser from "@/hooks/use-user";
 import { CreditsDisplay } from "../credits-display";
 import { useModal } from "@/hooks/use-modal";
 import { env } from "@/env";
+import { ConversionsDisplay } from "../conversions-display";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;
@@ -665,7 +666,7 @@ export default function ConvertToPixelArtModal({
             <DialogDescription>{currentStep.description}</DialogDescription>
           </DialogHeader>
 
-          <CreditsDisplay />
+          <ConversionsDisplay />
 
           <div className="mb-4 flex w-full gap-2">
             {steps.map((_, index) => (

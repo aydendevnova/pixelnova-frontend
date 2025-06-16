@@ -41,7 +41,8 @@
     "**/*.cjs",
     "**/*.js",
     ".next/types/**/*.ts",
-    "../../packages/shared/**/*.ts"
+    "../../packages/shared/**/*.ts",
+    "src/app/terms-of-service"
   ],
   "exclude": [
     "node_modules",

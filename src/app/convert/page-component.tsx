@@ -32,6 +32,7 @@ import { GeneratedImage } from "@/types/types";
 import useUser from "@/hooks/use-user";
 import { CreditsDisplay } from "@/components/credits-display";
 import { SignInModal } from "@/components/modals/signin-modal";
+import { ConversionsDisplay } from "@/components/conversions-display";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;
@@ -1039,7 +1040,7 @@ export default function DownscalePageComponent() {
   const currentStep = steps[step - 1] ?? steps[0]!;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-8  max-md:pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-8 pt-20">
       <div className="mx-auto max-w-7xl duration-500 animate-in fade-in">
         <SignInModal
           isOpen={showSignInModal}
@@ -1148,7 +1149,7 @@ export default function DownscalePageComponent() {
             )}
           </div>
 
-          <CreditsDisplay />
+          <ConversionsDisplay />
         </div>
 
         <div className="mb-8 flex w-full gap-2">

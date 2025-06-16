@@ -159,7 +159,9 @@ export default function CppFrontPage() {
 
   return (
     <div className="container mx-auto max-w-4xl p-4">
-      <h1 className="mb-6 text-2xl font-bold">PixelNova C++ Image Processor</h1>
+      <h1 className="mb-6 text-2xl font-bold">
+        Pixel Nova C++ Image Processor
+      </h1>
       <p className="mb-6 text-sm text-gray-500">
         Go to{" "}
         <a className="text-blue-500" href="/convert">
