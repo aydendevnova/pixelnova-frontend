@@ -1,6 +1,7 @@
 "use client";
 
 import { CreditsDisplay } from "@/components/credits-display";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Sparkles, Star, ThumbsUp } from "lucide-react";
@@ -17,9 +18,9 @@ export default function SuccessPage() {
       >
         <div className="relative">
           <img
-            src="/logo.png"
+            src="/logo-og.png"
             alt="Pixel Nova"
-            className="h-32 w-32"
+            className="h-44 w-44"
             style={{ imageRendering: "pixelated" }}
           />
           <motion.div
@@ -42,8 +43,8 @@ export default function SuccessPage() {
           Payment Successful!
         </h1>
         <p className="mb-6 text-lg text-gray-600 dark:text-gray-300">
-          Thank you for your purchase! Your credits have been added to your
-          account.
+          Thank you for your purchase! Your account status is now{" "}
+          <Badge className=" bg-purple-600 text-white">PRO</Badge>.
         </p>
         <div className="mx-auto my-2 w-fit">
           <CreditsDisplay />
@@ -56,7 +57,11 @@ export default function SuccessPage() {
         transition={{ delay: 0.4 }}
         className="flex gap-4"
       >
-        <Button asChild size="lg" className="bg-purple-600 hover:bg-purple-700">
+        <Button
+          asChild
+          size="lg"
+          className="bg-purple-800 text-white hover:bg-purple-900 hover:text-white"
+        >
           <Link href="/">Start Creating</Link>
         </Button>
       </motion.div>

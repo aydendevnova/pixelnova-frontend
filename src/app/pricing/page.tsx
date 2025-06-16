@@ -12,7 +12,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { env } from "@/env";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { useCheckout } from "@/hooks/use-api";
+import { useBillingPortal, useCheckout } from "@/hooks/use-api";
 import Image from "next/image";
 
 export default function BuyPage() {
@@ -20,10 +20,22 @@ export default function BuyPage() {
   const router = useRouter();
   const checkout = useCheckout();
 
-  async function handleManageSubscription() {
-    // TODO: Implement Stripe billing portal redirect
-    toast("Billing portal integration coming soon!");
-  }
+  const { mutate: openBillingPortal, isLoading: isLoadingBillingPortal } =
+    useBillingPortal();
+
+  // When you want to open the billing portal:
+  const handleManageSubscription = () => {
+    openBillingPortal(undefined, {
+      onSuccess: (url) => {
+        // Redirect to the Stripe billing portal
+        window.location.href = url;
+      },
+      onError: (error) => {
+        toast.error("Failed to open billing portal");
+        console.error("Failed to open billing portal:", error);
+      },
+    });
+  };
 
   async function handleCheckout(priceId: string) {
     if (!user) {
@@ -156,9 +168,9 @@ export default function BuyPage() {
                         ? handleManageSubscription()
                         : handleCheckout(env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO)
                     }
-                    disabled={checkout.isLoading}
+                    disabled={checkout.isLoading || isLoadingBillingPortal}
                   >
-                    {checkout.isLoading ? (
+                    {checkout.isLoading || isLoadingBillingPortal ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : null}
                     {profile?.tier === "PRO"

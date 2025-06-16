@@ -40,7 +40,9 @@ export default function CancelPage() {
         className="flex gap-4"
       >
         <Button asChild size="lg" variant="outline">
-          <Link href="/pricing">Try Again</Link>
+          <Link href="/pricing" className="text-white">
+            Try Again
+          </Link>
         </Button>
         <Button asChild size="lg" className="bg-purple-600 hover:bg-purple-700">
           <Link href="/">Return Home</Link>
@@ -55,7 +57,12 @@ export default function CancelPage() {
       >
         <p>
           Having issues? Contact{" "}
-          <a href="mailto:ayden@pixelnova.app">ayden@pixelnova.app</a>
+          <a
+            href="mailto:ayden@pixelnova.app"
+            className="text-blue-500 hover:underline"
+          >
+            ayden@pixelnova.app
+          </a>
         </p>
       </motion.div>
     </div>

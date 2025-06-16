@@ -15,6 +15,7 @@ const API_ROUTES = {
   GENERATE_IMAGE: "/api/generate-image",
   CHECKOUT: "/api/checkout",
   GENERATE_PIXEL_ART: "/api/generate-pixel-art",
+  CREATE_PORTAL_SESSION: "/api/create-portal-session",
 } as const;
 
 export function useUpdateAccount() {
@@ -220,6 +221,28 @@ export function useGeneratePixelArt() {
         ),
       );
       return `data:image/png;base64,${base64}`;
+    },
+  });
+}
+
+export function useBillingPortal() {
+  const session = useSession();
+  return useMutation({
+    mutationFn: async () => {
+      if (!session) {
+        throw new Error("No session found");
+      }
+      const response = await axios.post(
+        `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.CREATE_PORTAL_SESSION}`,
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        },
+      );
+      return response.data.url;
     },
   });
 }
