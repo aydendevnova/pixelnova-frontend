@@ -77,52 +77,48 @@ export default async function Home() {
             {/* Main Features Grid */}
 
             <div className="grid gap-8 md:grid-cols-2">
-              {env.NEXT_PUBLIC_IS_DEVELOPMENT === "true" && (
-                <>
-                  {/* AI Generator Card */}
-                  <div className="group relative">
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 opacity-75 blur-xl transition duration-300 group-hover:opacity-100"></div>
-                    <div className="relative rounded-2xl border border-slate-700/50 bg-slate-800/50 p-8 backdrop-blur transition-all duration-300 hover:border-purple-500/50">
-                      <div className="mb-6 flex items-start justify-between">
-                        <div>
-                          <h2 className="mb-2 text-3xl font-bold text-white">
-                            Create Pixel Art with AI
-                          </h2>
-                          <Badge className="border-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                            ✨ Text to Pixel Art
-                          </Badge>
-                        </div>
-                        <div className="text-5xl opacity-20">🎨</div>
-                      </div>
-                      <p className="mb-6 text-lg leading-relaxed text-slate-300">
-                        Transform your ideas into pixel art instantly. Just
-                        describe what you want, and our AI will create beautiful
-                        pixel art for your games, social media, or projects.
-                      </p>
-                      <div className="flex flex-row gap-4">
-                        <Link href="/ai-pixel-art">
-                          <Button
-                            size="lg"
-                            className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 px-8 font-semibold text-white hover:from-purple-700 hover:via-pink-700 hover:to-orange-700"
-                          >
-                            Start Creating
-                          </Button>
-                        </Link>
-
-                        <Link href="/gallery">
-                          <Button
-                            variant="outline"
-                            size="lg"
-                            className="border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-slate-700"
-                          >
-                            View Gallery
-                          </Button>
-                        </Link>
-                      </div>
+              {/* AI Generator Card */}
+              <div className="group relative">
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 opacity-75 blur-xl transition duration-300 group-hover:opacity-100"></div>
+                <div className="relative rounded-2xl border border-slate-700/50 bg-slate-800/50 p-8 backdrop-blur transition-all duration-300 hover:border-purple-500/50">
+                  <div className="mb-6 flex items-start justify-between">
+                    <div>
+                      <h2 className="mb-2 text-3xl font-bold text-white">
+                        Create Pixel Art with AI
+                      </h2>
+                      <Badge className="border-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                        ✨ Text to Pixel Art
+                      </Badge>
                     </div>
+                    <div className="text-5xl opacity-20">🎨</div>
                   </div>
-                </>
-              )}
+                  <p className="mb-6 text-lg leading-relaxed text-slate-300">
+                    Transform your ideas into pixel art instantly. Just describe
+                    what you want, and our AI will create beautiful pixel art
+                    for your games, social media, or projects.
+                  </p>
+                  <div className="flex flex-row gap-4">
+                    <Link href="/ai-pixel-art">
+                      <Button
+                        size="lg"
+                        className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 px-8 font-semibold text-white hover:from-purple-700 hover:via-pink-700 hover:to-orange-700"
+                      >
+                        Start Creating
+                      </Button>
+                    </Link>
+
+                    <Link href="/gallery">
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-slate-700"
+                      >
+                        View Gallery
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
 
               {/* AI Downscaler Card */}
               <div className="group relative">
