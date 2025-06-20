@@ -16,6 +16,7 @@ import { useBillingPortal, useCheckout } from "@/hooks/use-api";
 import Image from "next/image";
 import { PLAN_LIMITS } from "@/lib/constants";
 import Link from "next/link";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function BuyPage() {
   const { user, profile, isLoading: isLoadingUser } = useUser();
@@ -99,6 +100,26 @@ export default function BuyPage() {
           </p>
         </div>
 
+        {profile?.pro_overriden && (
+          <Alert className="mx-auto mb-8 max-w-2xl bg-green-900">
+            <AlertTitle className="mb-2 text-xl font-semibold">
+              Pro Access Granted by Developer
+            </AlertTitle>
+            <AlertDescription>
+              You were granted free access to the pro plan without a
+              subscription. You will not be able to buy the pro plan nor manage
+              your subscription. Contact{" "}
+              <a
+                href="mailto:support@pixelnova.app"
+                className="text-blue-400 hover:underline"
+              >
+                support@pixelnova.app
+              </a>{" "}
+              if you were billed.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Main Content Grid */}
         <div className="relative mx-auto max-w-4xl">
           {/* Pro Card - Center */}
@@ -171,7 +192,11 @@ export default function BuyPage() {
                         ? handleManageSubscription()
                         : handleCheckout(env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO)
                     }
-                    disabled={checkout.isLoading || isLoadingBillingPortal}
+                    disabled={
+                      checkout.isLoading ||
+                      isLoadingBillingPortal ||
+                      profile?.pro_overriden
+                    }
                   >
                     {checkout.isLoading || isLoadingBillingPortal ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -243,9 +268,17 @@ export default function BuyPage() {
           </div> */}
         </div>
 
-        <div className="mt-4 text-center">
+        <div className="mt-12 text-center">
           <div className="mb-2 flex items-center justify-center gap-2">
-            {!!user ? <CreditsDisplay /> : <></>}
+            <p className="text-sm text-slate-400">
+              Having Issues? Contact{" "}
+              <a
+                href="mailto:support@pixelnova.app"
+                className="text-blue-400 hover:underline"
+              >
+                support@pixelnova.app
+              </a>
+            </p>
           </div>
         </div>
       </div>

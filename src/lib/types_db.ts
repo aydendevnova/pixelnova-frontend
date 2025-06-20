@@ -41,6 +41,7 @@ export type Database = {
           generation_count: number
           generation_count_lifetime: number
           id: string
+          pro_overriden: boolean
           suspended: boolean
           tier: Database["public"]["Enums"]["user_tier"]
           updated_at: string | null
@@ -57,6 +58,7 @@ export type Database = {
           generation_count?: number
           generation_count_lifetime?: number
           id: string
+          pro_overriden?: boolean
           suspended?: boolean
           tier?: Database["public"]["Enums"]["user_tier"]
           updated_at?: string | null
@@ -73,6 +75,7 @@ export type Database = {
           generation_count?: number
           generation_count_lifetime?: number
           id?: string
+          pro_overriden?: boolean
           suspended?: boolean
           tier?: Database["public"]["Enums"]["user_tier"]
           updated_at?: string | null
