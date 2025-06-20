@@ -34,6 +34,8 @@ import { CreditsDisplay } from "@/components/credits-display";
 import { SignInModal } from "@/components/modals/signin-modal";
 import { ConversionsDisplay } from "@/components/conversions-display";
 import { getMaxConversions, PLAN_LIMITS, UserTier } from "@/lib/constants";
+import { resizeImageWithPica } from "@/lib/utils/image";
+import { PixelArtPreviewModal } from "@/components/modals/pixel-art-preview";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;
@@ -48,6 +50,8 @@ interface StepOneProps {
   searchTerm: string;
   setSearchTerm: (searchTerm: string) => void;
   setIsGenerating: (isGenerating: boolean) => void;
+  isProcessing: boolean;
+  processingStage: string;
 }
 
 const StepOne = ({
@@ -58,12 +62,35 @@ const StepOne = ({
   searchTerm,
   setSearchTerm,
   setIsGenerating,
+  isProcessing,
+  processingStage,
 }: StepOneProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="relative mt-4 rounded-2xl border border-slate-700/50 bg-slate-800/50 backdrop-blur">
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 opacity-75 blur-xl"></div>
+
+      {/* Loading Overlay */}
+      {isProcessing && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-2xl bg-slate-900/80 backdrop-blur">
+          <div className="flex flex-col items-center space-y-4 p-8 text-center">
+            <div className="relative">
+              <Loader2 className="h-12 w-12 animate-spin text-purple-500" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Sparkle className="h-6 w-6 text-purple-300" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-white">
+                Processing Image
+              </h3>
+              <p className="text-sm text-slate-300">{processingStage}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="relative flex h-full flex-col items-center justify-start space-y-8 p-4">
         <div className="space-y-2 text-center">
           <h3 className="text-2xl font-semibold text-white">
@@ -244,6 +271,10 @@ const StepTwo = ({
     y: number;
   } | null>(null);
   const [showKeyboardTip, setShowKeyboardTip] = useState(false);
+  const [selectedPreview, setSelectedPreview] = useState<{
+    imageUrl: string;
+    gridSize: number;
+  } | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -613,7 +644,7 @@ const StepTwo = ({
         {uploadedImage && (
           <div className="relative w-full rounded-xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur lg:min-w-[770px]">
             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 opacity-75 blur-xl"></div>
-            <div className="relative ">
+            <div className="relative">
               <h3 className="mb-4 text-lg font-medium text-white">
                 Image Preview
               </h3>
@@ -688,13 +719,22 @@ const StepTwo = ({
                         <h3 className="text-sm font-medium text-white">
                           Grid Size: {result.grid}
                         </h3>
-                        <div className="relative aspect-square h-[40vh] w-auto overflow-hidden rounded-lg border border-slate-600">
+                        <div
+                          className="relative aspect-square h-[40vh] w-auto cursor-pointer overflow-hidden rounded-lg border border-slate-600 transition-transform hover:scale-[1.02]"
+                          onClick={() =>
+                            setSelectedPreview({
+                              imageUrl: result.image,
+                              gridSize: result.grid,
+                            })
+                          }
+                        >
                           <img
                             src={result.image}
                             alt={`Pixelated ${result.grid}x${result.grid}`}
                             className="h-full w-full object-contain"
                             style={{ imageRendering: "pixelated" }}
                           />
+                          <div className="absolute inset-0 bg-slate-900/0 transition-colors hover:bg-slate-900/20" />
                         </div>
                         <div className="mx-auto w-[90%]">
                           <Button
@@ -706,7 +746,7 @@ const StepTwo = ({
                               link.click();
                               document.body.removeChild(link);
                             }}
-                            className=" w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                           >
                             <DownloadIcon className="mr-2 h-4 w-4" />
                             Download Image
@@ -749,6 +789,14 @@ const StepTwo = ({
           </div>
         )}
       </div>
+
+      {/* Preview Modal */}
+      <PixelArtPreviewModal
+        isOpen={selectedPreview !== null}
+        onClose={() => setSelectedPreview(null)}
+        imageUrl={selectedPreview?.imageUrl ?? ""}
+        gridSize={selectedPreview?.gridSize ?? 0}
+      />
     </div>
   );
 };
@@ -794,6 +842,8 @@ export default function DownscalePageComponent() {
   const [processImageError, setProcessImageError] = useState<string | null>(
     null,
   );
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStage, setProcessingStage] = useState("");
 
   useEffect(() => {
     const loadImages = async () => {
@@ -837,6 +887,9 @@ export default function DownscalePageComponent() {
     }
 
     try {
+      setIsProcessing(true);
+      setProcessingStage("Converting image format...");
+
       // Clear previous results when new image is uploaded
       setResults(null);
       setShowSmallImageWarning(false);
@@ -844,6 +897,11 @@ export default function DownscalePageComponent() {
       // Convert to PNG format first
       const pngImage = await convertToPng(imageUrl);
 
+      setProcessingStage("Optimizing image size...");
+      // Resize the image using Pica
+      const resizedImage = await resizeImageWithPica(pngImage);
+
+      setProcessingStage("Preparing image preview...");
       const img = new Image();
       img.onload = async () => {
         const dimensions = { width: img.width, height: img.height };
@@ -854,13 +912,19 @@ export default function DownscalePageComponent() {
           setShowSmallImageWarning(true);
         }
 
-        setUploadedImage(pngImage);
-        setUploadedFile(file);
+        // Create a new File object from the resized image
+        const response = await fetch(resizedImage);
+        const blob = await response.blob();
+        const resizedFile = new File([blob], file.name, { type: "image/png" });
+
+        setUploadedImage(resizedImage);
+        setUploadedFile(resizedFile);
 
         if (prompt) {
+          setProcessingStage("Saving to history...");
           try {
             await saveImage({
-              url: pngImage,
+              url: resizedImage,
               prompt,
               timestamp: new Date().toISOString(),
             });
@@ -873,12 +937,15 @@ export default function DownscalePageComponent() {
 
         setStep(2);
         setOriginalGridSizeEstimate(null);
-        void handleEstimateGridSize(pngImage, user.id);
+        setProcessingStage("Analyzing image grid...");
+        await handleEstimateGridSize(resizedImage, user.id);
+        setIsProcessing(false);
       };
-      img.src = pngImage;
+      img.src = resizedImage;
     } catch (error) {
       console.error("Failed to convert image:", error);
       setError("Failed to process image. Please try again.");
+      setIsProcessing(false);
     }
   };
 
@@ -890,6 +957,9 @@ export default function DownscalePageComponent() {
     }
 
     try {
+      setIsProcessing(true);
+      setProcessingStage("Converting image format...");
+
       // Clear previous results when new image is selected
       setResults(null);
       setShowSmallImageWarning(false);
@@ -897,6 +967,11 @@ export default function DownscalePageComponent() {
       // Convert to PNG format first
       const pngImage = await convertToPng(imageUrl);
 
+      setProcessingStage("Optimizing image size...");
+      // Resize the image using Pica
+      const resizedImage = await resizeImageWithPica(pngImage);
+
+      setProcessingStage("Preparing image preview...");
       const img = new Image();
       img.onload = async () => {
         const dimensions = { width: img.width, height: img.height };
@@ -907,23 +982,26 @@ export default function DownscalePageComponent() {
           setShowSmallImageWarning(true);
         }
 
-        const response = await fetch(pngImage);
+        const response = await fetch(resizedImage);
         const blob = await response.blob();
         const file = new File([blob], "history-image.png", {
           type: "image/png",
         });
-        setUploadedImage(pngImage);
+        setUploadedImage(resizedImage);
         setUploadedFile(file);
         setOriginalGridSizeEstimate(null);
-        void handleEstimateGridSize(pngImage, user.id);
+        setProcessingStage("Analyzing image grid...");
+        await handleEstimateGridSize(resizedImage, user.id);
         setStep(2);
+        setIsProcessing(false);
       };
-      img.src = pngImage;
+      img.src = resizedImage;
     } catch (error) {
       console.error("Failed to process history image:", error);
       setError(
         "This website's URL may not allow direct importing. Please download and import the image directly.",
       );
+      setIsProcessing(false);
     }
   };
 
@@ -1035,6 +1113,8 @@ export default function DownscalePageComponent() {
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             setIsGenerating={setIsGenerating}
+            isProcessing={isProcessing}
+            processingStage={processingStage}
           />
         </div>
       ),
@@ -1215,7 +1295,23 @@ export default function DownscalePageComponent() {
             </Alert>
           )}
 
-        <div className="rounded-lg">{currentStep.content}</div>
+        <div className="rounded-lg">
+          {step === 1 ? (
+            <StepOne
+              onImageGenerated={handleImageGenerated}
+              recentImages={recentImages}
+              onHistoryImageSelect={handleHistoryImageSelect}
+              handleDeleteImage={handleDeleteImage}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              setIsGenerating={setIsGenerating}
+              isProcessing={isProcessing}
+              processingStage={processingStage}
+            />
+          ) : (
+            currentStep.content
+          )}
+        </div>
       </div>
     </div>
   );

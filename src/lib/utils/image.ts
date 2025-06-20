@@ -1,3 +1,10 @@
+import Pica from "pica";
+
+// Initialize pica instance
+const pica = new Pica({
+  features: ["js", "wasm", "ww"],
+});
+
 export async function loadImageFromFile(file: File): Promise<ImageData> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -51,4 +58,57 @@ export function extractColors(imageData: ImageData): string[] {
   }
 
   return Array.from(colorSet);
+}
+
+export async function resizeImageWithPica(imageUrl: string): Promise<string> {
+  // Create an image element to load the source
+  const img = new Image();
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = reject;
+    img.src = imageUrl;
+  });
+
+  // Calculate new dimensions maintaining aspect ratio
+  let newWidth = img.width;
+  let newHeight = img.height;
+  const maxDimension = 512;
+
+  if (newWidth > maxDimension || newHeight > maxDimension) {
+    if (newWidth > newHeight) {
+      newHeight = Math.round((newHeight * maxDimension) / newWidth);
+      newWidth = maxDimension;
+    } else {
+      newWidth = Math.round((newWidth * maxDimension) / newHeight);
+      newHeight = maxDimension;
+    }
+  }
+
+  // Create source and destination canvases
+  const from = document.createElement("canvas");
+  from.width = img.width;
+  from.height = img.height;
+  const fromCtx = from.getContext("2d");
+  if (!fromCtx) throw new Error("Failed to get canvas context");
+  fromCtx.drawImage(img, 0, 0);
+
+  const to = document.createElement("canvas");
+  to.width = newWidth;
+  to.height = newHeight;
+
+  // Perform the resize operation
+  await pica.resize(from, to, {
+    unsharpAmount: 160,
+    unsharpRadius: 0.6,
+    unsharpThreshold: 1,
+  });
+
+  // Convert to blob and then to data URL
+  const blob = await pica.toBlob(to, "image/png", 0.9);
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
