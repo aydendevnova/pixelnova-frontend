@@ -33,6 +33,7 @@ export default function Header() {
     { href: "/ai-pixel-art", label: "AI Pixel Art" },
     { href: "/convert", label: "Convert to Pixel Art" },
     { href: "/pricing", label: "Pricing" },
+    { href: "/tutorials", label: "Tutorials" },
   ];
 
   const moreNavItems = [

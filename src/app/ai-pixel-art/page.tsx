@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 export default function GeneratePage() {
   const [prompt, setPrompt] = useState("");
   const [useOpenAI, setUseOpenAI] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Set<number>>(
     new Set(),
   );
@@ -62,6 +63,9 @@ export default function GeneratePage() {
       return;
     }
 
+    // Set initial loading message
+    setLoadingMessage("Preparing to generate your pixel art...");
+
     generatePixelArt(
       {
         prompt,
@@ -69,6 +73,7 @@ export default function GeneratePage() {
       },
       {
         onSuccess: (imageData) => {
+          setLoadingMessage("");
           const newVariant = {
             id: Date.now().toString(),
             image: imageData,
@@ -87,8 +92,23 @@ export default function GeneratePage() {
             return newSet;
           });
         },
+        onError: () => {
+          setLoadingMessage("");
+        },
       },
     );
+
+    // Update loading message based on OpenAI usage
+    if (useOpenAI) {
+      setLoadingMessage("Using ChatGPT to enhance your prompt...");
+      setTimeout(() => {
+        if (isLoading) {
+          setLoadingMessage("Generating pixel art from enhanced prompt...");
+        }
+      }, 3000);
+    } else {
+      setLoadingMessage("Generating your pixel art...");
+    }
   };
 
   const handleVariantClick = (index: number) => {
@@ -262,7 +282,6 @@ export default function GeneratePage() {
                 use the image for (e.g. "game sprite", "game asset", "profile
                 picture", etc). Different models will be different results.
               </p>
-
               {/* Show remaining generations */}
               {profile?.tier && (
                 <div className="rounded-lg bg-slate-700/30 p-3 text-sm text-slate-200">
@@ -277,12 +296,11 @@ export default function GeneratePage() {
                   </p>
                 </div>
               )}
-
               <div className="flex items-center gap-2">
                 <Switch checked={useOpenAI} onCheckedChange={setUseOpenAI} />
                 <p className="text-white">
                   Automatically use ChatGPT to improve prompt <br />{" "}
-                  (recommended - may take a few seconds)
+                  (recommended - may take longer)
                 </p>
               </div>
               <Textarea
@@ -292,8 +310,9 @@ export default function GeneratePage() {
                 }
                 placeholder="Describe the pixel art you want to generate..."
                 className="h-32 resize-none bg-slate-800/30 text-white placeholder:text-slate-400"
+                disabled={isLoading}
               />
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-3">
                 <Button
                   onClick={handleGenerate}
                   disabled={
@@ -304,16 +323,61 @@ export default function GeneratePage() {
                         getMaxGenerations(profile.tier))
                   }
                   size="lg"
-                  className="mt-4 w-full bg-gradient-to-r from-purple-600 to-orange-600 px-12 py-4 text-lg font-semibold"
+                  className="relative mt-4 w-full bg-gradient-to-r from-purple-600 to-orange-600 px-12 py-4 text-lg font-semibold"
                 >
-                  {isLoading ? "Generating..." : "Generate Pixel Art"}
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      <span>Generating...</span>
+                    </div>
+                  ) : (
+                    "Generate Pixel Art"
+                  )}
                 </Button>
+                {isLoading && loadingMessage && (
+                  <div className="animate-pulse text-center text-sm text-slate-300">
+                    {loadingMessage}
+                  </div>
+                )}
               </div>
               <p className="pt-4 text-xs text-slate-400">
-                Disclaimer: Current implementation uses the PixelArt.Redmond on
-                HuggingFace. You are prohibited from generating explicit or
-                suggestive material. Violation may lead to account suspension
-                without refund.
+                Disclaimer: This is a beta feature. We are working on adding
+                more models and features. If you have any feedback, please
+                contact us at{" "}
+                <a href="mailto:support@pixelnova.ai" className="text-blue-400">
+                  support@pixelnova.ai
+                </a>
+                .
+              </p>
+              <p className="text-xs text-slate-400">
+                By using this tool, you agree to our{" "}
+                <a
+                  href="/terms-of-service"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline"
+                >
+                  terms of service
+                </a>{" "}
+                and{" "}
+                <a
+                  href="/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline"
+                >
+                  privacy policy
+                </a>
+                , as well as the{" "}
+                <a
+                  href="https://huggingface.co/spaces/CompVis/stable-diffusion-license"
+                  className="text-blue-400 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  model provider license
+                </a>
+                .
               </p>
             </div>
           </div>
@@ -353,9 +417,16 @@ export default function GeneratePage() {
 
             {isLoading && variants.length === 0 && (
               <div className="flex h-64 items-center justify-center">
-                <div className="text-center">
-                  <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
-                  <p className="text-slate-400">Generating your pixel art...</p>
+                <div className="space-y-4 text-center">
+                  <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium text-white">
+                      Creating Your Pixel Art
+                    </p>
+                    <p className="animate-pulse text-slate-400">
+                      {loadingMessage}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
