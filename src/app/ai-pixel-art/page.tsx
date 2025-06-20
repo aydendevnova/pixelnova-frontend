@@ -19,7 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useGeneratePixelArt } from "@/hooks/use-api";
 import useUser from "@/hooks/use-user";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import {
   downloadAsZip,
@@ -28,6 +28,7 @@ import {
 } from "@/lib/utils/download";
 import { SignInModal } from "@/components/modals/signin-modal";
 import { useModal } from "@/hooks/use-modal";
+import { getMaxGenerations, PLAN_LIMITS } from "@/lib/constants";
 
 export default function GeneratePage() {
   const [prompt, setPrompt] = useState("");
@@ -41,7 +42,7 @@ export default function GeneratePage() {
     error,
     data,
   } = useGeneratePixelArt();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, profile } = useUser();
   const [variants, setVariants] = useState<
     Array<{ id: string; image: string; name: string }>
   >([]);
@@ -49,6 +50,14 @@ export default function GeneratePage() {
   const handleGenerate = async () => {
     if (!isSignedIn) {
       setSignInModalOpen(true);
+      return;
+    }
+
+    // Check generation limits
+    if (
+      profile?.tier &&
+      profile.generation_count >= getMaxGenerations(profile.tier)
+    ) {
       return;
     }
 
@@ -188,6 +197,42 @@ export default function GeneratePage() {
               </div>
             </div>
 
+            {/* Show generation limit alert */}
+            {profile?.tier &&
+              profile.generation_count >= getMaxGenerations(profile.tier) && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Generation Limit Reached</AlertTitle>
+                  <AlertDescription>
+                    You've reached your{" "}
+                    {PLAN_LIMITS[profile.tier].MAX_GENERATIONS} image generation
+                    limit for this month.
+                    {profile.tier === "NONE" ? (
+                      <>
+                        {" "}
+                        Upgrade to Pro for {
+                          PLAN_LIMITS.PRO.MAX_GENERATIONS
+                        }{" "}
+                        generations per month!
+                      </>
+                    ) : (
+                      <div>
+                        <p>
+                          We plan on adding pay as you go soon. See{" "}
+                          <a
+                            href="/limits"
+                            className="text-blue-400 hover:underline"
+                          >
+                            limits
+                          </a>{" "}
+                          for more information.
+                        </p>
+                      </div>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+
             {!!error && (
               <Alert variant="destructive" className="mt-4">
                 <AlertCircle className="h-4 w-4" />
@@ -210,6 +255,22 @@ export default function GeneratePage() {
                 use the image for (e.g. "game sprite", "game asset", "profile
                 picture", etc). Different models will be different results.
               </p>
+
+              {/* Show remaining generations */}
+              {profile?.tier && (
+                <div className="rounded-lg bg-slate-700/30 p-3 text-sm text-slate-200">
+                  <p>
+                    Generations remaining:{" "}
+                    {Math.max(
+                      0,
+                      getMaxGenerations(profile.tier) -
+                        (profile.generation_count || 0),
+                    )}{" "}
+                    / {PLAN_LIMITS[profile.tier].MAX_GENERATIONS}
+                  </p>
+                </div>
+              )}
+
               <div className="flex items-center gap-2">
                 <Switch checked={useOpenAI} onCheckedChange={setUseOpenAI} />
                 <p className="text-white">
@@ -228,7 +289,13 @@ export default function GeneratePage() {
               <div className="flex justify-center">
                 <Button
                   onClick={handleGenerate}
-                  disabled={!prompt.trim() || isLoading}
+                  disabled={
+                    !prompt.trim() ||
+                    isLoading ||
+                    (profile?.tier &&
+                      profile.generation_count >=
+                        getMaxGenerations(profile.tier))
+                  }
                   size="lg"
                   className="mt-4 w-full bg-gradient-to-r from-purple-600 to-orange-600 px-12 py-4 text-lg font-semibold"
                 >

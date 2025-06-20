@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { WasmProvider } from "@/components/wasm-provider";
 import { useRouter } from "next/navigation";
 import {
@@ -33,6 +33,7 @@ import useUser from "@/hooks/use-user";
 import { CreditsDisplay } from "@/components/credits-display";
 import { SignInModal } from "@/components/modals/signin-modal";
 import { ConversionsDisplay } from "@/components/conversions-display";
+import { getMaxConversions, PLAN_LIMITS, UserTier } from "@/lib/constants";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;
@@ -226,6 +227,7 @@ const StepTwo = ({
   userId: string;
   isEstimatingGridSizeError: boolean;
 }) => {
+  const { profile } = useUser();
   const [aspectRatio, setAspectRatio] = useState(1);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isZooming, setIsZooming] = useState(false);
@@ -566,7 +568,10 @@ const StepTwo = ({
                 isDownscaling ||
                 isDownscalingKey ||
                 isEstimatingGridSize ||
-                isEstimatingGridSizeKey
+                isEstimatingGridSizeKey ||
+                (profile?.tier &&
+                  profile.conversion_count >=
+                    getMaxConversions(profile.tier as UserTier))
               }
               onClick={() => handleDownscaleImage(userId)}
             >
@@ -587,6 +592,17 @@ const StepTwo = ({
                 </>
               )}
             </Button>
+            {profile?.tier && (
+              <div className="mb-4 mt-4 rounded-lg bg-slate-700/30 p-3 text-sm text-slate-200">
+                <p>
+                  Conversions remaining:{" "}
+                  {PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS ===
+                  Infinity
+                    ? "Unlimited"
+                    : `${Math.max(0, PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS - (profile.conversion_count || 0))} / ${PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS}`}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -738,7 +754,10 @@ const StepTwo = ({
 };
 
 export default function DownscalePageComponent() {
-  const { profile, incrementOptimisticGenerations } = useUser();
+  const { profile, incrementOptimisticGenerations, user } = useUser();
+  const { saveImage, getImages, deleteImage, searchByPrompt } = useIndexedDB();
+  const router = useRouter();
+
   const [step, setStep] = useState(1);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -775,10 +794,6 @@ export default function DownscalePageComponent() {
   const [processImageError, setProcessImageError] = useState<string | null>(
     null,
   );
-
-  const { saveImage, getImages, deleteImage, searchByPrompt } = useIndexedDB();
-  const { user } = useUser();
-  const router = useRouter();
 
   useEffect(() => {
     const loadImages = async () => {
@@ -920,6 +935,21 @@ export default function DownscalePageComponent() {
   const handleDownscaleImage = async (userId: string) => {
     if (!uploadedImage || !uploadedFile) return;
 
+    // Check conversion limits
+    if (
+      profile?.tier &&
+      profile.conversion_count >= getMaxConversions(profile.tier as UserTier)
+    ) {
+      setProcessImageError(
+        `You've reached your ${PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS} image conversion limit.${
+          profile.tier === "NONE"
+            ? " Upgrade to Pro for unlimited conversions!"
+            : ""
+        }`,
+      );
+      return;
+    }
+
     try {
       setProcessImageError(null);
       const { a, b, c, image } = await downscaleImage(uploadedFile);
@@ -931,7 +961,7 @@ export default function DownscalePageComponent() {
 
       // Use the pre-processed image from the server as input to WASM
       const result = await downscaleImageWASM(
-        !!image ? image : uploadedImage, // Use server processed image if available, otherwise fallback to original
+        !!image ? image : uploadedImage,
         gridSize,
         a,
         userId,
@@ -1164,6 +1194,27 @@ export default function DownscalePageComponent() {
             />
           ))}
         </div>
+
+        {/* Show conversion limit alert */}
+        {profile?.tier &&
+          profile.conversion_count >=
+            getMaxConversions(profile.tier as UserTier) && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Conversion Limit Reached</AlertTitle>
+              <AlertDescription>
+                You've reached your{" "}
+                {PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS ===
+                Infinity
+                  ? "unlimited"
+                  : PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS}{" "}
+                image conversion limit.
+                {profile.tier === "NONE" && (
+                  <> Upgrade to Pro for unlimited conversions!</>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
 
         <div className="rounded-lg">{currentStep.content}</div>
       </div>

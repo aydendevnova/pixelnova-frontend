@@ -48,7 +48,9 @@ export default function Header() {
           ? "absolute right-0 top-0 z-30"
           : "absolute left-0 right-0 top-0"
       } ${
-        pathname === "/terms-of-service" || pathname === "/privacy-policy"
+        pathname === "/terms-of-service" ||
+        pathname === "/privacy-policy" ||
+        pathname === "/limits"
           ? "bg-black"
           : ""
       }`}

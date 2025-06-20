@@ -59,6 +59,7 @@ const config = {
     "@next/next/no-assign-module-variable": "warn",
     "react/no-unescaped-entities": "off",
     "@typescript-eslint/no-empty-interface": "off",
+    "@typescript-eslint/dot-notation": "warn",
   },
   overrides: [
     {

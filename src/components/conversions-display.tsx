@@ -1,4 +1,5 @@
 import useUser from "@/hooks/use-user";
+import { PLAN_LIMITS } from "@/lib/constants";
 import { Repeat } from "lucide-react";
 import Link from "next/link";
 
@@ -20,7 +21,9 @@ export function ConversionsDisplay() {
             ? "..."
             : isPro
               ? "Unlimited Conversions"
-              : "0/10 Conversions"}
+              : `${profile?.conversion_count ?? 0}/${
+                  PLAN_LIMITS[profile?.tier ?? "NONE"].MAX_CONVERSIONS
+                } Conversions`}
         </span>
       </div>
     </Link>

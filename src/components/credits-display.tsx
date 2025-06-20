@@ -1,10 +1,10 @@
 import useUser from "@/hooks/use-user";
+import { PLAN_LIMITS } from "@/lib/constants";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export function CreditsDisplay() {
   const { profile, isLoading, optimisticGenerations } = useUser();
-  const isPro = profile?.tier === "PRO";
   return (
     <Link
       href="/pricing"
@@ -18,7 +18,7 @@ export function CreditsDisplay() {
           {isLoading || profile?.generation_count == null
             ? "..."
             : optimisticGenerations}{" "}
-          /{isPro ? "175" : "5"} Generations
+          /{PLAN_LIMITS[profile?.tier ?? "NONE"].MAX_GENERATIONS} Generations
         </span>
       </div>
     </Link>

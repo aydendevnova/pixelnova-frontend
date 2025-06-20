@@ -116,6 +116,33 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, [profile?.generation_count]);
 
+  // Set up real-time subscription for profile changes
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const channel = supabaseClient
+      .channel("public:profiles")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${session.user.id}`,
+        },
+        (payload) => {
+          console.log("Profile changed:", payload.new);
+          // Update the profile data in the React Query cache
+          queryClient.setQueryData(["profile", session.user.id], payload.new);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabaseClient.removeChannel(channel);
+    };
+  }, [session?.user?.id, supabaseClient, queryClient]);
+
   const invalidateUser = async () => {
     await queryClient.invalidateQueries({ queryKey: ["worker-user"] });
     await queryClient.invalidateQueries({ queryKey: ["profile"] });

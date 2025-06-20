@@ -14,6 +14,8 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useBillingPortal, useCheckout } from "@/hooks/use-api";
 import Image from "next/image";
+import { PLAN_LIMITS } from "@/lib/constants";
+import Link from "next/link";
 
 export default function BuyPage() {
   const { user, profile, isLoading: isLoadingUser } = useUser();
@@ -134,7 +136,8 @@ export default function BuyPage() {
                         <Sparkles className="h-4 w-4 text-purple-400" />
                       </div>
                       <span className="text-slate-300">
-                        175 AI Pixel Art Generations per month
+                        {PLAN_LIMITS["PRO"].MAX_GENERATIONS} AI Pixel Art
+                        Generations per month
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -179,7 +182,14 @@ export default function BuyPage() {
                   </Button>
 
                   <p className="mt-4 text-center text-sm text-slate-400">
-                    30-day money-back guarantee
+                    See{" "}
+                    <Link
+                      href="/limits"
+                      className="text-blue-400 hover:underline"
+                    >
+                      limits
+                    </Link>{" "}
+                    for more information.
                   </p>
                 </Card>
               </div>
