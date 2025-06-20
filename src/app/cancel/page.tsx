@@ -58,10 +58,10 @@ export default function CancelPage() {
         <p>
           Having issues? Contact{" "}
           <a
-            href="mailto:ayden@pixelnova.app"
+            href="mailto:support@pixelnova.app"
             className="text-blue-500 hover:underline"
           >
-            ayden@pixelnova.app
+            support@pixelnova.app
           </a>
         </p>
       </motion.div>

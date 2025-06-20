@@ -96,10 +96,10 @@ export default function LimitsPage() {
           <p className="text-gray-700">
             If you need higher limits, please email{" "}
             <a
-              href="mailto:ayden@pixelnova.app"
+              href="mailto:support@pixelnova.app"
               className="text-blue-600 hover:underline"
             >
-              ayden@pixelnova.app
+              support@pixelnova.app
             </a>{" "}
             to discuss custom plans for your needs.
           </p>

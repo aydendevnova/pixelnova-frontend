@@ -74,7 +74,7 @@ export default function SuccessPage() {
       >
         <p>
           Having issues? Contact{" "}
-          <a href="mailto:ayden@pixelnova.app">ayden@pixelnova.app</a>
+          <a href="mailto:support@pixelnova.app">support@pixelnova.app</a>
         </p>
       </motion.div>
     </div>

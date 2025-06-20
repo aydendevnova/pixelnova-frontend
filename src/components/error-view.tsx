@@ -17,7 +17,7 @@ interface ErrorViewProps {
 export default function ErrorView({ error, reset }: ErrorViewProps) {
   const handleContactSupport = () => {
     window.location.href =
-      "mailto:ayden@pixlabs.org?subject=Error Report&body=" +
+      "mailto:support@pixelnova.app?subject=Error Report&body=" +
       encodeURIComponent(`
 Error Details:
 ${error.message}

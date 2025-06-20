@@ -203,10 +203,10 @@ export default function TermsOfService() {
           <p>
             For questions or concerns regarding these Terms, contact us at:{" "}
             <a
-              href="mailto:ayden@pixelnova.app"
+              href="mailto:support@pixelnova.app"
               className="text-blue-600 hover:underline"
             >
-              ayden@pixelnova.app
+              support@pixelnova.app
             </a>
           </p>
         </section>

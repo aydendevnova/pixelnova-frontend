@@ -189,10 +189,10 @@ export default function PrivacyPolicy() {
           <p className="mt-4">
             To exercise any of these rights, email{" "}
             <a
-              href="mailto:ayden@pixelnova.app"
+              href="mailto:support@pixelnova.app"
               className="text-blue-600 hover:underline"
             >
-              ayden@pixelnova.app
+              support@pixelnova.app
             </a>{" "}
             with the subject line "DATA DELETION REQUESTED" or specify the
             applicable request type. You must include your registered email and
@@ -212,10 +212,10 @@ export default function PrivacyPolicy() {
             13. If you believe that a child under 13 has provided us with
             personal information, contact us immediately at{" "}
             <a
-              href="mailto:ayden@pixelnova.app"
+              href="mailto:support@pixelnova.app"
               className="text-blue-600 hover:underline"
             >
-              ayden@pixelnova.app
+              support@pixelnova.app
             </a>{" "}
             for removal.
           </p>
@@ -254,10 +254,10 @@ export default function PrivacyPolicy() {
             <br />
             Email:{" "}
             <a
-              href="mailto:ayden@pixelnova.app"
+              href="mailto:support@pixelnova.app"
               className="text-blue-600 hover:underline"
             >
-              ayden@pixelnova.app
+              support@pixelnova.app
             </a>
           </p>
         </section>
