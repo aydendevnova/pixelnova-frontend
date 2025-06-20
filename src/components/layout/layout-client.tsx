@@ -22,13 +22,22 @@ const supabase = createClient(
   env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 );
 
+// Create a persistent QueryClient instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 0,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    },
+  },
+});
+
 export default function LayoutClient({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const queryClient = new QueryClient();
-
   const pathname = usePathname();
 
   useEffect(() => {

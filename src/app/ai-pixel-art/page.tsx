@@ -29,6 +29,7 @@ import {
 import { SignInModal } from "@/components/modals/signin-modal";
 import { useModal } from "@/hooks/use-modal";
 import { getMaxGenerations, PLAN_LIMITS } from "@/lib/constants";
+import { Badge } from "@/components/ui/badge";
 
 export default function GeneratePage() {
   const [prompt, setPrompt] = useState("");
@@ -185,8 +186,14 @@ export default function GeneratePage() {
                   <div className="flex items-center gap-3">
                     <Wand2 className="h-8 w-8 text-blue-400" />
                     <div className="">
-                      <h1 className="text-3xl font-bold text-white">
+                      <h1 className="flex items-center gap-3 text-3xl font-bold text-white">
                         AI Pixel Art Generator
+                        <Badge
+                          variant="default"
+                          className="mt-1.5 bg-purple-400 "
+                        >
+                          Beta
+                        </Badge>
                       </h1>
                       <p className="text-slate-400">
                         Transform your ideas into pixel art using AI

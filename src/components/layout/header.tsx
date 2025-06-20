@@ -206,15 +206,16 @@ export default function Header() {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
-                    Your Account
+                    {profile?.full_name ? profile.full_name : "Account"}
                   </p>
+
                   <p className="py-2 text-xs leading-none text-muted-foreground">
                     @{profile?.username}
                   </p>
                   {profile?.tier === "PRO" && (
                     <Badge
                       variant="default"
-                      className="w-fit bg-orange-600 hover:bg-orange-600"
+                      className="w-fit bg-purple-600 hover:bg-purple-600"
                     >
                       PRO
                     </Badge>

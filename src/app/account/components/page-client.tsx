@@ -105,8 +105,6 @@ export default function PageClient() {
       },
       {
         onSuccess: () => {
-          router.refresh();
-          router.push("/account");
           setIsEditing(false);
           setSelectedImage(undefined);
           setPreviewImage(null);

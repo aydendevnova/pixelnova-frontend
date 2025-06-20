@@ -395,7 +395,7 @@ export default function ConvertToPixelArtModal({
   onFinish: (image: string) => void;
   onSignInRequired: () => void;
 }) {
-  const { profile, incrementOptimisticGenerations } = useUser();
+  const { profile } = useUser();
   const [step, setStep] = useState(1);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -548,7 +548,7 @@ export default function ConvertToPixelArtModal({
         throw new Error("Failed to get key!");
       }
       setIsDownscaling(true);
-      incrementOptimisticGenerations();
+
       const result = await downscaleImageWASM(
         !!image ? image : uploadedImage,
         gridSize,

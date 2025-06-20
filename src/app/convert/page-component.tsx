@@ -754,7 +754,7 @@ const StepTwo = ({
 };
 
 export default function DownscalePageComponent() {
-  const { profile, incrementOptimisticGenerations, user } = useUser();
+  const { profile, user } = useUser();
   const { saveImage, getImages, deleteImage, searchByPrompt } = useIndexedDB();
   const router = useRouter();
 
@@ -957,7 +957,6 @@ export default function DownscalePageComponent() {
         throw new Error("Failed to get key!");
       }
       setIsDownscaling(true);
-      incrementOptimisticGenerations();
 
       // Use the pre-processed image from the server as input to WASM
       const result = await downscaleImageWASM(

@@ -14,15 +14,16 @@ import {
 import { type Database } from "@/lib/types_db";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { env } from "@/env";
+import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
+
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 type UserContextType = {
   user: User | null;
-  profile: Database["public"]["Tables"]["profiles"]["Row"] | null;
+  profile: Profile | null;
   isLoading: boolean;
   isSignedIn: boolean;
   invalidateUser: () => Promise<void>;
-  optimisticGenerations: number;
-  incrementOptimisticGenerations: () => void;
 };
 
 const UserContext = createContext<UserContextType>({
@@ -30,12 +31,6 @@ const UserContext = createContext<UserContextType>({
   profile: null,
   isLoading: true,
   isSignedIn: false,
-  optimisticGenerations: 0,
-  incrementOptimisticGenerations: () => {
-    throw new Error(
-      "Increment optimistic generations function not implemented",
-    );
-  },
   invalidateUser: async () => {
     throw new Error("Invalidate user function not implemented");
   },
@@ -45,7 +40,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const supabaseClient = useSupabaseClient<Database>();
   const session = useSession();
   const queryClient = useQueryClient();
-  const [optimisticGenerations, setOptimisticGenerations] = useState(0);
 
   // Query for worker-verified user data
   const { data: workerUser, isLoading: workerLoading } = useQuery({
@@ -108,21 +102,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     },
     enabled: !!session?.user?.id,
     initialData: null,
+    // Add these configurations to ensure proper cache behavior
+    staleTime: 0, // Consider all data stale immediately
+    cacheTime: Infinity, // Keep the data in cache until explicitly removed
   });
-
-  useEffect(() => {
-    if (profile?.generation_count) {
-      setOptimisticGenerations(profile.generation_count);
-    }
-  }, [profile?.generation_count]);
 
   // Set up real-time subscription for profile changes
   useEffect(() => {
     if (!session?.user?.id) return;
 
     const channel = supabaseClient
-      .channel("public:profiles")
-      .on(
+      .channel(`public:profiles:${session.user.id}`)
+      .on<{
+        new: Profile;
+        old: Profile;
+        eventType: "INSERT" | "UPDATE" | "DELETE";
+      }>(
         "postgres_changes",
         {
           event: "*",
@@ -132,14 +127,31 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         },
         (payload) => {
           console.log("Profile changed:", payload.new);
-          // Update the profile data in the React Query cache
-          queryClient.setQueryData(["profile", session.user.id], payload.new);
+          // Update the profile data in the React Query cache and force a refetch
+          queryClient.setQueryData<Profile | null>(
+            ["profile", session.user.id],
+            payload.new as Profile,
+          );
+          // Force a refetch to ensure all components are updated
+          void queryClient.invalidateQueries({
+            queryKey: ["profile", session.user.id],
+          });
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
+          console.log("Successfully subscribed to profile changes");
+        } else {
+          console.error("Failed to subscribe to profile changes:", status);
+        }
+      });
 
     return () => {
-      void supabaseClient.removeChannel(channel);
+      console.log("Cleaning up profile subscription");
+      supabaseClient.removeChannel(channel).then(
+        () => console.log("Channel removed successfully"),
+        (error) => console.error("Error removing channel:", error),
+      );
     };
   }, [session?.user?.id, supabaseClient, queryClient]);
 
@@ -148,18 +160,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await queryClient.invalidateQueries({ queryKey: ["profile"] });
   };
 
-  const incrementOptimisticGenerations = useCallback(() => {
-    setOptimisticGenerations((prev) => prev + 1);
-  }, []);
-
   const value = {
     user: session?.user ?? null,
     profile: profile ?? null,
     isLoading: !!session?.user && (profileLoading || workerLoading),
     isSignedIn: !!session?.user && !!workerUser,
     invalidateUser,
-    optimisticGenerations,
-    incrementOptimisticGenerations,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

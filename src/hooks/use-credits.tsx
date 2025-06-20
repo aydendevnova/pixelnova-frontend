@@ -22,7 +22,6 @@ interface CreditsContextType {
   credits: number;
   isLoading: boolean;
   updateCredits: (params: { amount: number }) => Promise<any>;
-  optimisticDeductCredits: (amount: number) => void;
 }
 
 const CreditsContext = createContext<CreditsContextType | undefined>(undefined);
@@ -73,20 +72,10 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const optimisticDeductCredits = (amount: number) => {
-    console.log("optimisticDeductCredits", amount);
-    // Immediately update the display credits
-    setDisplayGenerations((prev) => Math.max(0, prev - amount));
-
-    // Still invalidate the query to get the real server state
-    void queryClient.invalidateQueries({ queryKey: ["user"] });
-  };
-
   const value = {
     credits: displayGenerations,
     isLoading: false,
     updateCredits,
-    optimisticDeductCredits,
   };
 
   return (

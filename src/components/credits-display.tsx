@@ -4,7 +4,7 @@ import { Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export function CreditsDisplay() {
-  const { profile, isLoading, optimisticGenerations } = useUser();
+  const { profile, isLoading } = useUser();
   return (
     <Link
       href="/pricing"
@@ -17,7 +17,7 @@ export function CreditsDisplay() {
         <span className="text-sm font-medium text-white">
           {isLoading || profile?.generation_count == null
             ? "..."
-            : optimisticGenerations}{" "}
+            : profile?.generation_count}{" "}
           /{PLAN_LIMITS[profile?.tier ?? "NONE"].MAX_GENERATIONS} Generations
         </span>
       </div>
