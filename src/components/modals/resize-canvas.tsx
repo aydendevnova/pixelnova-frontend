@@ -79,16 +79,16 @@ export function ResizeCanvasModal({
     if (!numberRegex.test(value)) return null;
     const num = parseInt(value);
     if (num <= 0) return null;
-    return Math.min(num, 256); // Limit to max 256
+    return Math.min(num, 512); // Limit to max 512
   };
 
   // Update input handlers
   useEffect(() => {
     if (isOpen) {
-      setWidthInput(Math.min(currentWidth, 256).toString());
-      setHeightInput(Math.min(currentHeight, 256).toString());
-      setWidth(Math.min(currentWidth, 256));
-      setHeight(Math.min(currentHeight, 256));
+      setWidthInput(Math.min(currentWidth, 512).toString());
+      setHeightInput(Math.min(currentHeight, 512).toString());
+      setWidth(Math.min(currentWidth, 512));
+      setHeight(Math.min(currentHeight, 512));
       setPadDirection({ width: "center", height: "center" });
       setTimeout(generatePreview, 0);
     }
@@ -104,9 +104,9 @@ export function ResizeCanvasModal({
   const handleResize = () => {
     if (!canvasRef.current) return;
 
-    // Ensure dimensions are between 1 and 256
-    const newWidth = Math.max(1, Math.min(256, width));
-    const newHeight = Math.max(1, Math.min(256, height));
+    // Ensure dimensions are between 1 and 512
+    const newWidth = Math.max(1, Math.min(512, width));
+    const newHeight = Math.max(1, Math.min(512, height));
 
     canvasRef.current.resizeCanvas(newWidth, newHeight, padDirection);
     onResize(newWidth, newHeight);
@@ -119,7 +119,7 @@ export function ResizeCanvasModal({
         <DialogHeader>
           <DialogTitle>Resize Canvas</DialogTitle>
           <DialogDescription>
-            Enter new dimensions (max 256x256) and choose padding direction.
+            Enter new dimensions (max 512x512) and choose padding direction.
           </DialogDescription>
         </DialogHeader>
         <div>
@@ -140,7 +140,7 @@ export function ResizeCanvasModal({
                       <AlertTriangle className="h-4 w-4" />
                       <AlertDescription>
                         Choose the padding direction to decide where your
-                        content will go. Maximum size is 256x256.
+                        content will go. Maximum size is 512 x 512.
                       </AlertDescription>
                     </Alert>
                   )}

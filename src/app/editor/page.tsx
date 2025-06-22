@@ -143,7 +143,7 @@ export default function Editor() {
 
   const handleImageImport = (imageData: ImageData) => {
     let finalImageData = imageData;
-    const MAX_DIMENSION = 256;
+    const MAX_DIMENSION = 512;
 
     // Check if image needs resizing
     if (imageData.width > MAX_DIMENSION || imageData.height > MAX_DIMENSION) {

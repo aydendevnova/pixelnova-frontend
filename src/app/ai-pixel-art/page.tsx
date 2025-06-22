@@ -9,6 +9,7 @@ import {
   Package,
   Grid,
   AlertCircle,
+  HelpCircle,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ import { SignInModal } from "@/components/modals/signin-modal";
 import { useModal } from "@/hooks/use-modal";
 import { getMaxGenerations, PLAN_LIMITS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
 export default function GeneratePage() {
   const [prompt, setPrompt] = useState("");
@@ -218,6 +220,15 @@ export default function GeneratePage() {
                       <p className="text-slate-400">
                         Transform your ideas into pixel art using AI
                       </p>
+                      <Link href="/tutorials/ai-pixel-art">
+                        <Button
+                          variant="outline"
+                          className="mt-2 border-slate-600 bg-slate-800/50 px-8 text-slate-300 hover:bg-slate-700"
+                        >
+                          <HelpCircle className="mr-2 h-4 w-4" />
+                          View Tutorial
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -234,13 +245,18 @@ export default function GeneratePage() {
                     You've reached your{" "}
                     {PLAN_LIMITS[profile.tier].MAX_GENERATIONS} image generation
                     limit for this month.
+                    <br />
                     {profile.tier === "NONE" ? (
                       <>
                         {" "}
-                        Upgrade to Pro for {
-                          PLAN_LIMITS.PRO.MAX_GENERATIONS
-                        }{" "}
-                        generations per month!
+                        <a
+                          href="/pricing"
+                          className="text-blue-400 hover:underline"
+                        >
+                          Upgrade to Pro
+                        </a>{" "}
+                        for {PLAN_LIMITS.PRO.MAX_GENERATIONS} generations per
+                        month!
                       </>
                     ) : (
                       <div>
@@ -282,20 +298,7 @@ export default function GeneratePage() {
                 use the image for (e.g. "game sprite", "game asset", "profile
                 picture", etc). Different models will be different results.
               </p>
-              {/* Show remaining generations */}
-              {profile?.tier && (
-                <div className="rounded-lg bg-slate-700/30 p-3 text-sm text-slate-200">
-                  <p>
-                    Generations remaining:{" "}
-                    {Math.max(
-                      0,
-                      getMaxGenerations(profile.tier) -
-                        (profile.generation_count || 0),
-                    )}{" "}
-                    / {PLAN_LIMITS[profile.tier].MAX_GENERATIONS}
-                  </p>
-                </div>
-              )}
+
               <div className="flex items-center gap-2">
                 <Switch checked={useOpenAI} onCheckedChange={setUseOpenAI} />
                 <p className="text-white">

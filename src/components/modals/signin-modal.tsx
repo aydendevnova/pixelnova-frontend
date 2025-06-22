@@ -16,7 +16,6 @@ interface SignInModalProps {
   featureName?: string;
   onExport?: () => Promise<void>;
 }
-
 export function SignInModal({
   isOpen,
   onClose,
@@ -26,6 +25,7 @@ export function SignInModal({
   const router = useRouter();
   const pathname = usePathname();
   const isEditorRoute = pathname === "/editor";
+  const isPricingRoute = pathname === "/pricing";
 
   const handleSignIn = async () => {
     if (onExport && isEditorRoute) {
@@ -46,14 +46,18 @@ export function SignInModal({
         <div className="relative">
           <DialogHeader>
             <DialogTitle className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-2xl font-bold text-transparent">
-              Sign in for free to continue
+              {isPricingRoute
+                ? "Sign in to upgrade your account"
+                : "Sign in for free to continue"}
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-6 py-6">
             <div className="space-y-4">
               <p className="text-base text-slate-300">
-                Please sign in to use the {featureName}. It only takes a few
-                seconds and all your work will be saved automatically.
+                {isPricingRoute
+                  ? "Please sign in to upgrade your account and unlock premium features. Creating an account is free and only takes a few seconds."
+                  : `Please sign in to use the ${featureName}. It only takes a few
+                  seconds and all your work will be saved automatically.`}
               </p>
               <p className="text-base text-slate-300">
                 Join our creative community today!
@@ -71,7 +75,11 @@ export function SignInModal({
                 onClick={handleSignIn}
                 className="gap-2 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 px-8 font-semibold text-white shadow-lg transition-all duration-200 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 hover:shadow-xl"
               >
-                {isEditorRoute ? "Export canvas and sign in" : "Sign in"}
+                {isPricingRoute
+                  ? "Login or Create Account"
+                  : isEditorRoute
+                    ? "Export canvas and sign in"
+                    : "Sign in"}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>

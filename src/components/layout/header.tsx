@@ -21,6 +21,13 @@ import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { ConversionsDisplay } from "../conversions-display";
 import { Badge } from "../ui/badge";
 
+const pathsWithBackground = [
+  "/terms-of-service",
+  "/privacy-policy",
+  "/limits",
+  "/support",
+];
+
 export default function Header() {
   const { profile, isSignedIn } = useUser();
   const pathname = usePathname();
@@ -48,13 +55,7 @@ export default function Header() {
         pathname === "/editor"
           ? "absolute right-0 top-0 z-30"
           : "absolute left-0 right-0 top-0"
-      } ${
-        pathname === "/terms-of-service" ||
-        pathname === "/privacy-policy" ||
-        pathname === "/limits"
-          ? "bg-black"
-          : ""
-      }`}
+      } ${pathsWithBackground.includes(pathname) ? "bg-black" : ""}`}
     >
       <div className="relative z-20 flex items-center justify-between p-4">
         {pathname != "/editor" && (

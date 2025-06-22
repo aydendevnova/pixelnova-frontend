@@ -14,7 +14,7 @@ export default function GenerateWithAiTutorial() {
               Creating Authentic Pixel Art with AI
             </span>
           </h1>
-          <p className="mt-4 text-lg text-slate-400">
+          <p className="mt-4 text-lg text-slate-300">
             Learn how to generate professional-quality pixel art using our
             specialized AI tool
           </p>
@@ -49,7 +49,7 @@ export default function GenerateWithAiTutorial() {
                     />
                   </div>
                 </div>
-                <ul className="space-y-2 text-sm text-slate-400">
+                <ul className="space-y-2 text-sm text-slate-300">
                   <li>• Tries to mimic pixel art style</li>
                   <li>• Inconsistent pixel sizes</li>
                   <li>• Requires manual conversion</li>
@@ -74,7 +74,7 @@ export default function GenerateWithAiTutorial() {
                     />
                   </div>
                 </div>
-                <ul className="space-y-2 text-sm text-slate-400">
+                <ul className="space-y-2 text-sm text-slate-300">
                   <li>• Creates true pixel art directly</li>
                   <li>• Perfect pixel grid alignment</li>
                   <li>• Game-ready assets</li>
@@ -108,7 +108,7 @@ export default function GenerateWithAiTutorial() {
                     <h4 className="mb-2 font-medium text-slate-200">
                       Example Prompts:
                     </h4>
-                    <ul className="space-y-2 text-sm text-slate-400">
+                    <ul className="space-y-2 text-sm text-slate-300">
                       <li>
                         "game sprite of a cute blue slime monster jumping"
                       </li>
@@ -122,7 +122,7 @@ export default function GenerateWithAiTutorial() {
                     <h4 className="mb-2 font-medium text-slate-200">
                       Pro Tips:
                     </h4>
-                    <ul className="space-y-2 text-sm text-slate-400">
+                    <ul className="space-y-2 text-sm text-slate-300">
                       <li>
                         • Mention the art style (cute, realistic, fantasy)
                       </li>
@@ -175,7 +175,7 @@ export default function GenerateWithAiTutorial() {
                     <h4 className="mb-2 font-medium text-slate-200">
                       Download Options:
                     </h4>
-                    <ul className="space-y-2 text-sm text-slate-400">
+                    <ul className="space-y-2 text-sm text-slate-300">
                       <li>• Individual PNG files</li>
                       <li>• ZIP archive for multiple images</li>
                       <li>• Spritesheet format</li>
@@ -185,7 +185,7 @@ export default function GenerateWithAiTutorial() {
                     <h4 className="mb-2 font-medium text-slate-200">
                       Features:
                     </h4>
-                    <ul className="space-y-2 text-sm text-slate-400">
+                    <ul className="space-y-2 text-sm text-slate-300">
                       <li>• Perfect pixel alignment</li>
                       <li>• Optimized for games</li>
                       <li>• No post-processing needed</li>
@@ -217,7 +217,7 @@ export default function GenerateWithAiTutorial() {
                     <h4 className="mb-2 font-medium text-slate-200">
                       Gallery Features:
                     </h4>
-                    <ul className="space-y-2 text-sm text-slate-400">
+                    <ul className="space-y-2 text-sm text-slate-300">
                       <li>• View all your past generations</li>
                       <li>• Download previously created art</li>
                     </ul>
@@ -226,7 +226,7 @@ export default function GenerateWithAiTutorial() {
                     <h4 className="mb-2 font-medium text-slate-200">
                       Benefits:
                     </h4>
-                    <ul className="space-y-2 text-sm text-slate-400">
+                    <ul className="space-y-2 text-sm text-slate-300">
                       <li>• Never lose your generations</li>
                       <li>• Track your creative history</li>
                       <li>• Build a personal asset library</li>

@@ -20,7 +20,7 @@ import {
   useEstimateGridSize,
   useGenerateImage,
 } from "@/hooks/use-api";
-import { Loader2, Sparkle, Trash2, UndoIcon } from "lucide-react";
+import { HelpCircle, Loader2, Sparkle, Trash2, UndoIcon } from "lucide-react";
 import { DownscaleImageWASMResponse, DownscaleResponse } from "@/shared-types";
 
 import {
@@ -36,6 +36,7 @@ import { CreditsDisplay } from "../credits-display";
 import { useModal } from "@/hooks/use-modal";
 import { env } from "@/env";
 import { ConversionsDisplay } from "../conversions-display";
+import Link from "next/link";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;

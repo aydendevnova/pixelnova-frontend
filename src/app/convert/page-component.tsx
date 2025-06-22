@@ -20,6 +20,7 @@ import {
   Trash2,
   UndoIcon,
   AlertCircle,
+  HelpCircle,
 } from "lucide-react";
 import { DownscaleImageWASMResponse } from "@/shared-types";
 import {
@@ -36,6 +37,7 @@ import { ConversionsDisplay } from "@/components/conversions-display";
 import { getMaxConversions, PLAN_LIMITS, UserTier } from "@/lib/constants";
 import { resizeImageWithPica } from "@/lib/utils/image";
 import { PixelArtPreviewModal } from "@/components/modals/pixel-art-preview";
+import Link from "next/link";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;
@@ -1021,7 +1023,7 @@ export default function DownscalePageComponent() {
       setProcessImageError(
         `You've reached your ${PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS} image conversion limit.${
           profile.tier === "NONE"
-            ? " Upgrade to Pro for unlimited conversions!"
+            ? "Upgrade to Pro for unlimited conversions!"
             : ""
         }`,
       );
@@ -1237,8 +1239,8 @@ export default function DownscalePageComponent() {
 
         <div className="mb-4 flex items-center gap-4">
           {/* Buttons */}
-          <div className="flex justify-between">
-            {step === 2 && (
+          {step === 2 && (
+            <div className="flex justify-between">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -1255,8 +1257,18 @@ export default function DownscalePageComponent() {
                 <ArrowLeftIcon className="mr-2 h-4 w-4" />
                 Back
               </Button>
-            )}
-          </div>
+            </div>
+          )}
+
+          <Link href="/tutorials/convert-to-pixel-art">
+            <Button
+              variant="outline"
+              className="border-slate-600 bg-slate-800/50 px-8 text-slate-300 hover:bg-slate-700"
+            >
+              <HelpCircle className="mr-2 h-4 w-4" />
+              View Tutorial
+            </Button>
+          </Link>
 
           <ConversionsDisplay />
         </div>
@@ -1287,9 +1299,17 @@ export default function DownscalePageComponent() {
                 Infinity
                   ? "unlimited"
                   : PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS}{" "}
-                image conversion limit.
+                image conversion limit.{" "}
                 {profile.tier === "NONE" && (
-                  <> Upgrade to Pro for unlimited conversions!</>
+                  <>
+                    <a
+                      href="/pricing"
+                      className="text-blue-400 hover:underline"
+                    >
+                      Upgrade to Pro
+                    </a>{" "}
+                    for unlimited conversions!
+                  </>
                 )}
               </AlertDescription>
             </Alert>

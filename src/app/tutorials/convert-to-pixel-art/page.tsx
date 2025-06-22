@@ -14,7 +14,7 @@ export default function ConvertAiImageTutorial() {
               Converting AI Images to Real Pixel Art
             </span>
           </h1>
-          <p className="mt-4 text-lg text-slate-400">
+          <p className="mt-4 text-lg text-slate-300">
             Learn how to transform AI-generated "pixel art style" images into
             real, usable pixel art
           </p>
@@ -48,7 +48,7 @@ export default function ConvertAiImageTutorial() {
                     />
                   </div>
                 </div>
-                <ul className="space-y-2 text-sm text-slate-400">
+                <ul className="space-y-2 text-sm text-slate-300">
                   <li>• Inconsistent pixel sizes</li>
                   <li>• Blurred edges</li>
                   <li>• Anti-aliasing artifacts</li>
@@ -74,7 +74,7 @@ export default function ConvertAiImageTutorial() {
                     />
                   </div>
                 </div>
-                <ul className="space-y-2 text-sm text-slate-400">
+                <ul className="space-y-2 text-sm text-slate-300">
                   <li>• Consistent pixel grid</li>
                   <li>• Sharp, clean edges</li>
                   <li>• No anti-aliasing</li>
@@ -109,7 +109,7 @@ export default function ConvertAiImageTutorial() {
                     <h4 className="mb-2 font-medium text-slate-200">
                       Example Prompt:
                     </h4>
-                    <p className="text-sm text-slate-400">
+                    <p className="text-sm text-slate-300">
                       "Generate a pixel art white arctic fox character."
                     </p>
                   </div>
@@ -224,10 +224,10 @@ export default function ConvertAiImageTutorial() {
                     <p className="text-center text-sm text-slate-300">
                       Zoomed in AI Image
                     </p>
-                    <p className="text-center text-sm text-slate-400">
+                    <p className="text-center text-sm text-slate-300">
                       Pixels are grainy and blurred
                     </p>
-                    <p className="text-center text-sm text-slate-400">
+                    <p className="text-center text-sm text-slate-300">
                       There are hundreds of colors
                     </p>
                   </div>
@@ -268,7 +268,7 @@ export default function ConvertAiImageTutorial() {
                     <p className="text-center text-sm text-slate-300">
                       Zoomed Pixel Art
                     </p>
-                    <p className="text-center text-sm text-slate-400">
+                    <p className="text-center text-sm text-slate-300">
                       There are perfect pixels and few colors
                     </p>
                   </div>

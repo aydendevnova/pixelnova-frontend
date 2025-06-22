@@ -60,7 +60,7 @@ export default function TutorialsPage() {
           </Link>
 
           {/* Convert/Fix AI Image Tutorial Card */}
-          <Link href="/tutorials/convert-ai-image" className="group">
+          <Link href="/tutorials/convert-to-pixel-art" className="group">
             <article className="overflow-hidden rounded-xl border border-slate-700/50 bg-slate-800/50 transition-all hover:border-blue-500/50 hover:bg-slate-800/80">
               <div className="flex">
                 <div className="relative h-48 w-48 flex-shrink-0">
