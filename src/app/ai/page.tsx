@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
+import { useSearchParams } from "next/navigation";
 import {
   Wand2,
   Download,
@@ -10,6 +11,8 @@ import {
   Grid,
   AlertCircle,
   HelpCircle,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,10 +35,50 @@ import { useModal } from "@/hooks/use-modal";
 import { getMaxGenerations, PLAN_LIMITS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export default function GeneratePage() {
+export default function GeneratePageSuspense() {
+  return (
+    <Suspense fallback={<GeneratePageLoading />}>
+      <GeneratePage />
+    </Suspense>
+  );
+}
+
+function GeneratePageLoading() {
+  return (
+    <div className="flex h-64 items-center justify-center">
+      <div className="space-y-4 text-center">
+        <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
+        <div className="space-y-2">
+          <p className="text-lg font-medium text-white">Loading...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GeneratePage() {
+  const searchParams = useSearchParams();
   const [prompt, setPrompt] = useState("");
   const [useOpenAI, setUseOpenAI] = useState(false);
+  const [resolution, setResolution] = useState<"64x64" | "96x96" | "128x128">(
+    "128x128",
+  );
   const [loadingMessage, setLoadingMessage] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Set<number>>(
     new Set(),
@@ -50,6 +93,22 @@ export default function GeneratePage() {
   const [variants, setVariants] = useState<
     Array<{ id: string; image: string; name: string }>
   >([]);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Resolution mapping
+  const resolutionToNumber: Record<"64x64" | "96x96" | "128x128", number> = {
+    "64x64": 64,
+    "96x96": 96,
+    "128x128": 128,
+  };
+
+  // Effect to set initial prompt from URL
+  useEffect(() => {
+    const urlPrompt = searchParams.get("prompt");
+    if (urlPrompt) {
+      setPrompt(decodeURIComponent(urlPrompt));
+    }
+  }, [searchParams]);
 
   const handleGenerate = async () => {
     if (!isSignedIn) {
@@ -62,6 +121,11 @@ export default function GeneratePage() {
       profile?.tier &&
       profile.generation_count >= getMaxGenerations(profile.tier)
     ) {
+      if (profile.tier === "NONE") {
+        setShowUpgradeModal(true);
+        return;
+      }
+      // Pro users will see the alert that's already in the UI
       return;
     }
 
@@ -72,6 +136,7 @@ export default function GeneratePage() {
       {
         prompt,
         useOpenAI,
+        resolution: resolutionToNumber[resolution],
       },
       {
         onSuccess: (imageData) => {
@@ -126,76 +191,134 @@ export default function GeneratePage() {
   };
 
   const handleDownloadZip = async () => {
-    const imageResults = variants.map((variant) => {
-      // Create a canvas to convert base64 to ImageData
-      const img = new Image();
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
+    const imageResults = await Promise.all(
+      variants.map(async (variant) => {
+        // Create a canvas to convert base64 to ImageData
+        const img = new Image();
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
 
-      // Set image source and wait for it to load
-      return new Promise<ImageResult>((resolve) => {
-        img.onload = () => {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx?.drawImage(img, 0, 0);
-          const imageData = ctx?.getImageData(
-            0,
-            0,
-            canvas.width,
-            canvas.height,
-          );
-          if (imageData) {
-            resolve({
-              preset: variant.name,
-              imageData: imageData,
-            });
-          }
-        };
-        img.src = variant.image;
-      });
-    });
+        // Convert base64 to ImageData
+        return new Promise<ImageResult>((resolve) => {
+          img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx?.drawImage(img, 0, 0);
+            const imageData = ctx?.getImageData(
+              0,
+              0,
+              canvas.width,
+              canvas.height,
+            );
+            if (imageData) {
+              resolve({
+                preset: variant.name,
+                imageData: imageData,
+              });
+            }
+          };
+          img.src = variant.image;
+        });
+      }),
+    );
 
-    // Wait for all images to be processed
-    const results = await Promise.all(imageResults);
-    await downloadAsZip(results, selectedVariants);
+    await downloadAsZip(imageResults, selectedVariants);
   };
 
   const handleDownloadSpritesheet = async () => {
-    const imageResults = variants.map((variant) => {
-      // Create a canvas to convert base64 to ImageData
-      const img = new Image();
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
+    const imageResults = await Promise.all(
+      variants.map(async (variant) => {
+        // Create a canvas to convert base64 to ImageData
+        const img = new Image();
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
 
-      // Set image source and wait for it to load
-      return new Promise<ImageResult>((resolve) => {
-        img.onload = () => {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx?.drawImage(img, 0, 0);
-          const imageData = ctx?.getImageData(
-            0,
-            0,
-            canvas.width,
-            canvas.height,
-          );
-          if (imageData) {
-            resolve({
-              preset: variant.name,
-              imageData: imageData,
-            });
-          }
-        };
-        img.src = variant.image;
-      });
-    });
+        // Convert base64 to ImageData
+        return new Promise<ImageResult>((resolve) => {
+          img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx?.drawImage(img, 0, 0);
+            const imageData = ctx?.getImageData(
+              0,
+              0,
+              canvas.width,
+              canvas.height,
+            );
+            if (imageData) {
+              resolve({
+                preset: variant.name,
+                imageData: imageData,
+              });
+            }
+          };
+          img.src = variant.image;
+        });
+      }),
+    );
 
-    // Wait for all images to be processed
-    const results = await Promise.all(imageResults);
-    downloadAsSpritesheet(results, selectedVariants);
+    downloadAsSpritesheet(imageResults, selectedVariants);
   };
 
   const [signInModalOpen, setSignInModalOpen] = useState(false);
+
+  const UpgradeModal = () => (
+    <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-2xl">
+            <Sparkles className="h-6 w-6 text-yellow-400" />
+            Unlock Unlimited Creativity
+          </DialogTitle>
+          <DialogDescription className="pt-2 text-gray-800">
+            <div className="text-md space-y-4">
+              <p>
+                You've reached your free tier limit of{" "}
+                {PLAN_LIMITS.NONE.MAX_GENERATIONS} generations this month.
+                Upgrade to Pro to unlock:
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-center gap-2">
+                  <div className="rounded-full bg-green-500/20 p-1">
+                    <Wand2 className="h-4 w-4 text-green-500" />
+                  </div>
+                  <span>
+                    {PLAN_LIMITS.PRO.MAX_GENERATIONS} Monthly AI Generations
+                  </span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="rounded-full bg-blue-500/20 p-1">
+                    <Package className="h-4 w-4 text-blue-500" />
+                  </div>
+                  <span>Unlimited Image Conversions</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="rounded-full bg-purple-500/20 p-1">
+                    <Sparkles className="h-4 w-4 text-purple-500" />
+                  </div>
+                  <span>Priority Support</span>
+                </li>
+              </ul>
+              <div className="flex justify-center pt-4">
+                <Link href="/pricing" className="w-full">
+                  <Button
+                    size="lg"
+                    className="w-full bg-gradient-to-r from-purple-600 to-orange-600 text-lg font-semibold"
+                  >
+                    Upgrade to Pro
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
+              <p className="text-center text-sm text-gray-500">
+                Cancel anytime. Instant access upon upgrade.
+              </p>
+            </div>
+          </DialogDescription>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20">
@@ -236,42 +359,25 @@ export default function GeneratePage() {
             </div>
 
             {/* Show generation limit alert */}
-            {profile?.tier &&
+            {profile?.tier === "PRO" &&
               profile.generation_count >= getMaxGenerations(profile.tier) && (
-                <Alert variant="destructive" className="mt-4">
+                <Alert variant="default" className="mt-4 bg-purple-900/50">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Generation Limit Reached</AlertTitle>
                   <AlertDescription>
-                    You've reached your{" "}
-                    {PLAN_LIMITS[profile.tier].MAX_GENERATIONS} image generation
-                    limit for this month.
-                    <br />
-                    {profile.tier === "NONE" ? (
-                      <>
-                        {" "}
+                    <div>
+                      <p>
+                        Great news! We're working on flexible pay-as-you-go
+                        options to keep your creativity flowing. Check our{" "}
                         <a
-                          href="/pricing"
+                          href="/limits"
                           className="text-blue-400 hover:underline"
                         >
-                          Upgrade to Pro
+                          limits page
                         </a>{" "}
-                        for {PLAN_LIMITS.PRO.MAX_GENERATIONS} generations per
-                        month!
-                      </>
-                    ) : (
-                      <div>
-                        <p>
-                          We plan on adding pay as you go soon. See{" "}
-                          <a
-                            href="/limits"
-                            className="text-blue-400 hover:underline"
-                          >
-                            limits
-                          </a>{" "}
-                          for more information.
-                        </p>
-                      </div>
-                    )}
+                        for updates and early access information.
+                      </p>
+                    </div>
                   </AlertDescription>
                 </Alert>
               )}
@@ -299,13 +405,44 @@ export default function GeneratePage() {
                 picture", etc). Different models will be different results.
               </p>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4 py-2">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="resolution"
+                    className="text-sm font-medium text-white"
+                  >
+                    Resolution:
+                  </Label>
+                  <Select
+                    value={resolution}
+                    onValueChange={(value) =>
+                      setResolution(value as "64x64" | "96x96" | "128x128")
+                    }
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger className="w-[120px] border-slate-600 bg-slate-800/30 text-white">
+                      <SelectValue placeholder="Select resolution" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="64x64">64x64</SelectItem>
+                      <SelectItem value="96x96">96x96</SelectItem>
+                      <SelectItem value="128x128">128x128</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <span className="text-sm text-slate-300">
+                  Change if your result looks blurry
+                </span>
+              </div>
+
+              {/* <div className="flex items-center gap-2">
                 <Switch checked={useOpenAI} onCheckedChange={setUseOpenAI} />
                 <p className="text-white">
                   Automatically use ChatGPT to improve prompt <br />{" "}
                   (recommended - may take longer)
                 </p>
-              </div>
+              </div> */}
+
               <Textarea
                 value={prompt}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
@@ -321,7 +458,7 @@ export default function GeneratePage() {
                   disabled={
                     !prompt.trim() ||
                     isLoading ||
-                    (profile?.tier &&
+                    (profile?.tier === "PRO" &&
                       profile.generation_count >=
                         getMaxGenerations(profile.tier))
                   }
@@ -347,8 +484,11 @@ export default function GeneratePage() {
                 Disclaimer: This is a beta feature. We are working on adding
                 more models and features. If you have any feedback, please
                 contact us at{" "}
-                <a href="mailto:support@pixelnova.ai" className="text-blue-400">
-                  support@pixelnova.ai
+                <a
+                  href="mailto:support@pixelnova.app"
+                  className="text-blue-400"
+                >
+                  support@pixelnova.app
                 </a>
                 .
               </p>
@@ -467,6 +607,7 @@ export default function GeneratePage() {
         onClose={() => setSignInModalOpen(false)}
         featureName="AI Pixel Art Generator"
       />
+      <UpgradeModal />
     </div>
   );
 }

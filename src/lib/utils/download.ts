@@ -51,7 +51,7 @@ export const downloadAsZip = async (
 };
 
 /**
- * Create a spritesheet with images arranged in a 3x3 grid and download
+ * Create a spritesheet with images arranged in a grid, optimizing layout for less than 3 images
  */
 export const downloadAsSpritesheet = (
   results: ImageResult[],
@@ -70,11 +70,17 @@ export const downloadAsSpritesheet = (
   const imageWidth = firstImage.imageData.width;
   const imageHeight = firstImage.imageData.height;
 
-  // Calculate grid dimensions (3 columns, as many rows as needed)
-  const cols = 3;
-  const rows = Math.ceil(selectedResults.length / cols);
+  // Calculate grid dimensions based on number of images
+  let cols = Math.min(selectedResults.length, 3); // Max 3 columns, but use less if fewer images
+  let rows = Math.ceil(selectedResults.length / cols);
 
-  // Create spritesheet canvas
+  // For 2 images, use 2 columns and 1 row
+  if (selectedResults.length === 2) {
+    cols = 2;
+    rows = 1;
+  }
+
+  // Create spritesheet canvas with optimized dimensions
   const spritesheetCanvas = document.createElement("canvas");
   spritesheetCanvas.width = imageWidth * cols;
   spritesheetCanvas.height = imageHeight * rows;

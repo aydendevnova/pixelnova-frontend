@@ -203,7 +203,7 @@ export default function GalleryPage() {
       <div className="duration-500 animate-in fade-in">
         <div className="flex flex-col gap-4 lg:flex-row">
           {/* Main Content Section */}
-          <div className="w-full overflow-y-auto rounded-2xl border border-slate-700/50 bg-slate-800/50 p-8 lg:h-[90vh]">
+          <div className="w-full rounded-2xl border border-slate-700/50 bg-slate-800/50 p-8">
             {/* Header */}
             <div className="border-b border-slate-700/50">
               <div className="mx-auto pb-4">
@@ -222,7 +222,7 @@ export default function GalleryPage() {
             </div>
 
             {/* Example Images Section */}
-            <section className="mb-12 mt-6">
+            {/* <section className="mb-12 mt-6">
               <h2 className="mb-6 text-2xl font-bold text-white">
                 Example Creations
               </h2>
@@ -250,10 +250,10 @@ export default function GalleryPage() {
                   </div>
                 ))}
               </div>
-            </section>
+            </section> */}
 
             {/* User Images Section */}
-            <section>
+            <section className="mt-6">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-white">
                   Your Generations
@@ -320,7 +320,7 @@ export default function GalleryPage() {
                 </div>
               ) : userImages.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6">
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                     {displayedImages.map((image, index) => (
                       <div
                         key={index}
@@ -380,10 +380,10 @@ export default function GalleryPage() {
                     ))}
                   </div>
                   {hasMore && (
-                    <div className="mt-8 flex justify-center">
+                    <div className="mb-8 mt-16 flex justify-center">
                       <button
                         onClick={handleLoadMore}
-                        className="rounded-md bg-gradient-to-r from-purple-400 to-pink-400 px-6 py-2 text-sm font-medium text-white hover:from-purple-500 hover:to-pink-500"
+                        className="rounded-md bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2 text-sm font-medium text-white hover:from-purple-600 hover:to-pink-600"
                       >
                         Load More
                       </button>
@@ -396,7 +396,7 @@ export default function GalleryPage() {
                     You haven&apos;t created any pixel art yet
                   </p>
                   <Link
-                    href="/ai-pixel-art"
+                    href="/ai"
                     className="inline-flex items-center justify-center rounded-md bg-gradient-to-r from-purple-400 to-pink-400 px-4 py-2 text-sm font-medium text-white hover:from-purple-500 hover:to-pink-500"
                   >
                     Create Your First Pixel Art

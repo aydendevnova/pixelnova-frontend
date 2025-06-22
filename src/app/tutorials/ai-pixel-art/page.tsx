@@ -109,9 +109,7 @@ export default function GenerateWithAiTutorial() {
                       Example Prompts:
                     </h4>
                     <ul className="space-y-2 text-sm text-slate-300">
-                      <li>
-                        "game sprite of a cute blue slime monster jumping"
-                      </li>
+                      <li>"game sprite of a cute blue slime jumping"</li>
                       <li>
                         "pixel art icon of a magical staff with purple glow"
                       </li>
@@ -249,7 +247,7 @@ export default function GenerateWithAiTutorial() {
 
         {/* Call to Action */}
         <div className="flex justify-center py-24">
-          <Link href="/ai-pixel-art">
+          <Link href="/ai">
             <Button className="bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-6 text-lg text-white hover:from-purple-700 hover:to-pink-700">
               Start Generating Pixel Art
               <ArrowRightIcon className="ml-2 h-5 w-5" />

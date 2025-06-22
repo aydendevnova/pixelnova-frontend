@@ -62,7 +62,7 @@ export default function SuccessPage() {
           size="lg"
           className="bg-purple-800 text-white hover:bg-purple-900 hover:text-white"
         >
-          <Link href="/">Start Creating</Link>
+          <Link href="/ai">Start Creating</Link>
         </Button>
       </motion.div>
 

@@ -16,7 +16,17 @@ import { usePathname, useRouter } from "next/navigation";
 import { CreditsDisplay } from "../credits-display";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
-import { ArrowRight, ChevronDown, Menu, X, Crown } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronDown,
+  Menu,
+  X,
+  Crown,
+  Palette,
+  Users,
+  Pencil,
+  Image,
+} from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { ConversionsDisplay } from "../conversions-display";
 import { Badge } from "../ui/badge";
@@ -37,16 +47,33 @@ export default function Header() {
   const router = useRouter();
 
   const mainNavItems = [
-    { href: "/ai-pixel-art", label: "AI Pixel Art" },
+    { href: "/ai", label: "AI Pixel Art" },
     { href: "/convert", label: "Convert to Pixel Art" },
     { href: "/pricing", label: "Pricing" },
     { href: "/tutorials", label: "Tutorials" },
   ];
 
   const moreNavItems = [
-    { href: "/colorizer", label: "Colorizer" },
-    { href: "/skin-tone-generator", label: "Skin Tone Generator" },
-    { href: "/editor", label: "Pixel Art Editor" },
+    {
+      href: "/colorizer",
+      label: "Colorizer",
+      icon: <Palette className="mr-2 h-4 w-4" />,
+    },
+    {
+      href: "/skin-tone-generator",
+      label: "Skin Tone Generator",
+      icon: <Users className="mr-2 h-4 w-4" />,
+    },
+    {
+      href: "/editor",
+      label: "Pixel Art Editor",
+      icon: <Pencil className="mr-2 h-4 w-4" />,
+    },
+    {
+      href: "/gallery",
+      label: "Your Image Gallery",
+      icon: <Image className="mr-2 h-4 w-4" />,
+    },
   ];
 
   return (
@@ -90,7 +117,10 @@ export default function Header() {
                 <DropdownMenuContent className="w-48 bg-white" align="start">
                   {moreNavItems.map((item) => (
                     <DropdownMenuItem key={item.href} asChild>
-                      <Link href={item.href}>{item.label}</Link>
+                      <Link href={item.href} className="flex items-center">
+                        {item.icon}
+                        {item.label}
+                      </Link>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -156,9 +186,10 @@ export default function Header() {
                         <Link
                           key={item.href}
                           href={item.href}
-                          className="block py-2 text-base text-white hover:text-gray-200"
+                          className="flex items-center py-2 text-base text-white hover:text-gray-200"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
+                          {item.icon}
                           {item.label}
                         </Link>
                       ))}

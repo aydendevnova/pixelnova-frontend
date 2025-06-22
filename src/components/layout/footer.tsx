@@ -38,7 +38,7 @@ export default function Footer() {
                 Pixel Art Editor
               </Link>
               <Link
-                href="/ai-pixel-art"
+                href="/ai"
                 className="text-sm text-slate-400 transition-colors hover:text-white"
               >
                 AI Pixel Art
@@ -68,6 +68,12 @@ export default function Footer() {
           <div className="flex flex-col items-center md:items-start">
             <h3 className="mb-3 text-sm font-semibold text-white">Resources</h3>
             <div className="flex flex-col items-center gap-2 md:items-start">
+              <Link
+                href="/dashboard"
+                className="text-sm text-slate-400 transition-colors hover:text-white"
+              >
+                Dashboard
+              </Link>
               <Link
                 href="/tutorials"
                 className="text-sm text-slate-400 transition-colors hover:text-white"

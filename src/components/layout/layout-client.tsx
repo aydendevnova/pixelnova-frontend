@@ -66,22 +66,19 @@ export default function LayoutClient({
   }, [pathname]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SessionContextProvider supabaseClient={supabase}>
-        <CreditsProvider>
-          <UserProvider>
-            <div
-              className={`relative flex min-h-screen flex-col ${
-                pathname == "/editor" ? "overflow-hidden" : "dark"
-              }`}
-            >
-              <Header />
-
-              <ErrorBoundary
-                fallback={({ error, reset }) => (
-                  <ErrorView error={error} reset={reset} />
-                )}
+    <ErrorBoundary
+      fallback={({ error, reset }) => <ErrorView error={error} reset={reset} />}
+    >
+      <QueryClientProvider client={queryClient}>
+        <SessionContextProvider supabaseClient={supabase}>
+          <CreditsProvider>
+            <UserProvider>
+              <div
+                className={`relative flex min-h-screen flex-col ${
+                  pathname == "/editor" ? "overflow-hidden" : "dark"
+                }`}
               >
+                <Header />
                 <ToasterRadixUI />
                 <ToasterHotToast />
 
@@ -103,12 +100,12 @@ export default function LayoutClient({
                     </span>
                   </div>
                 )}
-              </ErrorBoundary>
-              <Footer />
-            </div>
-          </UserProvider>
-        </CreditsProvider>
-      </SessionContextProvider>
-    </QueryClientProvider>
+                <Footer />
+              </div>
+            </UserProvider>
+          </CreditsProvider>
+        </SessionContextProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
