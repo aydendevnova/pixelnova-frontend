@@ -265,17 +265,16 @@ function GeneratePage() {
 
   const UpgradeModal = () => (
     <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="border-slate-700/50 bg-slate-800/50 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
+          <DialogTitle className="flex items-center gap-2 text-2xl text-white">
             <Sparkles className="h-6 w-6 text-yellow-400" />
             Unlock Unlimited Creativity
           </DialogTitle>
-          <DialogDescription className="pt-2 text-gray-800">
+          <DialogDescription className="pt-2 text-slate-300">
             <div className="text-md space-y-4">
               <p>
-                You've reached your free tier limit of{" "}
-                {PLAN_LIMITS.NONE.MAX_GENERATIONS} generations this month.
+                You've reached your free tier limit of generations this month.
                 Upgrade to Pro to unlock:
               </p>
               <ul className="space-y-3">
@@ -311,7 +310,7 @@ function GeneratePage() {
                   </Button>
                 </Link>
               </div>
-              <p className="text-center text-sm text-gray-500">
+              <p className="text-center text-sm text-slate-400">
                 Cancel anytime. Instant access upon upgrade.
               </p>
             </div>

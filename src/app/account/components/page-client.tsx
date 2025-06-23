@@ -142,13 +142,13 @@ export default function PageClient() {
   }, [previewImage]);
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-background">
-      <div className="mx-auto max-w-4xl px-4 py-16">
-        <h1 className="mb-8 scroll-m-20 text-4xl font-bold tracking-tight">
+    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-2">
+      <div className="mx-auto mt-8 max-w-4xl px-4 py-16">
+        <h1 className="mb-8 scroll-m-20 text-4xl font-bold tracking-tight text-white">
           Account Settings
         </h1>
 
-        <Card>
+        <Card className="border-slate-700/50 bg-slate-800/50">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Profile Information</CardTitle>
             {!isEditing && (
@@ -170,7 +170,7 @@ export default function PageClient() {
                   <>
                     <div className="space-y-2">
                       {isEditing && (
-                        <Alert className="mb-4">
+                        <Alert className="mb-4 border-slate-700/50 bg-slate-800/50">
                           <AlertCircle className="h-4 w-4" />
                           <AlertTitle>Profile Picture Notice</AlertTitle>
                           <AlertDescription>
@@ -181,7 +181,7 @@ export default function PageClient() {
                       )}
                       <Label>Profile Picture</Label>
                       <div className="flex items-center gap-4">
-                        <div className="relative h-24 w-24 overflow-hidden rounded-full">
+                        <div className="relative h-24 w-24 overflow-hidden rounded-full bg-slate-800/50">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={
@@ -190,9 +190,18 @@ export default function PageClient() {
                               AvatarPlaceholder.src
                             }
                             alt="Profile"
-                            className="object-cover"
-                            style={{ imageRendering: "pixelated" }}
+                            className="h-full w-full object-cover"
+                            style={{
+                              imageRendering: previewImage
+                                ? "auto"
+                                : "pixelated",
+                            }}
                           />
+                          {isEditing && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100">
+                              <Upload className="h-6 w-6 text-white" />
+                            </div>
+                          )}
                         </div>
                         {isEditing && (
                           <div className="flex flex-col gap-2">
@@ -200,8 +209,11 @@ export default function PageClient() {
                               type="file"
                               accept="image/jpeg, image/png, image/webp"
                               onChange={handleImageChange}
-                              className="max-w-[220px]"
+                              className="max-w-[220px] border-slate-700/50 bg-slate-800/50"
                             />
+                            <p className="text-xs text-muted-foreground">
+                              Recommended: Square image, at least 256x256 pixels
+                            </p>
                           </div>
                         )}
                       </div>
@@ -226,6 +238,7 @@ export default function PageClient() {
                             });
                           }}
                           placeholder="Enter your full name"
+                          className="border-slate-700/50 bg-slate-800/50"
                         />
                       ) : (
                         <p className="text-sm text-muted-foreground">
@@ -254,13 +267,13 @@ export default function PageClient() {
                                 })
                               }
                               placeholder="Enter your username"
-                              className="w-fit"
+                              className="w-fit border-slate-700/50 bg-slate-800/50"
                             />
 
                             <Button
                               variant="outline"
                               size="sm"
-                              className="mx-2 py-5"
+                              className="mx-2 border-slate-700/50 bg-slate-800/50 py-5"
                               onClick={() => setIsChangeUsernameModalOpen(true)}
                             >
                               <div className="flex items-center gap-4">
@@ -285,7 +298,7 @@ export default function PageClient() {
                         !!formData.username &&
                         formData.username != profile.username && (
                           <div>
-                            <Alert className="mb-4">
+                            <Alert className="mb-4 border-slate-700/50 bg-slate-800/50">
                               <AlertCircle className="h-4 w-4" />
                               <AlertTitle>Username</AlertTitle>
                               <AlertDescription>
@@ -296,7 +309,7 @@ export default function PageClient() {
                         )}
                     </div>
 
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                       <Label>Website (optional)</Label>
                       {isEditing ? (
                         <div className="flex flex-col space-y-2">
@@ -321,7 +334,7 @@ export default function PageClient() {
                             />
                           </div>
 
-                          {/* {formData.website && (
+                          {formData.website && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <p>Test your link:</p>
                             <a
@@ -333,7 +346,7 @@ export default function PageClient() {
                               {formData.website}
                             </a>
                           </div>
-                        )} */}
+                        )}
                           {formErrors.website && (
                             <p className="text-sm text-destructive">
                               {formErrors.website}
@@ -345,7 +358,7 @@ export default function PageClient() {
                           {profile?.website ?? "Not set"}
                         </p>
                       )}
-                    </div>
+                    </div> */}
 
                     {isEditing ? (
                       <div className="flex gap-2">
@@ -359,6 +372,7 @@ export default function PageClient() {
                           variant="outline"
                           onClick={handleCancel}
                           disabled={isUpdatingAccount}
+                          className="border-slate-700/50 bg-slate-800/50"
                         >
                           Cancel
                         </Button>

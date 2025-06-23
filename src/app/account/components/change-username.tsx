@@ -93,9 +93,9 @@ export default function ChangeUsernameModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="border-slate-700/50 bg-slate-800/70 backdrop-blur">
         <DialogHeader>
-          <DialogTitle>Change Username</DialogTitle>
+          <DialogTitle className="text-white">Change Username</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
@@ -104,6 +104,7 @@ export default function ChangeUsernameModal({
                 placeholder="Enter new username"
                 value={username}
                 onChange={(e) => handleUsernameChange(e.target.value)}
+                className="border-slate-700/50 bg-slate-800/50 text-white"
               />
               <Button
                 onClick={handleCheckUsername}
@@ -124,6 +125,7 @@ export default function ChangeUsernameModal({
                 resetModal();
                 onClose();
               }}
+              className="border-slate-700/50 bg-slate-800/50"
             >
               Cancel
             </Button>

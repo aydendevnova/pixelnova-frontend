@@ -17,11 +17,9 @@ import { CreditsDisplay } from "../credits-display";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import {
-  ArrowRight,
   ChevronDown,
   Menu,
   X,
-  Crown,
   Palette,
   Users,
   Pencil,
@@ -205,55 +203,61 @@ export default function Header() {
         {isSignedIn ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8">
-                <UserMyAvatar />
-                {profile?.tier === "PRO" && (
-                  <div className="absolute -left-6 bottom-2 rounded-full">
-                    <div
-                      className="icon"
-                      style={{
-                        color: "rgb(0, 0, 0)",
-                      }}
-                    >
-                      <svg
-                        stroke="#ffa500"
-                        fill="#ffa500"
-                        stroke-width="0"
-                        viewBox="0 0 24 24"
-                        height="200px"
-                        width="200px"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path d="M2.80577 5.20006L7.00505 7.99958L11.1913 2.13881C11.5123 1.6894 12.1369 1.58531 12.5863 1.90631C12.6761 1.97045 12.7546 2.04901 12.8188 2.13881L17.0051 7.99958L21.2043 5.20006C21.6639 4.89371 22.2847 5.01788 22.5911 5.47741C22.7228 5.67503 22.7799 5.91308 22.7522 6.14895L21.109 20.1164C21.0497 20.62 20.6229 20.9996 20.1158 20.9996H3.8943C3.38722 20.9996 2.9604 20.62 2.90115 20.1164L1.25792 6.14895C1.19339 5.60045 1.58573 5.10349 2.13423 5.03896C2.37011 5.01121 2.60816 5.06832 2.80577 5.20006ZM12.0051 14.9996C13.1096 14.9996 14.0051 14.1042 14.0051 12.9996C14.0051 11.895 13.1096 10.9996 12.0051 10.9996C10.9005 10.9996 10.0051 11.895 10.0051 12.9996C10.0051 14.1042 10.9005 14.9996 12.0051 14.9996Z"></path>
-                      </svg>
+              <Button
+                variant="ghost"
+                className="relative flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 transition-all duration-200 hover:bg-white/20"
+              >
+                <div className="relative">
+                  <UserMyAvatar className="h-8 w-8" />
+                  {profile?.tier === "PRO" && (
+                    <div className="absolute -right-2 -top-2">
+                      <div className="flex scale-75 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-amber-600 p-1 shadow-lg ring-2 ring-black">
+                        <svg
+                          className="h-2 w-2 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12.0051 14.9996C13.1096 14.9996 14.0051 14.1042 14.0051 12.9996C14.0051 11.895 13.1096 10.9996 12.0051 10.9996C10.9005 10.9996 10.0051 11.895 10.0051 12.9996C10.0051 14.1042 10.9005 14.9996 12.0051 14.9996ZM2.80577 5.20006L7.00505 7.99958L11.1913 2.13881C11.5123 1.6894 12.1369 1.58531 12.5863 1.90631C12.6761 1.97045 12.7546 2.04901 12.8188 2.13881L17.0051 7.99958L21.2043 5.20006C21.6639 4.89371 22.2847 5.01788 22.5911 5.47741C22.7228 5.67503 22.7799 5.91308 22.7522 6.14895L21.109 20.1164C21.0497 20.62 20.6229 20.9996 20.1158 20.9996H3.8943C3.38722 20.9996 2.9604 20.62 2.90115 20.1164L1.25792 6.14895C1.19339 5.60045 1.58573 5.10349 2.13423 5.03896C2.37011 5.01121 2.60816 5.06832 2.80577 5.20006Z" />
+                        </svg>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                </div>
+                {profile?.tier === "PRO" && (
+                  <span className="text-sm font-medium text-amber-400">
+                    PRO
+                  </span>
                 )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="flex w-64 flex-col gap-2 bg-white"
+              className="flex w-64 flex-col gap-2 "
               align="end"
               forceMount
             >
-              <DropdownMenuLabel className="font-normal">
+              <div className="flex items-center gap-2 p-2">
+                <UserMyAvatar className="h-10 w-10" />
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
                     {profile?.full_name ? profile.full_name : "Account"}
                   </p>
-
-                  <p className="py-2 text-xs leading-none text-muted-foreground">
-                    @{profile?.username}
-                  </p>
-                  {profile?.tier === "PRO" && (
-                    <Badge
-                      variant="default"
-                      className="w-fit bg-purple-600 hover:bg-purple-600"
-                    >
-                      PRO
-                    </Badge>
-                  )}
+                  <div className="flex gap-2">
+                    <p className="py-1 text-sm leading-none text-muted-foreground">
+                      @{profile?.username}
+                    </p>
+                    {profile?.tier === "PRO" && (
+                      <Badge
+                        variant="default"
+                        className="w-fit bg-purple-600 hover:bg-purple-600"
+                      >
+                        PRO
+                      </Badge>
+                    )}
+                  </div>
                 </div>
+              </div>
+
+              <DropdownMenuLabel className="font-normal">
                 <div className="my-2 space-y-2">
                   <CreditsDisplay />
                   <ConversionsDisplay />
