@@ -114,6 +114,12 @@ export default function Footer() {
                 My Account
               </Link>
               <Link
+                href="/limits"
+                className="text-sm text-slate-400 transition-colors hover:text-white"
+              >
+                Usage Limits
+              </Link>
+              <Link
                 href="/terms-of-service"
                 className="text-sm text-slate-400 transition-colors hover:text-white"
               >

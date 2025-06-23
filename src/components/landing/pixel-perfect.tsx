@@ -6,16 +6,16 @@ import { Badge } from "../ui/badge";
 
 export default function PixelPerfectLandingSection() {
   return (
-    <section className="px-4 py-16">
+    <section className="px-4 py-8 md:py-16">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 text-center">
           <Badge className="mb-4 border-0 bg-gradient-to-r from-emerald-600 to-teal-700 px-4 py-1 text-white">
             🎯 Pixel Perfect Conversion
           </Badge>
-          <h2 className="mb-4 text-4xl font-bold text-white">
+          <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">
             Convert Any Image to True Pixel Art
           </h2>
-          <p className="mx-auto max-w-2xl text-lg text-slate-300">
+          <p className="mx-auto max-w-2xl text-base text-slate-300 md:text-lg">
             Transform AI-generated images, photos, or artwork into authentic
             pixel art that stays crisp and clean at any resolution.
           </p>
@@ -33,15 +33,15 @@ export default function PixelPerfectLandingSection() {
           </Link>
         </div>
 
-        <div className="relative mb-12 rounded-2xl border border-slate-700/50 bg-slate-800/50 p-8 backdrop-blur">
-          <div className="grid gap-8">
+        <div className="relative mb-12 rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur md:p-8">
+          <div className="grid gap-6 md:gap-8">
             {/* Text Content */}
-            <div className="mx-auto max-w-3xl space-y-8">
+            <div className="mx-auto max-w-3xl space-y-6 md:space-y-8">
               <div className="text-center">
-                <h3 className="mb-3 text-2xl font-semibold text-white">
+                <h3 className="mb-3 text-xl font-semibold text-white md:text-2xl">
                   The Problem with AI "Pixel Art" from <i>Other Tools</i>
                 </h3>
-                <p className="text-slate-300">
+                <p className="text-sm text-slate-300 md:text-base">
                   AI tools like ChatGPT, Midjourney, and DALL-E create "pixel
                   art style" images that look blurry when zoomed in. They're not
                   true pixel art. Our generator is the only true pixel art
@@ -51,10 +51,10 @@ export default function PixelPerfectLandingSection() {
               </div>
 
               <div className="text-center">
-                <h3 className="mb-3 text-2xl font-semibold text-emerald-400">
+                <h3 className="mb-3 text-xl font-semibold text-emerald-400 md:text-2xl">
                   Our Pixel-Perfect Solution
                 </h3>
-                <p className="text-slate-300">
+                <p className="text-sm text-slate-300 md:text-base">
                   Convert any image into crisp, clean pixel art where every
                   single pixel is perfectly placed. Get that authentic retro
                   game look that stays sharp at any size.
@@ -63,9 +63,9 @@ export default function PixelPerfectLandingSection() {
             </div>
 
             {/* Image Comparison */}
-            <div className="flex items-center justify-center gap-8">
-              <div className="text-center">
-                <div className="relative aspect-square w-[350px]">
+            <div className="flex flex-col items-center justify-center gap-4 md:flex-row md:gap-8">
+              <div className="w-full text-center md:w-auto">
+                <div className="relative mx-auto aspect-square w-full max-w-[280px] md:w-[350px]">
                   <Image
                     src="/images/tutorials/sample_ai.png"
                     alt="AI Generated (Blurry)"
@@ -76,9 +76,11 @@ export default function PixelPerfectLandingSection() {
                 <p className="mt-3 text-sm text-slate-400">AI Generated</p>
                 <p className="text-xs text-red-400">Blurry when zoomed</p>
               </div>
-              <div className="text-2xl font-bold text-emerald-400">→</div>
-              <div className="text-center">
-                <div className="relative aspect-square w-[350px]">
+              <div className="rotate-90 text-2xl font-bold text-emerald-400 md:rotate-0">
+                →
+              </div>
+              <div className="w-full text-center md:w-auto">
+                <div className="relative mx-auto aspect-square w-full max-w-[280px] md:w-[350px]">
                   <Image
                     src="/images/tutorials/sample_pixel.png"
                     alt="Pixel Perfect"
@@ -95,39 +97,39 @@ export default function PixelPerfectLandingSection() {
         </div>
 
         <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="group rounded-xl border border-slate-800 bg-slate-900/50 p-6 transition-all duration-300 hover:border-emerald-500/50 hover:bg-slate-800/50">
+          <div className="group rounded-xl border border-slate-800 bg-slate-900/50 p-4 transition-all duration-300 hover:border-emerald-500/50 hover:bg-slate-800/50 md:p-6">
             <div className="mb-4 inline-block rounded-full bg-emerald-500/20 p-3">
               <Upload className="h-5 w-5 text-emerald-500" />
             </div>
             <h4 className="mb-2 text-lg font-semibold text-white">Upload</h4>
-            <p className="text-slate-400">
+            <p className="text-sm text-slate-400 md:text-base">
               Start with any image - photos, artwork, or AI-generated content
             </p>
           </div>
 
-          <div className="group rounded-xl border border-slate-800 bg-slate-900/50 p-6 transition-all duration-300 hover:border-emerald-500/50 hover:bg-slate-800/50">
+          <div className="group rounded-xl border border-slate-800 bg-slate-900/50 p-4 transition-all duration-300 hover:border-emerald-500/50 hover:bg-slate-800/50 md:p-6">
             <div className="mb-4 inline-block rounded-full bg-emerald-500/20 p-3">
               <Palette className="h-5 w-5 text-emerald-500" />
             </div>
             <h4 className="mb-2 text-lg font-semibold text-white">Customize</h4>
-            <p className="text-slate-400">
+            <p className="text-sm text-slate-400 md:text-base">
               Adjust resolution, color palettes, and pixelation settings to find
               the perfect number of pixels
             </p>
           </div>
 
-          <div className="group rounded-xl border border-slate-800 bg-slate-900/50 p-6 transition-all duration-300 hover:border-emerald-500/50 hover:bg-slate-800/50">
+          <div className="group rounded-xl border border-slate-800 bg-slate-900/50 p-4 transition-all duration-300 hover:border-emerald-500/50 hover:bg-slate-800/50 md:p-6">
             <div className="mb-4 inline-block rounded-full bg-emerald-500/20 p-3">
               <ArrowRight className="h-5 w-5 text-emerald-500" />
             </div>
             <h4 className="mb-2 text-lg font-semibold text-white">Export</h4>
-            <p className="text-slate-400">
+            <p className="text-sm text-slate-400 md:text-base">
               Download your pixel art in multiple formats
             </p>
           </div>
         </div>
       </div>
-      <div className="mt-12 flex justify-center">
+      <div className="mt-8 flex justify-center md:mt-12">
         <Link href="/convert" className="mx-auto mb-8 w-fit">
           <Button
             size="lg"

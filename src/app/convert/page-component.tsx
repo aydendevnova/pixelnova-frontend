@@ -230,10 +230,10 @@ const StepTwo = ({
   };
 
   return (
-    <div className="flex gap-4">
+    <div className="flex flex-col gap-4 lg:flex-row">
       {/* Left Side - Controls */}
-      <div className="w-full space-y-6 lg:w-80">
-        <div className="relative rounded-2xl border border-slate-700/50 bg-slate-800/50 p-6 backdrop-blur">
+      <div className="w-full lg:w-80">
+        <div className="relative rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur lg:p-6">
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-600/20 via-teal-600/20 to-cyan-600/20 opacity-75 blur-xl"></div>
           <div className="relative space-y-4">
             <h3 className="text-lg font-medium text-white">
@@ -361,7 +361,7 @@ const StepTwo = ({
       {/* Right Side - Preview and Results */}
       <div className="flex-1">
         {uploadedImage && (
-          <div className="relative w-full rounded-xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur lg:min-w-[770px]">
+          <div className="relative w-full rounded-xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur">
             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 opacity-75 blur-xl"></div>
             <div className="relative">
               <h3 className="mb-4 text-lg font-medium text-white">
@@ -378,7 +378,7 @@ const StepTwo = ({
                     <img
                       src={uploadedImage}
                       alt="Original image"
-                      className="h-[40vh] w-auto object-contain"
+                      className="h-[30vh] w-auto object-contain lg:h-[40vh]"
                     />
                   </div>
                 </div>
@@ -398,7 +398,7 @@ const StepTwo = ({
                         <img
                           src={result.image}
                           alt={`Pixelated ${result.resolution}x${result.resolution}`}
-                          className="h-[40vh] w-auto object-contain"
+                          className="h-[30vh] w-auto object-contain lg:h-[40vh]"
                           style={{ imageRendering: "pixelated" }}
                         />
                         <Button
@@ -732,7 +732,7 @@ export default function ConvertImagePageClient() {
   const currentStep = steps[step - 1] ?? steps[0]!;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-8 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-4 pt-20 lg:p-8">
       <div className="mx-auto max-w-7xl duration-500 animate-in fade-in">
         <SignInModal
           isOpen={showSignInModal}
@@ -760,7 +760,7 @@ export default function ConvertImagePageClient() {
             }
           }}
         />
-        <div className="mb-8 text-center">
+        <div className="mb-8 pt-12 text-center">
           <h1 className="text-4xl font-bold">
             <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
               {currentStep.title}
@@ -806,7 +806,7 @@ export default function ConvertImagePageClient() {
           </Alert>
         )}
 
-        <div className="mb-4 flex items-center gap-4">
+        <div className="mb-4 flex flex-wrap items-center gap-4">
           {/* Buttons */}
           {step === 2 && (
             <div className="flex justify-between">
@@ -819,7 +819,7 @@ export default function ConvertImagePageClient() {
                     setShowSmallImageWarning(false);
                   }
                 }}
-                className="border-slate-600 bg-slate-800/50 px-8 text-slate-300 hover:bg-slate-700"
+                className="border-slate-600 bg-slate-800/50 px-4 text-slate-300 hover:bg-slate-700 lg:px-8"
               >
                 <ArrowLeftIcon className="mr-2 h-4 w-4" />
                 Back
@@ -830,7 +830,7 @@ export default function ConvertImagePageClient() {
           <Link href="/tutorials/convert-to-pixel-art">
             <Button
               variant="outline"
-              className="border-slate-600 bg-slate-800/50 px-8 text-slate-300 hover:bg-slate-700"
+              className="border-slate-600 bg-slate-800/50 px-4 text-slate-300 hover:bg-slate-700 lg:px-8"
             >
               <HelpCircle className="mr-2 h-4 w-4" />
               View Tutorial

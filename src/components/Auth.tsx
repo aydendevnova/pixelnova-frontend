@@ -69,18 +69,15 @@ export default function Auth() {
         provider: "github",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: false,
         },
       });
 
       if (error) throw error;
-
-      // Note: GitHub OAuth will handle the redirect automatically
-      // but we can still redirect here as a fallback
-      router.push("/");
+      // OAuth provider will handle the redirect
     } catch (err) {
       console.error("Sign in error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
       setLoading(false);
     }
   };
@@ -94,16 +91,15 @@ export default function Auth() {
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: false,
         },
       });
 
       if (error) throw error;
-
-      router.push("/");
+      // OAuth provider will handle the redirect
     } catch (err) {
       console.error("Sign in error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
       setLoading(false);
     }
   };

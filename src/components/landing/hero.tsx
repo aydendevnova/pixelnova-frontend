@@ -40,8 +40,8 @@ export default function HeroLandingSection() {
   return (
     <section className="w-full py-12 md:py-24 lg:py-32 xl:py-52">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
-        <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_400px]">
-          <div className="flex flex-col justify-center space-y-4">
+        <div className="grid justify-center gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_400px]">
+          <div className="flex flex-col justify-center space-y-4 max-md:mt-20">
             <div className="max-w-xl space-y-2">
               <Badge className="w-fit border-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
                 Now Live
@@ -62,6 +62,20 @@ export default function HeroLandingSection() {
                 <div className="relative flex w-full max-w-[700px] items-center">
                   <Input
                     type="text"
+                    placeholder="Describe your pixel art idea..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSubmit(e);
+                      }
+                    }}
+                    autoFocus
+                    className="block h-14 rounded-2xl border-slate-700 bg-slate-900/50 px-6 text-lg text-white placeholder:text-slate-400 lg:hidden"
+                  />
+                  <Input
+                    type="text"
                     placeholder="Describe your pixel art idea... (e.g. 'a cute blue slime')"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
@@ -72,7 +86,7 @@ export default function HeroLandingSection() {
                       }
                     }}
                     autoFocus
-                    className="h-14 rounded-2xl border-slate-700 bg-slate-900/50 px-6 text-lg text-white placeholder:text-slate-400"
+                    className="hidden h-14 rounded-2xl border-slate-700 bg-slate-900/50 px-6 text-lg text-white placeholder:text-slate-400 lg:block"
                   />
                   <Button
                     type="submit"

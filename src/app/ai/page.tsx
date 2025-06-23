@@ -265,7 +265,7 @@ function GeneratePage() {
 
   const UpgradeModal = () => (
     <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
-      <DialogContent className="border-slate-700/50 bg-slate-800/50 sm:max-w-md">
+      <DialogContent className="border-slate-700/50 bg-slate-800 sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl text-white">
             <Sparkles className="h-6 w-6 text-yellow-400" />
