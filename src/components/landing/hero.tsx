@@ -22,10 +22,10 @@ export default function HeroLandingSection() {
 
   const carouselImages = [
     { src: "/images/landing/purple_staff.png", alt: "Purple Staff" },
-
     { src: "/images/landing/wizard.png", alt: "Wizard" },
     { src: "/images/landing/dragon.png", alt: "Dragon" },
     { src: "/images/tutorials/blue_slime.png", alt: "Blue Slime" },
+    { src: "/images/landing/cat_girl.png", alt: "Cat Girl" },
     { src: "/images/landing/chest.png", alt: "Chest" },
     { src: "/images/landing/sunset.png", alt: "Sunset" },
     { src: "/images/landing/rifle.png", alt: "Rifle" },
