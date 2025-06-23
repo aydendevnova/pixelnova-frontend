@@ -42,25 +42,3 @@ export type UpdateAccountBody = z.infer<typeof updateAccountSchema> & {
 };
 
 export type CheckUsernameBody = z.infer<typeof checkUsernameSchema>;
-
-export type EstimateGridSizeResponse = {
-  key: string;
-};
-
-export type EstimateGridSizeWASMResponse = {
-  gridSize: number;
-};
-
-export type DownscaleImageWASMResponse = {
-  results: {
-    grid: number;
-    image: string;
-  }[];
-};
-
-export type DownscaleResponse = {
-  a: string;
-  b: number;
-  c: string;
-  image: string;
-};

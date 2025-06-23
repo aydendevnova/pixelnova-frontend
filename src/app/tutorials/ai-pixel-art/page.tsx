@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRightIcon, Sparkle } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 
 export default function GenerateWithAiTutorial() {
   return (

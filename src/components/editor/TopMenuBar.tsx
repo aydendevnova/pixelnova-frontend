@@ -21,7 +21,6 @@ import {
   Sparkle,
   Palette,
 } from "lucide-react";
-import ConvertToPixelArtModal from "../modals/convert-to-pixel-art";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { Layer, ToolType } from "@/types/editor";
@@ -60,10 +59,10 @@ import {
 } from "@/components/ui/dialog";
 import { DialogFooter, DialogHeader } from "../ui/dialog";
 import NextImage from "next/image";
-import AIPixelArtModal from "../modals/ai-pixel-art";
 import ColorizerModal from "../modals/colorizer";
 import SkinColorModal from "../modals/skin-colors";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface TopMenuBarProps {
   onClearCanvas: () => void;
@@ -131,10 +130,6 @@ export default function TopMenuBar({
   const {
     isExportModalOpen,
     setIsExportModalOpen,
-    isConvertToPixelArtOpen,
-    setConvertToPixelArtOpen,
-    isAIPixelArtOpen,
-    setAIPixelArtOpen,
     isSmartColorizerOpen: isAIColorizerOpen,
     setSmartColorizerOpen: setAIColorizerOpen,
     isResizeCanvasOpen,
@@ -150,7 +145,7 @@ export default function TopMenuBar({
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [isSquareFilled, setIsSquareFilled] = useState(false);
   const [isCircleFilled, setIsCircleFilled] = useState(false);
-
+  const router = useRouter();
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const handleToleranceChange = (value: string) => {
@@ -318,8 +313,6 @@ export default function TopMenuBar({
       !isResizeCanvasOpen &&
       !isImportImageOpen &&
       !isExportModalOpen &&
-      !isConvertToPixelArtOpen &&
-      !isAIPixelArtOpen &&
       !isAIColorizerOpen &&
       !isSkinColorsOpen
     ) {
@@ -342,8 +335,7 @@ export default function TopMenuBar({
     isResizeCanvasOpen,
     isImportImageOpen,
     isExportModalOpen,
-    isConvertToPixelArtOpen,
-    isAIPixelArtOpen,
+
     isAIColorizerOpen,
     isSkinColorsOpen,
   ]);
@@ -449,7 +441,7 @@ export default function TopMenuBar({
           <DropdownMenuContent align="start" className="w-48">
             <DropdownMenuItem
               className="gap-2 bg-purple-300 lg:hidden"
-              onSelect={() => setConvertToPixelArtOpen(true)}
+              onSelect={() => router.push("/convert")}
             >
               <Sparkle className="h-4 w-4" />
               <span className="text-black">Convert to Pixel Art</span>
@@ -739,33 +731,7 @@ export default function TopMenuBar({
         onClose={() => setIsExportModalOpen(false)}
         onExport={handleExport}
       />
-      <ConvertToPixelArtModal
-        onSignInRequired={() => setShowSignInModal(true)}
-        onFinish={(img) => {
-          const image = new Image();
-          image.onload = () => {
-            const canvas = document.createElement("canvas");
-            canvas.width = image.width;
-            canvas.height = image.height;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) return;
 
-            ctx.drawImage(image, 0, 0);
-            const imageData = ctx.getImageData(
-              0,
-              0,
-              canvas.width,
-              canvas.height,
-            );
-            onImportImage(imageData);
-          };
-          image.src = img;
-        }}
-      />{" "}
-      <AIPixelArtModal
-        open={isAIPixelArtOpen}
-        onClose={() => setAIPixelArtOpen(false)}
-      />
       <ColorizerModal
         open={isAIColorizerOpen}
         onClose={() => setAIColorizerOpen(false)}

@@ -42,17 +42,6 @@ const nextConfig = {
 
   webpack(config) {
     config.experiments = { asyncWebAssembly: true, layers: true };
-
-    // Handle both WASM and wasm_exec.js
-    config.module.rules.push({
-      test: /\.(wasm|js)$/,
-      include: /public\/(main\.wasm|wasm_exec\.js)$/,
-      type: "asset/resource",
-      generator: {
-        filename: "[name][ext]",
-      },
-    });
-
     return config;
   },
 };

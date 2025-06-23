@@ -2,70 +2,57 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { WasmProvider } from "@/components/wasm-provider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import {
-  useDownscaleImage,
-  useEstimateGridSize,
-  useGenerateImage,
-} from "@/hooks/use-api";
-import {
   ArrowLeftIcon,
-  ArrowRightIcon,
   DownloadIcon,
   Loader2,
   Sparkle,
-  Trash2,
-  UndoIcon,
   AlertCircle,
   HelpCircle,
 } from "lucide-react";
-import { DownscaleImageWASMResponse } from "@/shared-types";
-import {
-  estimateGridSizeWASM,
-  downscaleImageWASM,
-  convertToPng,
-} from "@/lib/image-processing";
-import { useIndexedDB } from "@/hooks/use-indexed-db";
-import { GeneratedImage } from "@/types/types";
+
 import useUser from "@/hooks/use-user";
-import { CreditsDisplay } from "@/components/credits-display";
 import { SignInModal } from "@/components/modals/signin-modal";
 import { ConversionsDisplay } from "@/components/conversions-display";
 import { getMaxConversions, PLAN_LIMITS, UserTier } from "@/lib/constants";
 import { resizeImageWithPica } from "@/lib/utils/image";
-import { PixelArtPreviewModal } from "@/components/modals/pixel-art-preview";
 import Link from "next/link";
+import { PRESET_RESOLUTIONS } from "@/lib/client-image-processing";
+import { useUpdateGenerationCount, useReduceColors } from "@/hooks/use-api";
+import { useSession } from "@supabase/auth-helpers-react";
+import { Label } from "@/components/ui/label";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;
-  recentImages: Array<{
-    id: number;
-    url: string;
-    prompt: string;
-    timestamp: string;
-  }>;
   onHistoryImageSelect: (imageUrl: string) => void;
-  handleDeleteImage: (id: number) => void;
   searchTerm: string;
   setSearchTerm: (searchTerm: string) => void;
   setIsGenerating: (isGenerating: boolean) => void;
   isProcessing: boolean;
   processingStage: string;
+  colorFactor: number;
+  setColorFactor: (factor: number) => void;
 }
 
 const StepOne = ({
   onImageGenerated,
-  recentImages,
   onHistoryImageSelect,
-  handleDeleteImage,
   searchTerm,
   setSearchTerm,
   setIsGenerating,
   isProcessing,
   processingStage,
+  colorFactor,
+  setColorFactor,
 }: StepOneProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -175,474 +162,204 @@ const StepOne = ({
           </div>
         </div>
 
-        {/* Recent Images Section */}
-        {recentImages.length > 0 && (
-          <div className="w-full max-w-md space-y-2">
-            <h4 className="font-medium text-slate-200">
-              Option 3: Recent Images
-            </h4>
-            <div className="grid grid-cols-2 gap-2">
-              {recentImages.slice(0, 6).map((image) => (
-                <div key={image.id} className="group relative">
-                  <img
-                    src={image.url}
-                    alt={image.prompt}
-                    className="h-24 w-full cursor-pointer rounded-lg object-cover transition-opacity hover:opacity-75"
-                    onClick={() => onHistoryImageSelect(image.url)}
-                  />
-                  <button
-                    onClick={() => handleDeleteImage(image.id)}
-                    className="absolute right-1 top-1 rounded-full bg-red-500/80 p-1 opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <Trash2 className="h-4 w-4 text-white" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="ml-auto w-fit">
+          <Label className="text-slate-300">
+            Advanced: Color Reduction Factor
+          </Label>
+          <Input
+            type="number"
+            value={colorFactor}
+            onChange={(e) => setColorFactor(parseInt(e.target.value))}
+            className="bg-slate-900/50 text-slate-300"
+          />
+        </div>
       </div>
     </div>
   );
 };
 
 interface StepTwoProps {
-  uploadedFile: File | null;
   uploadedImage: string | null;
-  showGrid: boolean;
-  setShowGrid: React.Dispatch<React.SetStateAction<boolean>>;
-  gridSize: number;
-  setGridSize: React.Dispatch<React.SetStateAction<number>>;
-  imageDimensions: {
-    width: number;
-    height: number;
-  };
-  originalGridSizeEstimate: number | null;
-  setOriginalGridSizeEstimate: (size: number | null) => void;
-  results: DownscaleImageWASMResponse | null;
-  isDownscaling: boolean;
-  isDownscalingKey: boolean;
-  isEstimatingGridSize: boolean;
-  isEstimatingGridSizeKey: boolean;
-  handleDownscaleImage: (userId: string) => void;
-  userId: string;
+  onProcess: (resolution: number, variationRange: number) => void;
+  isProcessing: boolean;
+  results: Array<{ image: string; resolution: number }> | null;
 }
 
 const StepTwo = ({
-  uploadedFile,
   uploadedImage,
-  showGrid,
-  setShowGrid,
-  setGridSize,
-  gridSize,
-  imageDimensions,
-  originalGridSizeEstimate,
-  setOriginalGridSizeEstimate,
+  onProcess,
+  isProcessing,
   results,
-  isDownscaling,
-  isDownscalingKey,
-  isEstimatingGridSize,
-  isEstimatingGridSizeKey,
-  handleDownscaleImage,
-  userId,
-  isEstimatingGridSizeError,
-}: StepTwoProps & {
-  results: DownscaleImageWASMResponse | null;
-  isDownscaling: boolean;
-  isDownscalingKey: boolean;
-  isEstimatingGridSize: boolean;
-  isEstimatingGridSizeKey: boolean;
-  handleDownscaleImage: (userId: string) => void;
-  userId: string;
-  isEstimatingGridSizeError: boolean;
-}) => {
-  const { profile } = useUser();
-  const [aspectRatio, setAspectRatio] = useState(1);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [isZooming, setIsZooming] = useState(false);
-  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
-  const [zoomOffset, setZoomOffset] = useState({ x: 0, y: 0 });
-  const [zoomFactor, setZoomFactor] = useState(2);
-  const [compositeImage, setCompositeImage] = useState<string | null>(null);
-  const [lastMouseEvent, setLastMouseEvent] = useState<{
-    clientX: number;
-    clientY: number;
-  } | null>(null);
-  const [lastRelativePosition, setLastRelativePosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-  const [showKeyboardTip, setShowKeyboardTip] = useState(false);
-  const [selectedPreview, setSelectedPreview] = useState<{
-    imageUrl: string;
-    gridSize: number;
-  } | null>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const gridCanvasRef = useRef<HTMLCanvasElement>(null);
-  const keyboardTipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [displayedDimensions, setDisplayedDimensions] = useState({
-    width: 0,
-    height: 0,
-  });
+}: StepTwoProps) => {
+  const [resolution, setResolution] = useState<number>(32);
+  const [variationRange, setVariationRange] = useState<number>(1);
+  const [error, setError] = useState<string | null>(null);
 
-  // Create composite image when grid or image changes
+  // Handle keyboard shortcuts
   useEffect(() => {
-    if (!uploadedImage || !originalGridSizeEstimate || !imageRef.current)
-      return;
-
-    const timeoutId = setTimeout(() => {
-      const canvas = document.createElement("canvas");
-      canvas.width = imageDimensions.width;
-      canvas.height = imageDimensions.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      // Clear the entire canvas first
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw the original image
-      const img = new Image();
-      img.onload = () => {
-        // Clear and draw image
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        if (showGrid) {
-          // Draw grid
-          ctx.strokeStyle = "rgba(0,0,0,0.4)";
-          ctx.lineWidth = 1;
-
-          // Calculate grid dimensions based on aspect ratio
-          const horizontalLines = gridSize;
-          const verticalLines = Math.round(gridSize * aspectRatio);
-
-          // Draw vertical lines
-          for (let i = 0; i <= verticalLines; i++) {
-            const x = Math.round((i / verticalLines) * canvas.width);
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvas.height);
-            ctx.stroke();
-          }
-
-          // Draw horizontal lines
-          for (let i = 0; i <= horizontalLines; i++) {
-            const y = Math.round((i / horizontalLines) * canvas.height);
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvas.width, y);
-            ctx.stroke();
-          }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setResolution((prev) => {
+          const increment = e.key === "ArrowUp" ? 1 : -1;
+          const newValue = prev + increment;
+          return Math.max(1, Math.min(256, newValue));
+        });
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (resolution > 0 && resolution <= 256) {
+          onProcess(resolution, variationRange);
         }
-
-        setCompositeImage(canvas.toDataURL());
-      };
-      img.src = uploadedImage;
-    }, 50);
-
-    return () => clearTimeout(timeoutId);
-  }, [
-    uploadedImage,
-    showGrid,
-    gridSize,
-    originalGridSizeEstimate,
-    imageDimensions,
-    aspectRatio,
-  ]);
-
-  // Update zoom position when grid size changes, using stored relative position
-  useEffect(() => {
-    if (lastMouseEvent && isZooming && compositeImage) {
-      // Immediate update for zoom position (not expensive)
-      updateZoomPosition(lastMouseEvent);
-    }
-  }, [gridSize, compositeImage, lastMouseEvent, isZooming]);
-
-  const updateZoomPosition = (mouseEvent: {
-    clientX: number;
-    clientY: number;
-  }) => {
-    if (!imageRef.current || !containerRef.current) return;
-
-    const rect = containerRef.current.getBoundingClientRect();
-    const imageRect = imageRef.current.getBoundingClientRect();
-
-    // Account for padding and borders in the container
-    const containerStyle = window.getComputedStyle(containerRef.current);
-    const paddingTop = parseFloat(containerStyle.paddingTop);
-    const borderTop = parseFloat(containerStyle.borderTopWidth);
-
-    // Calculate relative position within the image, accounting for padding
-    const relativeX = (mouseEvent.clientX - imageRect.left) / imageRect.width;
-    const relativeY = (mouseEvent.clientY - imageRect.top) / imageRect.height;
-
-    // Store the relative position for later use
-    setLastRelativePosition({ x: relativeX, y: relativeY });
-
-    // Set zoom position, accounting for container offsets
-    setZoomPosition({
-      x: mouseEvent.clientX - rect.left,
-      y: mouseEvent.clientY - (rect.top + paddingTop + borderTop),
-    });
-
-    // Calculate the offset in the original image coordinates
-    setZoomOffset({
-      x: imageDimensions.width * relativeX,
-      y: imageDimensions.height * relativeY,
-    });
-  };
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-      e.preventDefault();
-      const increment = e.key === "ArrowUp" ? 1 : -1;
-      setGridSize((prevGridSize) => {
-        const newSize = prevGridSize + increment;
-        return Math.max(1, Math.min(256, newSize));
-      });
-
-      // Keep tooltip visible and reset the hide timer when using keyboard
-      setShowKeyboardTip(true);
-      if (keyboardTipTimeoutRef.current) {
-        clearTimeout(keyboardTipTimeoutRef.current);
-      }
-      keyboardTipTimeoutRef.current = setTimeout(() => {
-        setShowKeyboardTip(false);
-      }, 2000); // Hide after 2 seconds of inactivity
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const mouseEvent = { clientX: e.clientX, clientY: e.clientY };
-    setLastMouseEvent(mouseEvent);
-    updateZoomPosition(mouseEvent);
-  };
-
-  const handleMouseEnter = () => {
-    setIsZooming(true);
-    setShowKeyboardTip(true);
-
-    // Clear any existing timeout
-    if (keyboardTipTimeoutRef.current) {
-      clearTimeout(keyboardTipTimeoutRef.current);
-    }
-    // Hide tip after 3 seconds of no keyboard activity
-    keyboardTipTimeoutRef.current = setTimeout(() => {
-      setShowKeyboardTip(false);
-    }, 3000);
-  };
-
-  const handleMouseLeave = () => {
-    setIsZooming(false);
-    setShowKeyboardTip(false);
-
-    // Clear timeout
-    if (keyboardTipTimeoutRef.current) {
-      clearTimeout(keyboardTipTimeoutRef.current);
-      keyboardTipTimeoutRef.current = null;
-    }
-  };
-
-  // Add event listener once on mount
-  useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      if (keyboardTipTimeoutRef.current) {
-        clearTimeout(keyboardTipTimeoutRef.current);
       }
     };
-  }, []);
 
-  // Add this new useEffect for grid canvas
-  useEffect(() => {
-    if (
-      !gridCanvasRef.current ||
-      !imageRef.current ||
-      !showGrid ||
-      !originalGridSizeEstimate ||
-      !imageLoaded
-    )
-      return;
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [resolution, variationRange, onProcess]);
 
-    const canvas = gridCanvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // Set canvas size to match the image container
-    const rect = imageRef.current.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-
-    // Clear previous grid
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw grid
-    ctx.strokeStyle = "rgba(0,0,0,0.4)";
-    ctx.lineWidth = 1;
-
-    // Calculate grid dimensions based on aspect ratio
-    const horizontalLines = gridSize;
-    const verticalLines = Math.round(gridSize * aspectRatio);
-
-    // Draw vertical lines
-    for (let i = 0; i <= verticalLines; i++) {
-      const x = Math.round((i / verticalLines) * canvas.width);
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
-      ctx.stroke();
+  const handleResolutionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    if (!isNaN(value)) {
+      if (value > 0 && value <= 256) {
+        setResolution(value);
+        setError(null);
+      } else {
+        setError("Resolution must be between 1 and 256");
+      }
     }
-
-    // Draw horizontal lines
-    for (let i = 0; i <= horizontalLines; i++) {
-      const y = Math.round((i / horizontalLines) * canvas.height);
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
-      ctx.stroke();
-    }
-  }, [showGrid, gridSize, aspectRatio, originalGridSizeEstimate, imageLoaded]);
+  };
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row">
+    <div className="flex gap-4">
       {/* Left Side - Controls */}
       <div className="w-full space-y-6 lg:w-80">
-        {/* Grid Settings Card */}
         <div className="relative rounded-2xl border border-slate-700/50 bg-slate-800/50 p-6 backdrop-blur">
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-600/20 via-teal-600/20 to-cyan-600/20 opacity-75 blur-xl"></div>
           <div className="relative space-y-4">
-            <h3 className="text-lg font-medium text-white">Grid Settings</h3>
+            <h3 className="text-lg font-medium text-white">
+              Resolution Settings
+            </h3>
 
-            <div className="flex flex-wrap gap-6 lg:flex-col">
-              <div className="flex items-center justify-between">
-                <span className="mr-2 text-sm text-slate-200">Show Grid</span>
-                <Switch checked={showGrid} onCheckedChange={setShowGrid} />
-              </div>
-
+            <div className="space-y-4">
+              {/* Custom Resolution Input */}
               <div className="space-y-2">
-                <label className="text-sm text-slate-200">Grid Size</label>
+                <label className="text-sm text-slate-200">
+                  Custom Resolution
+                </label>
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
+                    value={resolution}
+                    onChange={handleResolutionChange}
                     min={1}
                     max={256}
-                    value={gridSize}
-                    onChange={(e) => setGridSize(parseInt(e.target.value))}
-                    className="w-full bg-slate-900/50 text-slate-200"
+                    className="bg-slate-900/50 text-slate-200"
                   />
-                  <Button
-                    onClick={() => {
-                      if (originalGridSizeEstimate) {
-                        setGridSize(originalGridSizeEstimate);
-                      }
-                    }}
-                    disabled={
-                      originalGridSizeEstimate === gridSize ||
-                      !originalGridSizeEstimate
-                    }
-                    className="bg-slate-700 text-white hover:bg-slate-600"
-                  >
-                    {!originalGridSizeEstimate ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : isEstimatingGridSizeError ? (
-                      <AlertCircle className="h-4 w-4 text-red-500" />
-                    ) : (
-                      <UndoIcon className="h-4 w-4" size="icon" />
-                    )}
-                  </Button>
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 bg-white px-2"
+                      onClick={() => setResolution((r) => Math.min(256, r + 1))}
+                    >
+                      ↑
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 bg-white px-2"
+                      onClick={() => setResolution((r) => Math.max(1, r - 1))}
+                    >
+                      ↓
+                    </Button>
+                  </div>
                 </div>
+                {error && <p className="text-xs text-red-500">{error}</p>}
+              </div>
+
+              {/* Variation Range Selector */}
+              <div className="space-y-2">
+                <label className="text-sm text-slate-200">Variations</label>
+                <Select
+                  value={variationRange.toString()}
+                  onValueChange={(value) => setVariationRange(parseInt(value))}
+                >
+                  <SelectTrigger className="bg-slate-900/50 text-slate-200">
+                    <SelectValue placeholder="Select variations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">No variations</SelectItem>
+                    <SelectItem value="1">+1 pixel (2 sizes)</SelectItem>
+                    <SelectItem value="3">±3 pixels (7 sizes)</SelectItem>
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-slate-400">
-                  Adjust grid to match pixel size
+                  Generate additional sizes around your target resolution
                 </p>
               </div>
 
+              {/* Preset Buttons */}
               <div className="space-y-2">
-                <label className="text-sm text-slate-200">
-                  Hover Zoom Factor: {zoomFactor.toFixed(1)}x
-                </label>
-                <input
-                  type="range"
-                  min="1.5"
-                  max="4"
-                  step="0.5"
-                  value={zoomFactor}
-                  onChange={(e) => setZoomFactor(parseFloat(e.target.value))}
-                  className="slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-700"
-                />
-                <p className="text-xs text-slate-400">
-                  Adjust zoom magnification level
-                </p>
+                <label className="text-sm text-slate-200">Quick Presets</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {PRESET_RESOLUTIONS.map((preset) => (
+                    <Button
+                      key={preset.value}
+                      variant={
+                        resolution === preset.value ? "default" : "outline"
+                      }
+                      onClick={() => {
+                        setResolution(preset.value);
+                        setError(null);
+                      }}
+                      className={
+                        resolution === preset.value
+                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                          : "border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-slate-700"
+                      }
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
+
+              <Button
+                onClick={() => onProcess(resolution, variationRange)}
+                disabled={isProcessing || resolution <= 0 || resolution > 256}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkle className="mr-2 h-4 w-4" />
+                    Process Image
+                  </>
+                )}
+              </Button>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-slate-200">Instructions</h4>
+              <h4 className="font-medium text-slate-200">Tips</h4>
               <ul className="space-y-1 text-xs text-slate-400">
-                <li>1. Adjust grid size to match image pixels</li>
-                <li>2. Ensure grid lines align with pixel boundaries</li>
-                <li>3. Use grid overlay as a guide for pixel accuracy</li>
-                <li>4. Hover over image to zoom and validate alignment</li>
+                <li>• Use ↑/↓ keys or buttons to adjust resolution</li>
+                <li>• Press Enter to quickly process</li>
+                <li>• Try different resolutions to find the best result</li>
+                <li>• Lower values = more pixelated</li>
+                <li>• Higher values = more detail</li>
+                <li>• Use variations to compare similar sizes</li>
               </ul>
             </div>
-          </div>
-        </div>
-
-        {/* Process Button Card */}
-        <div className="relative rounded-2xl border border-slate-700/50 bg-slate-800/50 p-6 backdrop-blur">
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 opacity-75 blur-xl"></div>
-          <div className="relative">
-            <Button
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
-              disabled={
-                !originalGridSizeEstimate ||
-                isDownscaling ||
-                isDownscalingKey ||
-                isEstimatingGridSize ||
-                isEstimatingGridSizeKey ||
-                (profile?.tier &&
-                  profile.conversion_count >=
-                    getMaxConversions(profile.tier as UserTier))
-              }
-              onClick={() => handleDownscaleImage(userId)}
-            >
-              {isDownscalingKey ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Validating Request
-                </>
-              ) : isDownscaling ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing Image
-                </>
-              ) : (
-                <>
-                  <Sparkle className="mr-2 h-4 w-4" />
-                  Process Image
-                </>
-              )}
-            </Button>
-            {profile?.tier && (
-              <div className="mb-4 mt-4 rounded-lg bg-slate-700/30 p-3 text-sm text-slate-200">
-                <p>
-                  Conversions remaining:{" "}
-                  {PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS ===
-                  Infinity
-                    ? "Unlimited"
-                    : `${Math.max(0, PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS - (profile.conversion_count || 0))} / ${PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS}`}
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
       {/* Right Side - Preview and Results */}
-      <div className="flex-1 space-y-6">
-        {/* Original Image with Grid */}
+      <div className="flex-1">
         {uploadedImage && (
           <div className="relative w-full rounded-xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur lg:min-w-[770px]">
             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 opacity-75 blur-xl"></div>
@@ -658,60 +375,17 @@ const StepTwo = ({
                     <h3 className="text-sm font-medium text-white">
                       Original Image
                     </h3>
-                    <div
-                      ref={containerRef}
-                      className="relative my-auto inline-block w-full max-w-[342px] cursor-crosshair overflow-hidden"
-                      onMouseMove={handleMouseMove}
-                      onMouseEnter={handleMouseEnter}
-                      onMouseLeave={handleMouseLeave}
-                    >
-                      {/* Keyboard Tip Tooltip */}
-                      {showKeyboardTip && (
-                        <div className="absolute z-40 rounded-lg bg-slate-900 px-3 py-2 text-xs text-white shadow-lg">
-                          <div className="flex items-center gap-2">
-                            <span>Press</span>
-                            <kbd className="rounded border border-slate-600 bg-slate-800 px-1.5 py-0.5 font-mono text-xs">
-                              ↑
-                            </kbd>
-                            <kbd className="rounded border border-slate-600 bg-slate-800 px-1.5 py-0.5 font-mono text-xs">
-                              ↓
-                            </kbd>
-                            <span>to adjust grid size</span>
-                          </div>
-                          <div className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-slate-900"></div>
-                        </div>
-                      )}
-                      <img
-                        ref={imageRef}
-                        src={uploadedImage}
-                        alt="Uploaded image"
-                        className="mx-auto block w-full object-contain"
-                        style={{ imageRendering: "pixelated" }}
-                        onLoad={(e) => {
-                          const img = e.currentTarget;
-                          const naturalAspectRatio =
-                            img.naturalWidth / img.naturalHeight;
-                          setAspectRatio(naturalAspectRatio);
-                          setImageLoaded(true);
-                        }}
-                      />
-                      {showGrid && originalGridSizeEstimate && imageLoaded && (
-                        <canvas
-                          ref={gridCanvasRef}
-                          className="pointer-events-none absolute inset-0"
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                          }}
-                        />
-                      )}
-                    </div>
+                    <img
+                      src={uploadedImage}
+                      alt="Original image"
+                      className="h-[40vh] w-auto object-contain"
+                    />
                   </div>
                 </div>
 
                 {/* Processed Results */}
                 {results &&
-                  results.results.map((result, index) => (
+                  results.map((result, index) => (
                     <div
                       key={index}
                       className="group relative rounded-xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur"
@@ -719,101 +393,51 @@ const StepTwo = ({
                       <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 opacity-75 blur-xl"></div>
                       <div className="relative flex flex-col items-center space-y-2">
                         <h3 className="text-sm font-medium text-white">
-                          Grid Size: {result.grid}
+                          {result.resolution}x{result.resolution}
                         </h3>
-                        <div
-                          className="relative aspect-square h-[40vh] w-auto cursor-pointer overflow-hidden rounded-lg border border-slate-600 transition-transform hover:scale-[1.02]"
-                          onClick={() =>
-                            setSelectedPreview({
-                              imageUrl: result.image,
-                              gridSize: result.grid,
-                            })
-                          }
+                        <img
+                          src={result.image}
+                          alt={`Pixelated ${result.resolution}x${result.resolution}`}
+                          className="h-[40vh] w-auto object-contain"
+                          style={{ imageRendering: "pixelated" }}
+                        />
+                        <Button
+                          onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = result.image;
+                            link.download = `pixelated_${result.resolution}x${result.resolution}.png`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                         >
-                          <img
-                            src={result.image}
-                            alt={`Pixelated ${result.grid}x${result.grid}`}
-                            className="h-full w-full object-contain"
-                            style={{ imageRendering: "pixelated" }}
-                          />
-                          <div className="absolute inset-0 bg-slate-900/0 transition-colors hover:bg-slate-900/20" />
-                        </div>
-                        <div className="mx-auto w-[90%]">
-                          <Button
-                            onClick={() => {
-                              const link = document.createElement("a");
-                              link.href = result.image;
-                              link.download = `pixelated_${result.grid}x${result.grid}.png`;
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                            }}
-                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
-                          >
-                            <DownloadIcon className="mr-2 h-4 w-4" />
-                            Download Image
-                          </Button>
-                        </div>
+                          <DownloadIcon className="mr-2 h-4 w-4" />
+                          Download Image
+                        </Button>
                       </div>
                     </div>
                   ))}
               </div>
-
-              {/* Zoom View */}
-              {isZooming && originalGridSizeEstimate && compositeImage && (
-                <div
-                  className="pointer-events-none absolute -top-44 left-20 z-50 h-[30vh] w-[30vh] -translate-x-1/2 overflow-hidden rounded-lg border-2 border-white shadow-2xl"
-                  style={{
-                    backgroundColor: "#1e293b",
-                  }}
-                >
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      backgroundImage: `url(${compositeImage})`,
-                      backgroundPosition: `-${zoomOffset.x * zoomFactor - 18 * 8}px -${
-                        zoomOffset.y * zoomFactor - 18 * 8
-                      }px`,
-                      backgroundSize: `${imageDimensions.width * zoomFactor}px ${
-                        imageDimensions.height * zoomFactor
-                      }px`,
-                      imageRendering: "pixelated",
-                      width: "100%",
-                      height: "100%",
-                    }}
-                  />
-                  {/* Center crosshair */}
-                  <div className="absolute left-1/2 top-1/2 h-px w-10 -translate-x-1/2 -translate-y-1/2 bg-red-400 opacity-80"></div>
-                  <div className="absolute left-1/2 top-1/2 h-10 w-px -translate-x-1/2 -translate-y-1/2 bg-red-400 opacity-80"></div>
-                </div>
-              )}
             </div>
           </div>
         )}
       </div>
-
-      {/* Preview Modal */}
-      <PixelArtPreviewModal
-        isOpen={selectedPreview !== null}
-        onClose={() => setSelectedPreview(null)}
-        imageUrl={selectedPreview?.imageUrl ?? ""}
-        gridSize={selectedPreview?.gridSize ?? 0}
-      />
     </div>
   );
 };
 
-export default function DownscalePageComponent() {
+export default function ConvertImagePageClient() {
   const { profile, user } = useUser();
-  const { saveImage, getImages, deleteImage, searchByPrompt } = useIndexedDB();
+  const session = useSession();
   const router = useRouter();
+  const updateGenerationCount = useUpdateGenerationCount();
+  const reduceColors = useReduceColors({});
 
   const [step, setStep] = useState(1);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [showGrid, setShowGrid] = useState(true);
-  const [gridSize, setGridSize] = useState(16);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [downscaledImage, setDownscaledImage] = useState<string | null>(null);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [pendingImageAction, setPendingImageAction] = useState<{
     type: "upload" | "url";
@@ -825,57 +449,53 @@ export default function DownscalePageComponent() {
     width: 0,
     height: 0,
   });
-  const [originalGridSizeEstimate, setOriginalGridSizeEstimate] = useState<
-    number | null
-  >(null);
   const [showSmallImageWarning, setShowSmallImageWarning] = useState(false);
 
-  const [results, setResults] = useState<DownscaleImageWASMResponse | null>(
-    null,
-  );
+  const [results, setResults] = useState<Array<{
+    image: string;
+    resolution: number;
+  }> | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isDownscaling, setIsDownscaling] = useState(false);
-  const [isEstimatingGridSize, setIsEstimatingGridSize] = useState(false);
-  const [recentImages, setRecentImages] = useState<GeneratedImage[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [estimateGridError, setEstimateGridError] = useState<string | null>(
-    null,
-  );
-  const [processImageError, setProcessImageError] = useState<string | null>(
-    null,
-  );
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStage, setProcessingStage] = useState("");
 
+  const [colorFactor, setColorFactor] = useState<number>(96);
+
+  // Handle browser back button navigation between steps
   useEffect(() => {
-    const loadImages = async () => {
-      try {
-        if (searchTerm.trim()) {
-          const results = await searchByPrompt(searchTerm);
-          setRecentImages(results);
-        } else {
-          const images = await getImages();
-          setRecentImages(images);
-        }
-      } catch (error) {
-        console.error("Failed to load/search images:", error);
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state && state.step) {
+        setStep(state.step);
+        setError(null);
+        setShowSmallImageWarning(false);
+      } else if (step === 2) {
+        // If no state but we're on step 2, go back to step 1
+        setStep(1);
+        setError(null);
+        setShowSmallImageWarning(false);
       }
     };
-    void loadImages();
-  }, [searchTerm, searchByPrompt, getImages]);
 
-  const handleDeleteImage = async (id: number) => {
-    if (typeof id === "undefined") return;
+    window.addEventListener("popstate", handlePopState);
 
-    try {
-      await deleteImage(id);
-      const updatedImages = await getImages();
-      setRecentImages(updatedImages);
-    } catch (error) {
-      console.error("Failed to delete image:", error);
-      setError("Failed to delete image. Please try again.");
+    // Initialize with current step
+    if (step === 1) {
+      window.history.replaceState({ step: 1 }, "", window.location.pathname);
     }
-  };
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [step]);
+
+  // Push new state when step changes
+  useEffect(() => {
+    if (step === 2) {
+      window.history.pushState({ step: 2 }, "", window.location.pathname);
+    }
+  }, [step]);
 
   const handleImageGenerated = async (
     file: File,
@@ -890,18 +510,28 @@ export default function DownscalePageComponent() {
 
     try {
       setIsProcessing(true);
-      setProcessingStage("Converting image format...");
+      setProcessingStage("Optimizing image size...");
 
       // Clear previous results when new image is uploaded
       setResults(null);
       setShowSmallImageWarning(false);
 
-      // Convert to PNG format first
-      const pngImage = await convertToPng(imageUrl);
+      // Initial downscale to 512px max dimension using Pica
+      const resizedImage = await resizeImageWithPica(imageUrl);
 
-      setProcessingStage("Optimizing image size...");
-      // Resize the image using Pica
-      const resizedImage = await resizeImageWithPica(pngImage);
+      // Convert resized image to File object for the API
+      const response = await fetch(resizedImage);
+      const blob = await response.blob();
+      const resizedFile = new File([blob], "resized-image.png", {
+        type: "image/png",
+      });
+
+      setProcessingStage("Reducing colors...");
+      const reducedColorsResult = await reduceColors.mutateAsync({
+        imageFile: resizedFile,
+        factor: colorFactor,
+      });
+      const reducedColorsImage = reducedColorsResult.image;
 
       setProcessingStage("Preparing image preview...");
       const img = new Image();
@@ -914,38 +544,16 @@ export default function DownscalePageComponent() {
           setShowSmallImageWarning(true);
         }
 
-        // Create a new File object from the resized image
-        const response = await fetch(resizedImage);
-        const blob = await response.blob();
-        const resizedFile = new File([blob], file.name, { type: "image/png" });
-
-        setUploadedImage(resizedImage);
-        setUploadedFile(resizedFile);
-
-        if (prompt) {
-          setProcessingStage("Saving to history...");
-          try {
-            await saveImage({
-              url: resizedImage,
-              prompt,
-              timestamp: new Date().toISOString(),
-            });
-            const updatedImages = await getImages();
-            setRecentImages(updatedImages);
-          } catch (error) {
-            console.error("Failed to save generated image:", error);
-          }
-        }
+        setUploadedImage(reducedColorsImage);
+        setDownscaledImage(reducedColorsImage);
+        setUploadedFile(file);
 
         setStep(2);
-        setOriginalGridSizeEstimate(null);
-        setProcessingStage("Analyzing image grid...");
-        await handleEstimateGridSize(resizedImage, user.id);
         setIsProcessing(false);
       };
-      img.src = resizedImage;
+      img.src = reducedColorsImage;
     } catch (error) {
-      console.error("Failed to convert image:", error);
+      console.error("Failed to process image:", error);
       setError("Failed to process image. Please try again.");
       setIsProcessing(false);
     }
@@ -960,18 +568,28 @@ export default function DownscalePageComponent() {
 
     try {
       setIsProcessing(true);
-      setProcessingStage("Converting image format...");
+      setProcessingStage("Optimizing image size...");
 
       // Clear previous results when new image is selected
       setResults(null);
       setShowSmallImageWarning(false);
 
-      // Convert to PNG format first
-      const pngImage = await convertToPng(imageUrl);
-
-      setProcessingStage("Optimizing image size...");
       // Resize the image using Pica
-      const resizedImage = await resizeImageWithPica(pngImage);
+      const resizedImage = await resizeImageWithPica(imageUrl);
+
+      // Convert resized image to File object for the API
+      const response = await fetch(resizedImage);
+      const blob = await response.blob();
+      const resizedFile = new File([blob], "resized-image.png", {
+        type: "image/png",
+      });
+
+      setProcessingStage("Reducing colors...");
+      const reducedColorsResult = await reduceColors.mutateAsync({
+        imageFile: resizedFile,
+        factor: colorFactor,
+      });
+      const reducedColorsImage = reducedColorsResult.image;
 
       setProcessingStage("Preparing image preview...");
       const img = new Image();
@@ -984,20 +602,17 @@ export default function DownscalePageComponent() {
           setShowSmallImageWarning(true);
         }
 
-        const response = await fetch(resizedImage);
+        const response = await fetch(reducedColorsImage);
         const blob = await response.blob();
         const file = new File([blob], "history-image.png", {
           type: "image/png",
         });
-        setUploadedImage(resizedImage);
+        setUploadedImage(reducedColorsImage);
         setUploadedFile(file);
-        setOriginalGridSizeEstimate(null);
-        setProcessingStage("Analyzing image grid...");
-        await handleEstimateGridSize(resizedImage, user.id);
         setStep(2);
         setIsProcessing(false);
       };
-      img.src = resizedImage;
+      img.src = reducedColorsImage;
     } catch (error) {
       console.error("Failed to process history image:", error);
       setError(
@@ -1007,23 +622,18 @@ export default function DownscalePageComponent() {
     }
   };
 
-  const { mutateAsync: downscaleImage, isLoading: isDownscalingKey } =
-    useDownscaleImage({
-      onSuccess: (data) => {},
-    });
-
-  const handleDownscaleImage = async (userId: string) => {
-    if (!uploadedImage || !uploadedFile) return;
+  const handleProcess = async (resolution: number, variationRange: number) => {
+    if (!downscaledImage) return;
 
     // Check conversion limits
     if (
       profile?.tier &&
       profile.conversion_count >= getMaxConversions(profile.tier as UserTier)
     ) {
-      setProcessImageError(
+      setError(
         `You've reached your ${PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS} image conversion limit.${
           profile.tier === "NONE"
-            ? "Upgrade to Pro for unlimited conversions!"
+            ? " Upgrade to Pro for unlimited conversions!"
             : ""
         }`,
       );
@@ -1031,72 +641,56 @@ export default function DownscalePageComponent() {
     }
 
     try {
-      setProcessImageError(null);
-      const { a, b, c, image } = await downscaleImage(uploadedFile);
-      if (!a) {
-        throw new Error("Failed to get key!");
-      }
-      setIsDownscaling(true);
-
-      // Use the pre-processed image from the server as input to WASM
-      const result = await downscaleImageWASM(
-        !!image ? image : uploadedImage,
-        gridSize,
-        a,
-        userId,
-        b,
-        c,
+      setIsProcessing(true);
+      setProcessingStage(
+        variationRange > 0
+          ? "Processing image variations..."
+          : "Processing image...",
       );
 
-      if (!result || !result.results || result.results.length === 0) {
-        throw new Error("Failed to process image - no results returned");
-      }
+      if (variationRange === 0) {
+        // Single image processing - use client-side downscaling with proper aspect ratio
+        const { downscaleImage } = await import(
+          "@/lib/client-image-processing"
+        );
+        const finalImage = await downscaleImage(downscaledImage, resolution);
 
-      setResults(result);
-      setIsDownscaling(false);
-    } catch (error) {
-      console.error("Failed to downscale image:", error);
-      setProcessImageError(
-        error instanceof Error
-          ? error.message
-          : "Failed to process image. Please try again.",
-      );
-      setIsDownscaling(false);
-    }
-  };
+        // Tell server to increment generation count
+        await updateGenerationCount.mutateAsync();
 
-  const {
-    mutateAsync: estimateGridSize,
-    isLoading: isEstimatingGridSizeKey,
-    isError: isEstimateGridSizeError,
-  } = useEstimateGridSize();
+        setResults([{ image: finalImage, resolution }]);
+      } else if (variationRange === 1 || variationRange === 3) {
+        // Handle variations - use client-side downscaling with proper aspect ratio
+        const { downscaleImage } = await import(
+          "@/lib/client-image-processing"
+        );
+        const variations = [];
+        const startRes = resolution - variationRange;
+        const endRes = resolution + (variationRange === 1 ? 1 : variationRange);
 
-  const handleEstimateGridSize = async (imageUrl: string, userId: string) => {
-    try {
-      setEstimateGridError(null);
-      setIsEstimatingGridSize(true);
-      const { a, b, c } = await estimateGridSize();
-      if (!a) {
-        throw new Error("Failed to get key!");
-      }
+        for (let currentRes = startRes; currentRes <= endRes; currentRes++) {
+          if (currentRes <= 0) continue;
 
-      const result = await estimateGridSizeWASM(imageUrl, a, userId, b, c);
-      if (result && result.gridSize && typeof result.gridSize === "number") {
-        setGridSize(result.gridSize);
-        setOriginalGridSizeEstimate(result.gridSize);
-      } else {
-        throw new Error("Failed to estimate grid size - invalid response");
+          setProcessingStage(`Processing ${currentRes}px width variation...`);
+
+          const finalImage = await downscaleImage(downscaledImage, currentRes);
+
+          variations.push({
+            image: finalImage,
+            resolution: currentRes,
+          });
+        }
+
+        // Tell server to increment generation count once for the whole batch
+        await updateGenerationCount.mutateAsync();
+
+        setResults(variations);
       }
     } catch (error) {
-      console.error("Failed to estimate grid size:", error);
-      setEstimateGridError(
-        error instanceof Error
-          ? error.message
-          : "Failed to estimate grid size. Please try again.",
-      );
-      setOriginalGridSizeEstimate(null);
+      console.error("Failed to process image:", error);
+      setError("Failed to process image. Please try again.");
     } finally {
-      setIsEstimatingGridSize(false);
+      setIsProcessing(false);
     }
   };
 
@@ -1109,40 +703,27 @@ export default function DownscalePageComponent() {
         <div className="space-y-4">
           <StepOne
             onImageGenerated={handleImageGenerated}
-            recentImages={recentImages}
             onHistoryImageSelect={handleHistoryImageSelect}
-            handleDeleteImage={handleDeleteImage}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
-            setIsGenerating={setIsGenerating}
+            setIsGenerating={setIsProcessing}
             isProcessing={isProcessing}
             processingStage={processingStage}
+            colorFactor={colorFactor}
+            setColorFactor={setColorFactor}
           />
         </div>
       ),
     },
     {
-      title: "Configure and Process",
-      description: "Adjust grid size and process your image",
+      title: "Set Output Resolution",
+      description: "Choose the resolution for your pixel art",
       content: (
         <StepTwo
-          uploadedFile={uploadedFile}
           uploadedImage={uploadedImage}
-          showGrid={showGrid}
-          setShowGrid={setShowGrid}
-          gridSize={gridSize}
-          setGridSize={setGridSize}
-          imageDimensions={imageDimensions}
-          originalGridSizeEstimate={originalGridSizeEstimate}
-          setOriginalGridSizeEstimate={setOriginalGridSizeEstimate}
+          onProcess={handleProcess}
+          isProcessing={isProcessing}
           results={results}
-          isDownscaling={isDownscaling}
-          isDownscalingKey={isDownscalingKey}
-          isEstimatingGridSize={isEstimatingGridSize}
-          isEstimatingGridSizeKey={isEstimatingGridSizeKey}
-          handleDownscaleImage={handleDownscaleImage}
-          userId={user?.id ?? ""}
-          isEstimatingGridSizeError={isEstimateGridSizeError}
         />
       ),
     },
@@ -1224,18 +805,6 @@ export default function DownscalePageComponent() {
             <AlertTitle>{error}</AlertTitle>
           </Alert>
         )}
-        {estimateGridError && (
-          <Alert variant="destructive" className="mb-4 flex items-center gap-2">
-            <AlertCircle className="mr-2 h-4 w-4" />
-            <AlertTitle>{estimateGridError}</AlertTitle>
-          </Alert>
-        )}
-        {processImageError && (
-          <Alert variant="destructive" className="mb-4 flex items-center gap-2">
-            <AlertCircle className="mr-2 h-4 w-4" />
-            <AlertTitle>{processImageError}</AlertTitle>
-          </Alert>
-        )}
 
         <div className="mb-4 flex items-center gap-4">
           {/* Buttons */}
@@ -1247,8 +816,6 @@ export default function DownscalePageComponent() {
                   if (step > 1) {
                     setStep((step) => step - 1);
                     setError(null);
-                    setEstimateGridError(null);
-                    setProcessImageError(null);
                     setShowSmallImageWarning(false);
                   }
                 }}
@@ -1315,23 +882,7 @@ export default function DownscalePageComponent() {
             </Alert>
           )}
 
-        <div className="rounded-lg">
-          {step === 1 ? (
-            <StepOne
-              onImageGenerated={handleImageGenerated}
-              recentImages={recentImages}
-              onHistoryImageSelect={handleHistoryImageSelect}
-              handleDeleteImage={handleDeleteImage}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              setIsGenerating={setIsGenerating}
-              isProcessing={isProcessing}
-              processingStage={processingStage}
-            />
-          ) : (
-            currentStep.content
-          )}
-        </div>
+        <div className="rounded-lg">{currentStep.content}</div>
       </div>
     </div>
   );

@@ -60,7 +60,11 @@ export function extractColors(imageData: ImageData): string[] {
   return Array.from(colorSet);
 }
 
-export async function resizeImageWithPica(imageUrl: string): Promise<string> {
+export async function resizeImageWithPica(
+  imageUrl: string,
+  targetWidth?: number,
+  targetHeight?: number,
+): Promise<string> {
   // Create an image element to load the source
   const img = new Image();
   await new Promise((resolve, reject) => {
@@ -69,18 +73,20 @@ export async function resizeImageWithPica(imageUrl: string): Promise<string> {
     img.src = imageUrl;
   });
 
-  // Calculate new dimensions maintaining aspect ratio
-  let newWidth = img.width;
-  let newHeight = img.height;
-  const maxDimension = 512;
+  // Calculate new dimensions maintaining aspect ratio if no target dimensions provided
+  let newWidth = targetWidth ?? img.width;
+  let newHeight = targetHeight ?? img.height;
 
-  if (newWidth > maxDimension || newHeight > maxDimension) {
-    if (newWidth > newHeight) {
-      newHeight = Math.round((newHeight * maxDimension) / newWidth);
-      newWidth = maxDimension;
-    } else {
-      newWidth = Math.round((newWidth * maxDimension) / newHeight);
-      newHeight = maxDimension;
+  if (!targetWidth && !targetHeight) {
+    const maxDimension = 512;
+    if (newWidth > maxDimension || newHeight > maxDimension) {
+      if (newWidth > newHeight) {
+        newHeight = Math.round((newHeight * maxDimension) / newWidth);
+        newWidth = maxDimension;
+      } else {
+        newWidth = Math.round((newWidth * maxDimension) / newHeight);
+        newHeight = maxDimension;
+      }
     }
   }
 

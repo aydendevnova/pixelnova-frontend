@@ -24,14 +24,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useGeneratePixelArt } from "@/hooks/use-api";
 import useUser from "@/hooks/use-user";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Switch } from "@/components/ui/switch";
 import {
   downloadAsZip,
   downloadAsSpritesheet,
   ImageResult,
 } from "@/lib/utils/download";
 import { SignInModal } from "@/components/modals/signin-modal";
-import { useModal } from "@/hooks/use-modal";
 import { getMaxGenerations, PLAN_LIMITS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -50,6 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import toast from "react-hot-toast";
 
 export default function GeneratePageSuspense() {
   return (
@@ -159,8 +158,10 @@ function GeneratePage() {
             return newSet;
           });
         },
-        onError: () => {
+        onError: (error: any) => {
           setLoadingMessage("");
+          toast.error(error);
+          throw error;
         },
       },
     );
@@ -386,9 +387,9 @@ function GeneratePage() {
               <Alert variant="destructive" className="mt-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  {error instanceof Error
-                    ? error.message
-                    : "Failed to generate image"}
+                  {typeof error === "string"
+                    ? error
+                    : "An error occurred while generating your pixel art. Please try again."}
                 </AlertDescription>
               </Alert>
             )}

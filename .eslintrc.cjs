@@ -10,16 +10,7 @@ const config = {
     "plugin:@typescript-eslint/recommended-type-checked",
     "plugin:@typescript-eslint/stylistic-type-checked",
   ],
-  ignorePatterns: [
-    "public/wasm_exec.js",
-    "build/",
-    "src/workers/image.worker.js",
-    "public/*.js",
-    "**/image.worker.js",
-    "**/*.wasm",
-    "dist/*",
-    ".next/*",
-  ],
+  ignorePatterns: ["build/", "dist/*", ".next/*"],
   rules: {
     "@typescript-eslint/array-type": "off",
     "@typescript-eslint/consistent-type-definitions": "off",
@@ -61,12 +52,6 @@ const config = {
     "@typescript-eslint/no-empty-interface": "off",
     "@typescript-eslint/dot-notation": "warn",
   },
-  overrides: [
-    {
-      files: ["!public/wasm_exec.js", "!src/workers/image.worker.js"],
-      excludedFiles: ["public/wasm_exec.js", "src/workers/image.worker.js"],
-    },
-  ],
 };
 
 module.exports = config;

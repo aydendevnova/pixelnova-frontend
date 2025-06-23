@@ -44,13 +44,5 @@
     "../../packages/shared/**/*.ts",
     "src/app/terms-of-service"
   ],
-  "exclude": [
-    "node_modules",
-    "public/wasm_exec.js",
-    "src/workers/image.worker.js",
-    "./wasm/build",
-    "public/**/*.js",
-    "out",
-    "next.config.js"
-  ]
+  "exclude": ["node_modules", "public/**/*.js", "out", "next.config.js"]
 }

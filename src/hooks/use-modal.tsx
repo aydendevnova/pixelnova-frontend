@@ -17,14 +17,6 @@ interface ModalStore {
   isExportModalOpen: boolean;
   setIsExportModalOpen: (open: boolean) => void;
 
-  // Convert to Pixel Art Modal
-  isConvertToPixelArtOpen: boolean;
-  setConvertToPixelArtOpen: (open: boolean) => void;
-
-  // AI Pixel Art Modal
-  isAIPixelArtOpen: boolean;
-  setAIPixelArtOpen: (open: boolean) => void;
-
   // AI Colorizer Modal
   isSmartColorizerOpen: boolean;
   setSmartColorizerOpen: (open: boolean) => void;
@@ -54,14 +46,6 @@ export const useModal = create<ModalStore>((set, get) => ({
   isExportModalOpen: false,
   setIsExportModalOpen: (open) => set({ isExportModalOpen: open }),
 
-  // Convert to Pixel Art Modal
-  isConvertToPixelArtOpen: false,
-  setConvertToPixelArtOpen: (open) => set({ isConvertToPixelArtOpen: open }),
-
-  // AI Pixel Art Modal
-  isAIPixelArtOpen: false,
-  setAIPixelArtOpen: (open) => set({ isAIPixelArtOpen: open }),
-
   // Colorizer Modal
   isSmartColorizerOpen: false,
   setSmartColorizerOpen: (open) => set({ isSmartColorizerOpen: open }),
@@ -78,8 +62,6 @@ export const useModal = create<ModalStore>((set, get) => ({
       state.isClearCanvasWarningOpen ||
       state.isImportImageOpen ||
       state.isExportModalOpen ||
-      state.isConvertToPixelArtOpen ||
-      state.isAIPixelArtOpen ||
       state.isSmartColorizerOpen ||
       state.isSkinColorsOpen
     );

@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useHistoryStore } from "@/store/historyStore";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Undo2, Redo2, Clock, XIcon, HistoryIcon } from "lucide-react";
+import { Undo2, Redo2, Clock, XIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface HistoryPanelProps {

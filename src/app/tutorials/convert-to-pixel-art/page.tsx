@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRightIcon, Sparkle } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 
 export default function ConvertAiImageTutorial() {
   return (
@@ -150,18 +150,24 @@ export default function ConvertAiImageTutorial() {
                     >
                       conversion tool
                     </Link>{" "}
-                    to transform your AI-generated image into authentic pixel
-                    art with a consistent grid.
+                    to transform your AI-generated image into real pixel art.
                   </p>
                   <ol className="space-y-2 text-sm text-slate-300">
                     <li>
-                      1. Upload your AI-generated image or import with link
+                      1. Upload your AI-generated image or import with URL
+                    </li>
+
+                    <li>
+                      2. Set target width resolution (height scales
+                      proportionally)
                     </li>
                     <li>
-                      2. Adjust the grid size to match the intended pixel scale
+                      3. Try different resolutions until you find the one that
+                      looks best
                     </li>
-                    <li>3. Use the zoom tool to verify pixel alignment</li>
-                    <li>4. Process the image to create true pixel art</li>
+                    <li>
+                      4. Download your pixel art with preserved aspect ratio
+                    </li>
                   </ol>
                 </div>
                 <div className="relative overflow-hidden rounded-lg">
