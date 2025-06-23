@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Separator } from "./ui/separator";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useToast } from "./ui/use-toast";
 import { Toaster } from "./ui/toaster";
-import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -18,7 +16,6 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showEmailSignIn, setShowEmailSignIn] = useState(false);
-  const { toast } = useToast();
   const router = useRouter();
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -69,15 +66,18 @@ export default function Auth() {
         provider: "github",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          skipBrowserRedirect: false,
         },
       });
 
       if (error) throw error;
-      // OAuth provider will handle the redirect
+
+      // Note: GitHub OAuth will handle the redirect automatically
+      // but we can still redirect here as a fallback
+      // router.push("/");
     } catch (err) {
       console.error("Sign in error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
       setLoading(false);
     }
   };
@@ -91,15 +91,16 @@ export default function Auth() {
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          skipBrowserRedirect: false,
         },
       });
 
       if (error) throw error;
-      // OAuth provider will handle the redirect
+
+      // router.push("/");
     } catch (err) {
       console.error("Sign in error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
       setLoading(false);
     }
   };
