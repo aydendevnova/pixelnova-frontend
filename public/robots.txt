@@ -1,0 +1,60 @@
+# Robots.txt for PixelNova.app
+# Last updated: December 2024
+
+# Allow all search engines to crawl public content
+User-agent: *
+Allow: /
+
+# Block access to sensitive areas
+Disallow: /admin/
+Disallow: /account/
+Disallow: /editor/
+Disallow: /_next/
+Disallow: /auth/
+Disallow: /signin/
+Disallow: /signup/
+Disallow: /sign-in/
+Disallow: /sign-up/
+Disallow: /login/
+Disallow: /reset-password/
+Disallow: /update-password/
+
+# Block dynamic/user-specific pages
+Disallow: /gallery
+Disallow: /cancel/
+Disallow: /success/
+Disallow: /limits/
+
+# Allow important pages for SEO
+Allow: /pricing/
+Allow: /tutorials/
+Allow: /privacy-policy/
+Allow: /terms-of-service/
+Allow: /support/
+
+# Block common files that shouldn't be indexed
+Disallow: /*.json$
+Disallow: /*.xml$
+Disallow: /*.txt$
+Disallow: /sitemap*.xml
+
+# Set crawl delay for aggressive bots (optional)
+# Crawl-delay: 1
+
+# Sitemap location (uncomment when you have a sitemap)
+# Sitemap: https://pixelnova.app/sitemap.xml
+
+# Specific rules for major search engines
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /account/
+Disallow: /editor/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /account/
+Disallow: /editor/
