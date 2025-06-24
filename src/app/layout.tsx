@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "Pixel Nova | AI Pixel Art Generator and Tools",
@@ -93,6 +94,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
       <body>
+        <Script
+          src="https://cloud.umami.is/script.js"
+          data-website-id="a4fb1317-1159-4702-8b14-7b24dbbfab06"
+          strategy="afterInteractive"
+        />
         <LayoutClient>{children}</LayoutClient>
       </body>
     </html>
