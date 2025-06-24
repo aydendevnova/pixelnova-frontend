@@ -1,9 +1,4 @@
 import { Metadata } from "next";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import Image from "next/image";
 import HeroLandingSection from "@/components/landing/hero";
 import PixelPerfectLandingSection from "@/components/landing/pixel-perfect";
 import AiGenerateLandingSection from "@/components/landing/ai-generate";
@@ -11,39 +6,87 @@ import PricingSection from "@/components/pricing/pricing-section";
 import ColorizerLandingSection from "@/components/landing/colorizer";
 import SkinToneLandingSection from "@/components/landing/skin-tones";
 import EditorLandingSection from "@/components/landing/editor";
-import { ChevronRight } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Pixel Nova | AI-Powered Pixel Art Creation Suite",
+  title: "Pixel Nova | AI Pixel Art Generator and Tools",
   description:
-    "Transform your ideas into stunning pixel art instantly. Create, fix, and perfect pixel art with our AI-powered tools. Features text-to-pixel-art generation, AI image conversion, colorization, and more.",
+    "Create stunning pixel art instantly with AI. Transform text and images into beautiful pixel art using advanced AI generation, smart colorization, and editing tools. Perfect for game developers, artists, and designers.",
   keywords: [
-    "ai pixel art",
-    "pixel art generator",
+    // Primary Keywords
+    "AI pixel art generator",
+    "AI pixel art creator",
     "text to pixel art",
-    "ai pixel art creator",
-    "pixel art editor",
-    "convert to pixel art",
+    "image to pixel art converter",
+    "pixel art AI tools",
+
+    // Feature-specific Keywords
+    "AI art generation",
     "pixel art colorizer",
+    "smart color palette",
     "skin tone generator",
-    "game development",
-    "digital art",
-    "retro art",
-    "8-bit art",
-  ],
+    "pixel perfect conversion",
+
+    // Use-case Keywords
+    "game asset creation",
+    "pixel sprite generator",
+    "retro game art maker",
+    "pixel character creator",
+    "8-bit art generator",
+
+    // Technical Keywords
+    "automated pixel art",
+    "AI image processing",
+    "pixel art automation",
+    "professional pixel editor",
+    "pixel art software",
+
+    // Intent-based Keywords
+    "create pixel art online",
+    "generate pixel art with AI",
+    "convert images to pixel art",
+    "make pixel art from text",
+    "pixel art for games",
+  ].join(", "),
   openGraph: {
-    title: "Pixel Nova | AI-Powered Pixel Art Creation Suite",
+    title: "Pixel Nova | AI-Powered Pixel Art Generator & Professional Editor",
     description:
-      "Transform your ideas into stunning pixel art instantly with our AI-powered tools.",
+      "Transform text and images into stunning pixel art instantly with AI. Professional-grade tools for game developers, artists, and designers. Generate, colorize, and perfect your pixel art.",
     type: "website",
     images: [
       {
-        url: "/logo-og.png",
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Pixel Nova Logo",
+        alt: "Pixel Nova - AI Pixel Art Generation Suite",
       },
     ],
+    siteName: "Pixel Nova",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pixel Nova | Create Pixel Art with AI",
+    description:
+      "Generate stunning pixel art from text or images using AI. Professional tools for game developers and artists. Try our AI pixel art generator now!",
+    images: ["/og-image.jpg"],
+    creator: "@thepixelnova",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    google: "verification_token",
+  },
+  alternates: {
+    canonical: "https://pixelnova.app",
   },
 };
 

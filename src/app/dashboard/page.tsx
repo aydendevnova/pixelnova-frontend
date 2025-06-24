@@ -3,8 +3,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { env } from "@/env";
-
 export const metadata: Metadata = {
   title: "Pixel Nova | AI Pixel Art Editor & Generator",
   description:

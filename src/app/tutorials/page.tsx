@@ -1,9 +1,74 @@
-"use client";
+import { Metadata } from "next";
 import { Wand2, ImageDown } from "lucide-react";
-
 import Link from "next/link";
 import Image from "next/image";
 import { LucideIcon, Calendar, Clock } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Pixel Nova Tutorials | Generate Pixel Art with AI",
+  description:
+    "Master pixel art creation with our comprehensive tutorials. Learn AI generation, image conversion, and professional techniques. Perfect for beginners and experienced pixel artists alike.",
+  keywords: [
+    // Content Types
+    "pixel art tutorials",
+    "AI art guides",
+    "pixel art learning",
+    "game art tutorials",
+    "pixel art techniques",
+
+    // Topics
+    "AI pixel art creation",
+    "image conversion guide",
+    "pixel art basics",
+    "character design tutorial",
+    "game asset creation",
+
+    // Skill Levels
+    "beginner pixel art",
+    "advanced techniques",
+    "professional pixel art",
+    "game development guides",
+    "pixel art masterclass",
+  ].join(", "),
+  openGraph: {
+    title: "Pixel Art Tutorials | Learn AI Art Creation",
+    description:
+      "Learn professional pixel art creation techniques. Comprehensive guides for AI generation, conversion, and more.",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Pixel Nova Tutorials - Learn Pixel Art Creation",
+      },
+    ],
+    siteName: "Pixel Nova",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Learn Pixel Art Creation | Free Tutorials",
+    description:
+      "Master pixel art with our comprehensive guides. From basics to advanced AI techniques.",
+    images: ["/og-image.jpg"],
+    creator: "@thepixelnova",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: "https://pixelnova.app/tutorials",
+  },
+};
 
 export default function TutorialsPage() {
   return (
