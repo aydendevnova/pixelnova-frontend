@@ -53,14 +53,13 @@ export function SignInModal({
           </DialogHeader>
           <div className="flex flex-col gap-6 py-6">
             <div className="space-y-4">
-              <p className="text-base text-slate-300">
+              <p className="text-base text-slate-200">
                 {isPricingRoute
-                  ? "Please sign in to upgrade your account and unlock premium features. Creating an account is free and only takes a few seconds."
-                  : `Please sign in to use the ${featureName}. It only takes a few
-                  seconds and all your work will be saved automatically.`}
+                  ? "Unlock premium features and take your creativity to the next level. Create a free account in seconds to get started."
+                  : `Continue with ${featureName} and keep your work automatically saved. Sign in takes just a moment.`}
               </p>
-              <p className="text-base text-slate-300">
-                Join our creative community today!
+              <p className="text-base text-slate-200">
+                Access exclusive tools and features today!
               </p>
             </div>
             <div className="flex justify-end gap-3">

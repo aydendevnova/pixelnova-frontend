@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { useGeneratePixelArt } from "@/hooks/use-api";
-import useUser from "@/hooks/use-user";
+import useUser, { setPostSignInRedirectUrl } from "@/hooks/use-user";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   downloadAsZip,
@@ -101,7 +101,15 @@ function AIGeneratePage() {
     "128x128": 128,
   };
 
-  // Effect to set initial prompt from URL
+  // Effect to load prompt from localStorage on mount
+  useEffect(() => {
+    const savedPrompt = localStorage.getItem("ai-generator-prompt");
+    if (savedPrompt && !searchParams.get("prompt")) {
+      setPrompt(savedPrompt);
+    }
+  }, []);
+
+  // Effect to set initial prompt from URL (takes precedence over localStorage)
   useEffect(() => {
     const urlPrompt = searchParams.get("prompt");
     if (urlPrompt) {
@@ -109,8 +117,16 @@ function AIGeneratePage() {
     }
   }, [searchParams]);
 
+  // Effect to save prompt to localStorage whenever it changes
+  useEffect(() => {
+    if (prompt.trim()) {
+      localStorage.setItem("ai-generator-prompt", prompt);
+    }
+  }, [prompt]);
+
   const handleGenerate = async () => {
     if (!isSignedIn) {
+      setPostSignInRedirectUrl(window.location.href);
       setSignInModalOpen(true);
       return;
     }

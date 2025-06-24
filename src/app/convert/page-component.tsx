@@ -22,6 +22,7 @@ import {
 
 import useUser from "@/hooks/use-user";
 import { SignInModal } from "@/components/modals/signin-modal";
+import { setPostSignInRedirectUrl } from "@/hooks/use-user";
 import { ConversionsDisplay } from "@/components/conversions-display";
 import { getMaxConversions, PLAN_LIMITS, UserTier } from "@/lib/constants";
 import { resizeImageWithPica } from "@/lib/utils/image";
@@ -504,6 +505,7 @@ export default function ConvertImagePageClient() {
   ) => {
     if (!user?.id) {
       setPendingImageAction({ type: "upload", file, imageUrl, prompt });
+      setPostSignInRedirectUrl(window.location.href);
       setShowSignInModal(true);
       return;
     }
@@ -562,6 +564,7 @@ export default function ConvertImagePageClient() {
   const handleHistoryImageSelect = async (imageUrl: string) => {
     if (!user?.id) {
       setPendingImageAction({ type: "url", imageUrl });
+      setPostSignInRedirectUrl(window.location.href);
       setShowSignInModal(true);
       return;
     }

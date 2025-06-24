@@ -15,6 +15,7 @@ import { type Database } from "@/lib/types_db";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { env } from "@/env";
 import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -24,6 +25,30 @@ type UserContextType = {
   isLoading: boolean;
   isSignedIn: boolean;
   invalidateUser: () => Promise<void>;
+  setPostSignInRedirect: (url: string) => void;
+  clearPostSignInRedirect: () => void;
+};
+
+// Utility functions for managing redirect URLs
+const REDIRECT_KEY = "post-signin-redirect";
+
+export const setPostSignInRedirectUrl = (url: string) => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(REDIRECT_KEY, url);
+  }
+};
+
+export const getPostSignInRedirectUrl = (): string | null => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem(REDIRECT_KEY);
+  }
+  return null;
+};
+
+export const clearPostSignInRedirectUrl = () => {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(REDIRECT_KEY);
+  }
 };
 
 const UserContext = createContext<UserContextType>({
@@ -34,12 +59,20 @@ const UserContext = createContext<UserContextType>({
   invalidateUser: async () => {
     throw new Error("Invalidate user function not implemented");
   },
+  setPostSignInRedirect: () => {
+    throw new Error("setPostSignInRedirect function not implemented");
+  },
+  clearPostSignInRedirect: () => {
+    throw new Error("clearPostSignInRedirect function not implemented");
+  },
 });
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const supabaseClient = useSupabaseClient<Database>();
   const session = useSession();
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   // Query for worker-verified user data
   const { data: workerUser, isLoading: workerLoading } = useQuery({
@@ -160,12 +193,43 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await queryClient.invalidateQueries({ queryKey: ["profile"] });
   };
 
+  // Handle post-signin redirect
+  useEffect(() => {
+    const isSignedIn = !!session?.user && !!workerUser;
+
+    if (isSignedIn && !hasRedirected) {
+      const redirectUrl = getPostSignInRedirectUrl();
+
+      if (redirectUrl) {
+        console.log("Redirecting to:", redirectUrl);
+        clearPostSignInRedirectUrl();
+        setHasRedirected(true);
+
+        // Use a timeout to ensure the component has fully rendered
+        setTimeout(() => {
+          router.push(redirectUrl);
+        }, 100);
+      }
+    }
+
+    // Reset hasRedirected when user signs out
+    if (!session?.user) {
+      setHasRedirected(false);
+    }
+  }, [session?.user, workerUser, router, hasRedirected]);
+
   const value = {
     user: session?.user ?? null,
     profile: profile ?? null,
     isLoading: !!session?.user && (profileLoading || workerLoading),
     isSignedIn: !!session?.user && !!workerUser,
     invalidateUser,
+    setPostSignInRedirect: (url: string) => {
+      setPostSignInRedirectUrl(url);
+    },
+    clearPostSignInRedirect: () => {
+      clearPostSignInRedirectUrl();
+    },
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
