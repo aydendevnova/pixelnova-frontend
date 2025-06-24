@@ -24,6 +24,7 @@ import {
   Users,
   Pencil,
   Image,
+  Loader2,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { ConversionsDisplay } from "../conversions-display";
@@ -37,7 +38,7 @@ const pathsWithBackground = [
 ];
 
 export default function Header() {
-  const { profile, isSignedIn } = useUser();
+  const { profile, isLoading, isSignedIn } = useUser();
   const pathname = usePathname();
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -103,6 +104,15 @@ export default function Header() {
                   {item.label}
                 </Link>
               ))}
+              {profile?.is_admin && (
+                <Link
+                  key="/admin"
+                  href="/admin"
+                  className="mx-2 text-base text-white hover:text-gray-200"
+                >
+                  Admin
+                </Link>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -316,8 +326,13 @@ export default function Header() {
                   router.push("/login");
                 }
               }}
+              disabled={isLoading}
             >
-              Sign in
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Sign in"
+              )}
             </Button>
             <Dialog
               open={isSignInModalOpen}

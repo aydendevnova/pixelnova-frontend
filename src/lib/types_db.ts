@@ -13,22 +13,39 @@ export type Database = {
         Row: {
           created_at: string
           id: number
+          level: string | null
           message: string | null
+          metadata: string | null
           type: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: number
+          level?: string | null
           message?: string | null
+          metadata?: string | null
           type?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: number
+          level?: string | null
           message?: string | null
+          metadata?: string | null
           type?: string | null
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -41,6 +58,7 @@ export type Database = {
           generation_count: number
           generation_count_lifetime: number
           id: string
+          is_admin: boolean
           pro_overriden: boolean
           suspended: boolean
           tier: Database["public"]["Enums"]["user_tier"]
@@ -58,6 +76,7 @@ export type Database = {
           generation_count?: number
           generation_count_lifetime?: number
           id: string
+          is_admin?: boolean
           pro_overriden?: boolean
           suspended?: boolean
           tier?: Database["public"]["Enums"]["user_tier"]
@@ -75,6 +94,7 @@ export type Database = {
           generation_count?: number
           generation_count_lifetime?: number
           id?: string
+          is_admin?: boolean
           pro_overriden?: boolean
           suspended?: boolean
           tier?: Database["public"]["Enums"]["user_tier"]
