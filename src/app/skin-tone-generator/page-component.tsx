@@ -38,9 +38,9 @@ import { sortByLuminance } from "@/lib/image-processing";
 import {
   generateSkinTones,
   downloadVariations,
-  downloadAsSpritesheet,
   type GeneratedVariant,
 } from "@/lib/skin-tone-processing";
+import { type ImageResult, downloadAsSpritesheet } from "@/lib/utils/download";
 import {
   Accordion,
   AccordionContent,
@@ -345,11 +345,40 @@ export default function SkinToneGeneratorComponent() {
           (variant): variant is GeneratedVariant => variant !== undefined,
         );
 
-      await downloadAsSpritesheet(
-        selectedVariantsArray.map(({ name, image }) => ({
-          name,
-          image,
-        })),
+      // Convert variants to ImageResult format
+      const imageResults = await Promise.all(
+        selectedVariantsArray.map(async (variant) => {
+          const img = new Image();
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
+          return new Promise<ImageResult>((resolve) => {
+            img.onload = () => {
+              canvas.width = img.width;
+              canvas.height = img.height;
+              ctx?.drawImage(img, 0, 0);
+              const imageData = ctx?.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+              );
+              if (imageData) {
+                resolve({
+                  preset: variant.name,
+                  imageData: imageData,
+                });
+              }
+            };
+            img.src = variant.image;
+          });
+        }),
+      );
+
+      // Use the global spritesheet function with selected indices
+      downloadAsSpritesheet(
+        imageResults,
+        new Set(Array.from({ length: imageResults.length }, (_, i) => i)),
       );
     } catch (error) {
       console.error("Error downloading spritesheet:", error);
@@ -397,6 +426,32 @@ export default function SkinToneGeneratorComponent() {
       setSelectedVariants(new Set(variants.map((_, i) => i)));
     }
   }, [variants]);
+
+  const generateUniqueFilename = (variant: { name: string; image: string }) => {
+    const timestamp = Date.now();
+    const randomId = Math.floor(Math.random() * 1000);
+    const sanitizedName = variant.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_");
+    return `skin_tone_${sanitizedName}_${timestamp}_${randomId}.png`;
+  };
+
+  const handleSingleDownload = async (
+    variant: { name: string; image: string },
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation();
+    const response = await fetch(variant.image);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = generateUniqueFilename(variant);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20 ">
@@ -730,11 +785,19 @@ export default function SkinToneGeneratorComponent() {
                 </DropdownMenu>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-3">
+              <div
+                className={`grid gap-4 ${
+                  variants.length === 1
+                    ? "mx-auto max-w-xl grid-cols-1"
+                    : variants.length === 2
+                      ? "mx-auto max-w-3xl grid-cols-2"
+                      : "grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-3"
+                }`}
+              >
                 {variants.map((variant, index) => (
                   <div
                     key={variant.id}
-                    className={`flex cursor-pointer flex-col items-center rounded-xl border p-4 ${
+                    className={`group flex cursor-pointer flex-col items-center rounded-xl border p-4 ${
                       selectedVariants.has(index)
                         ? "border-amber-400 bg-amber-500/10"
                         : "border-slate-600 bg-slate-700/20"
@@ -774,6 +837,13 @@ export default function SkinToneGeneratorComponent() {
                         className="h-full w-full object-contain"
                         style={{ imageRendering: "pixelated" }}
                       />
+                      {/* Download button in top right */}
+                      <button
+                        onClick={(e) => handleSingleDownload(variant, e)}
+                        className="absolute right-2 top-2 rounded-full bg-slate-800/80 p-2 opacity-0 transition-all duration-200 hover:scale-110 hover:bg-slate-700/80 group-hover:opacity-100"
+                      >
+                        <Download className="h-4 w-4 text-white" />
+                      </button>
                     </div>
                   </div>
                 ))}

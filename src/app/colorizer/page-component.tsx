@@ -193,6 +193,33 @@ export default function ColorizerPageComponent() {
     setResults([]);
   };
 
+  const generateUniqueFilename = (result: ImageResult, index: number) => {
+    const timestamp = Date.now();
+    const randomId = Math.floor(Math.random() * 1000);
+    const sanitizedPreset = result.preset
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_");
+    return `colorized_${sanitizedPreset}_${timestamp}_${randomId}.png`;
+  };
+
+  const handleSingleDownload = async (
+    result: ImageResult,
+    imageUrl: string,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation();
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = generateUniqueFilename(result, 0);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20">
       <div className="duration-500 animate-in fade-in">
@@ -456,7 +483,7 @@ export default function ColorizerPageComponent() {
                 {results.map((result, index) => (
                   <div
                     key={index}
-                    className={`cursor-pointer rounded-xl border p-4 ${
+                    className={`group cursor-pointer rounded-xl border p-4 ${
                       selectedResults.has(index)
                         ? "border-amber-400 bg-amber-500/10"
                         : "border-slate-600 bg-slate-700/20"
@@ -489,7 +516,7 @@ export default function ColorizerPageComponent() {
                         onClick={(e: MouseEvent) => e.stopPropagation()}
                       />
                     </div>
-                    <div className="aspect-square overflow-hidden rounded-lg">
+                    <div className="relative aspect-square overflow-hidden rounded-lg">
                       <img
                         src={imageUrls[index]}
                         alt={`${result.preset} Result`}
@@ -498,6 +525,18 @@ export default function ColorizerPageComponent() {
                           imageRendering: "pixelated",
                         }}
                       />
+                      {/* Download button in top right */}
+                      <button
+                        onClick={(e) => {
+                          const imageUrl = imageUrls[index];
+                          if (imageUrl) {
+                            void handleSingleDownload(result, imageUrl, e);
+                          }
+                        }}
+                        className="absolute right-2 top-2 rounded-full bg-slate-800/80 p-2 opacity-0 transition-all duration-200 hover:scale-110 hover:bg-slate-700/80 group-hover:opacity-100"
+                      >
+                        <Download className="h-4 w-4 text-white" />
+                      </button>
                     </div>
                   </div>
                 ))}

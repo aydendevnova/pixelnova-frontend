@@ -336,6 +336,47 @@ function AIGeneratePage() {
     </Dialog>
   );
 
+  const generateUniqueFilename = (variant: { name: string; image: string }) => {
+    const timestamp = Date.now();
+    const randomId = Math.floor(Math.random() * 1000);
+    const sanitizedPrompt = variant.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .slice(0, 50);
+    const imgWidth = resolution.split("x")[0];
+    return `pixel_art_${sanitizedPrompt}_${imgWidth}px_${timestamp}_${randomId}.png`;
+  };
+
+  const handleSingleDownload = async (variant: {
+    name: string;
+    image: string;
+  }) => {
+    const img = new Image();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    return new Promise<void>((resolve) => {
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx?.drawImage(img, 0, 0);
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = generateUniqueFilename(variant);
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          resolve();
+        });
+      };
+      img.src = variant.image;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20">
       <div className="duration-500 animate-in fade-in">
@@ -359,15 +400,26 @@ function AIGeneratePage() {
                       <p className="text-slate-400">
                         Transform your ideas into pixel art using AI
                       </p>
-                      <Link href="/tutorials/ai-pixel-art">
-                        <Button
-                          variant="outline"
-                          className="mt-2 border-slate-600 bg-slate-800/50 px-8 text-slate-300 hover:bg-slate-700"
-                        >
-                          <HelpCircle className="mr-2 h-4 w-4" />
-                          View Tutorial
-                        </Button>
-                      </Link>
+                      <div className="flex gap-2">
+                        <Link href="/tutorials/ai-pixel-art">
+                          <Button
+                            variant="outline"
+                            className="mt-2 border-slate-600 bg-slate-800/50 px-8 text-slate-300 hover:bg-slate-700"
+                          >
+                            <HelpCircle className="mr-2 h-4 w-4" />
+                            View Tutorial
+                          </Button>
+                        </Link>
+                        <Link href="/gallery">
+                          <Button
+                            variant="outline"
+                            className="mt-2 border-slate-600 bg-slate-800/50 px-8 text-slate-300 hover:bg-slate-700"
+                          >
+                            <Grid className="mr-2 h-4 w-4" />
+                            View Your Gallery
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -594,7 +646,7 @@ function AIGeneratePage() {
               {variants.map((variant, index) => (
                 <div
                   key={variant.id}
-                  className={`flex cursor-pointer flex-col items-center rounded-xl border ${
+                  className={`group flex cursor-pointer flex-col items-center rounded-xl border ${
                     selectedVariants.has(index)
                       ? "border-amber-400 bg-amber-500/10"
                       : "border-slate-600 bg-slate-700/20"
@@ -608,6 +660,16 @@ function AIGeneratePage() {
                       className="h-full w-full object-contain"
                       style={{ imageRendering: "pixelated" }}
                     />
+                    {/* Download button in top right */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handleSingleDownload(variant);
+                      }}
+                      className="absolute right-2 top-2 rounded-full bg-slate-800/80 p-2 opacity-0 transition-all duration-200 hover:scale-110 hover:bg-slate-700/80 group-hover:opacity-100"
+                    >
+                      <Download className="h-4 w-4 text-white" />
+                    </button>
                   </div>
                   <span className="mt-2 text-sm font-medium text-white">
                     {variant.name}

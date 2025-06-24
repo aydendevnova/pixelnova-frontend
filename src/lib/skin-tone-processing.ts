@@ -220,24 +220,35 @@ export async function downloadAsSpritesheet(
 ): Promise<void> {
   if (variations.length === 0) return;
 
-  // Load the first image to get dimensions
-  const firstImage = await new Promise<HTMLImageElement>((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.src = variations[0]!.image;
-  });
+  // Load all images first to get their dimensions
+  const loadedImages = await Promise.all(
+    variations.map(async (variation) => {
+      const img = await new Promise<HTMLImageElement>((resolve) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.src = variation.image;
+      });
+      return img;
+    }),
+  );
 
-  const imageWidth = firstImage.width;
-  const imageHeight = firstImage.height;
+  // Find the maximum width and height among all images
+  let maxWidth = 0;
+  let maxHeight = 0;
+
+  loadedImages.forEach((img) => {
+    maxWidth = Math.max(maxWidth, img.width);
+    maxHeight = Math.max(maxHeight, img.height);
+  });
 
   // Calculate grid dimensions (3 columns, as many rows as needed)
   const cols = 3;
   const rows = Math.ceil(variations.length / cols);
 
-  // Create spritesheet canvas
+  // Create spritesheet canvas using max dimensions
   const spritesheetCanvas = document.createElement("canvas");
-  spritesheetCanvas.width = imageWidth * cols;
-  spritesheetCanvas.height = imageHeight * rows;
+  spritesheetCanvas.width = maxWidth * cols;
+  spritesheetCanvas.height = maxHeight * rows;
   const ctx = spritesheetCanvas.getContext("2d");
 
   if (!ctx) return;
@@ -245,23 +256,21 @@ export async function downloadAsSpritesheet(
   // Fill background with transparent
   ctx.clearRect(0, 0, spritesheetCanvas.width, spritesheetCanvas.height);
 
-  // Load and place each image in the grid
-  await Promise.all(
-    variations.map(async (variation, index) => {
-      const img = await new Promise<HTMLImageElement>((resolve) => {
-        const image = new Image();
-        image.onload = () => resolve(image);
-        image.src = variation.image;
-      });
+  // Place each image in the grid, centered within its cell
+  loadedImages.forEach((img, index) => {
+    const col = index % cols;
+    const row = Math.floor(index / cols);
 
-      const col = index % cols;
-      const row = Math.floor(index / cols);
-      const x = col * imageWidth;
-      const y = row * imageHeight;
+    // Calculate cell position
+    const cellX = col * maxWidth;
+    const cellY = row * maxHeight;
 
-      ctx.drawImage(img, x, y);
-    }),
-  );
+    // Calculate centered position within the cell
+    const x = cellX + Math.floor((maxWidth - img.width) / 2);
+    const y = cellY + Math.floor((maxHeight - img.height) / 2);
+
+    ctx.drawImage(img, x, y);
+  });
 
   // Download the spritesheet
   spritesheetCanvas.toBlob((blob) => {

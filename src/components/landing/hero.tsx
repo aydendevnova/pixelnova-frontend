@@ -47,12 +47,12 @@ export default function HeroLandingSection() {
                 Now Live
               </Badge>
               <h1 className="max-w-xl text-3xl font-bold tracking-tighter text-white sm:text-5xl xl:text-6xl/none">
-                From Ideation to Pixel Art in Seconds
+                Your Ideas to Pixel Art in Seconds
               </h1>
               <p className="max-w-[600px] text-slate-300 md:text-xl">
-                Pixel Nova combines an intuitive pixel art editor with powerful
-                AI generation. Create, transform, and perfect your pixel art
-                with professional tools designed for both beginners and experts.
+                Transform any text prompt into stunning pixel art in seconds. No
+                artistic skills needed - just describe what you want and let our
+                AI do the magic.
               </p>
 
               <form

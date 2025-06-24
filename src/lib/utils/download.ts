@@ -51,7 +51,7 @@ export const downloadAsZip = async (
 };
 
 /**
- * Create a spritesheet with images arranged in a grid, optimizing layout for less than 3 images
+ * Create a spritesheet with images arranged in a grid, handling different resolutions
  */
 export const downloadAsSpritesheet = (
   results: ImageResult[],
@@ -63,12 +63,14 @@ export const downloadAsSpritesheet = (
 
   if (selectedResults.length === 0) return;
 
-  // Get the first image dimensions (assuming all images are the same size)
-  const firstImage = selectedResults[0];
-  if (!firstImage) return;
+  // Find the maximum width and height among all images
+  let maxWidth = 0;
+  let maxHeight = 0;
 
-  const imageWidth = firstImage.imageData.width;
-  const imageHeight = firstImage.imageData.height;
+  selectedResults.forEach((result) => {
+    maxWidth = Math.max(maxWidth, result.imageData.width);
+    maxHeight = Math.max(maxHeight, result.imageData.height);
+  });
 
   // Calculate grid dimensions based on number of images
   let cols = Math.min(selectedResults.length, 3); // Max 3 columns, but use less if fewer images
@@ -80,10 +82,10 @@ export const downloadAsSpritesheet = (
     rows = 1;
   }
 
-  // Create spritesheet canvas with optimized dimensions
+  // Create spritesheet canvas with optimized dimensions using max dimensions
   const spritesheetCanvas = document.createElement("canvas");
-  spritesheetCanvas.width = imageWidth * cols;
-  spritesheetCanvas.height = imageHeight * rows;
+  spritesheetCanvas.width = maxWidth * cols;
+  spritesheetCanvas.height = maxHeight * rows;
   const ctx = spritesheetCanvas.getContext("2d");
 
   if (!ctx) return;
@@ -91,12 +93,20 @@ export const downloadAsSpritesheet = (
   // Fill background with transparent
   ctx.clearRect(0, 0, spritesheetCanvas.width, spritesheetCanvas.height);
 
-  // Place each image in the grid
+  // Place each image in the grid, centered within its cell
   selectedResults.forEach((result, index) => {
     const col = index % cols;
     const row = Math.floor(index / cols);
-    const x = col * imageWidth;
-    const y = row * imageHeight;
+
+    // Calculate cell position
+    const cellX = col * maxWidth;
+    const cellY = row * maxHeight;
+
+    // Calculate centered position within the cell
+    const imageWidth = result.imageData.width;
+    const imageHeight = result.imageData.height;
+    const x = cellX + Math.floor((maxWidth - imageWidth) / 2);
+    const y = cellY + Math.floor((maxHeight - imageHeight) / 2);
 
     // Create temporary canvas for this image
     const tempCanvas = document.createElement("canvas");
