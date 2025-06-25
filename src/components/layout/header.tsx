@@ -87,7 +87,7 @@ export default function Header() {
         {pathname != "/editor" && (
           <div className="flex items-center gap-6">
             <Link className="flex items-center justify-center" href="/">
-              <img src="/logo-og.png" alt="Pixel Nova" className="h-8 w-8" />
+              <img src="/logo.png" alt="Pixel Nova" className="h-8 w-8" />
               <span className="mx-2 text-lg font-bold text-white">
                 Pixel Nova
               </span>
@@ -158,7 +158,7 @@ export default function Header() {
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <img
-                        src="/logo-og.png"
+                        src="/logo.png"
                         alt="Pixel Nova"
                         className="h-8 w-8"
                       />

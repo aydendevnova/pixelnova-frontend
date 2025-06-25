@@ -10,7 +10,7 @@ export default function Footer() {
           <div className="flex flex-col items-center md:items-start">
             <div className="flex items-center gap-2">
               <Image
-                src="/logo-og.png"
+                src="/logo.png"
                 alt="Pixel Nova Logo"
                 width={32}
                 height={32}

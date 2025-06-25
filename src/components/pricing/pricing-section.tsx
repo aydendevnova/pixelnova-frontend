@@ -38,21 +38,22 @@ export default function PricingSection({
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 text-center">
           {!noShowBgAndLogo && (
-            <h1 className="mb-4 flex items-center justify-center gap-4 text-2xl font-bold">
+            <span className="mb-4 flex items-center justify-center gap-4 text-2xl font-bold">
               <Image
-                src="/logo-og.png"
+                src="/logo.png"
                 alt="Pixel Nova Logo"
                 width={52}
                 height={52}
                 style={{
                   imageRendering: "pixelated",
                 }}
+                className="rounded-full"
               />
 
               <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
                 Pixel Nova
               </span>
-            </h1>
+            </span>
           )}
           <h1
             className="mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text 

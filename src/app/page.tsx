@@ -10,7 +10,7 @@ import EditorLandingSection from "@/components/landing/editor";
 export const metadata: Metadata = {
   title: "Pixel Nova | AI Pixel Art Generator and Tools",
   description:
-    "Create stunning pixel art instantly with AI. Transform text and images into beautiful pixel art using advanced AI generation, smart colorization, and editing tools. Perfect for game developers, artists, and designers.",
+    "Create pixel art instantly with our AI pixel art generator. Transform text prompts and images into professional pixel art, sprites, and game assets. The new AI-powered pixel art suite for artists, game developers and designers. Try our free tools today!",
   keywords: [
     // Primary Keywords
     "AI pixel art generator",
@@ -48,15 +48,15 @@ export const metadata: Metadata = {
     "pixel art for games",
   ].join(", "),
   openGraph: {
-    title: "Pixel Nova | AI-Powered Pixel Art Generator & Professional Editor",
+    title: "Pixel Nova | AI Pixel Art Generator & Editor",
     description:
-      "Transform text and images into stunning pixel art instantly with AI. Professional-grade tools for game developers, artists, and designers. Generate, colorize, and perfect your pixel art.",
+      "Create pixel art instantly with our AI pixel art generator. Transform text prompts and images into professional pixel art, sprites, and game assets. The new AI-powered pixel art suite for artists, game developers and designers. Try our free tools today!",
     type: "website",
     images: [
       {
-        url: "/og-image.jpg",
-        width: 1200,
-        height: 630,
+        url: "https://pixelnova.app/og-image.jpg",
+        width: 1024,
+        height: 1024,
         alt: "Pixel Nova - AI Pixel Art Generation Suite",
       },
     ],
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     title: "Pixel Nova | Create Pixel Art with AI",
     description:
       "Generate stunning pixel art from text or images using AI. Professional tools for game developers and artists. Try our AI pixel art generator now!",
-    images: ["/og-image.jpg"],
+    images: ["https://pixelnova.app/og-image.jpg"],
     creator: "@thepixelnova",
   },
   robots: {

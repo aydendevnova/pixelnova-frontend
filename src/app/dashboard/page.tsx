@@ -55,7 +55,7 @@ export default async function Home() {
             <div className="mb-8 text-center">
               <h1 className="mb-4 flex items-center justify-center gap-4 text-5xl font-bold">
                 <Image
-                  src="/logo-og.png"
+                  src="/logo.png"
                   alt="Pixel Nova Logo"
                   width={74}
                   height={74}

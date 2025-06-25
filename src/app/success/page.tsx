@@ -18,7 +18,7 @@ export default function SuccessPage() {
       >
         <div className="relative">
           <img
-            src="/logo-og.png"
+            src="/logo.png"
             alt="Pixel Nova"
             className="h-44 w-44"
             style={{ imageRendering: "pixelated" }}

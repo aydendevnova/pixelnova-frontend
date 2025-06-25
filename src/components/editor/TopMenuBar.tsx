@@ -346,7 +346,7 @@ export default function TopMenuBar({
       <div className="flex h-[64px] items-center gap-4 px-4 py-2">
         <Link href="/" className="flex items-center gap-2">
           <NextImage
-            src="/logo-og.png"
+            src="/logo.png"
             alt="Pixel Nova"
             width={32}
             height={32}
