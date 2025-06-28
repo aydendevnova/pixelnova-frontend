@@ -75,9 +75,9 @@ function AIGeneratePage() {
   const searchParams = useSearchParams();
   const [prompt, setPrompt] = useState("");
   const [useOpenAI, setUseOpenAI] = useState(false);
-  const [resolution, setResolution] = useState<"64x64" | "96x96" | "128x128">(
-    "128x128",
-  );
+  const [resolution, setResolution] = useState<
+    "64x64" | "96x96" | "128x128" | "256x256"
+  >("128x128");
   const [loadingMessage, setLoadingMessage] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Set<number>>(
     new Set(),
@@ -95,10 +95,14 @@ function AIGeneratePage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Resolution mapping
-  const resolutionToNumber: Record<"64x64" | "96x96" | "128x128", number> = {
+  const resolutionToNumber: Record<
+    "64x64" | "96x96" | "128x128" | "256x256",
+    number
+  > = {
     "64x64": 64,
     "96x96": 96,
     "128x128": 128,
+    "256x256": 256,
   };
 
   // Effect to load prompt from localStorage on mount
@@ -470,7 +474,7 @@ function AIGeneratePage() {
                 Be detailed for better results. For example, instead of "dog",
                 write "cute golden retriever puppy." Describe what you want to
                 use the image for (e.g. "game sprite", "game asset", "profile
-                picture", etc). Different models will be different results.
+                picture", etc).
               </p>
 
               <div className="flex items-center gap-4 py-2">
@@ -484,7 +488,9 @@ function AIGeneratePage() {
                   <Select
                     value={resolution}
                     onValueChange={(value) =>
-                      setResolution(value as "64x64" | "96x96" | "128x128")
+                      setResolution(
+                        value as "64x64" | "96x96" | "128x128" | "256x256",
+                      )
                     }
                     disabled={isLoading}
                   >
@@ -495,6 +501,7 @@ function AIGeneratePage() {
                       <SelectItem value="64x64">64x64</SelectItem>
                       <SelectItem value="96x96">96x96</SelectItem>
                       <SelectItem value="128x128">128x128</SelectItem>
+                      <SelectItem value="256x256">256x256</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -548,49 +555,8 @@ function AIGeneratePage() {
                   </div>
                 )}
               </div>
-              <p className="pt-4 text-xs text-slate-400">
-                Disclaimer: This is a beta feature. We are working on adding
-                more models and features. If you have any feedback, please
-                contact us at{" "}
-                <a
-                  href="mailto:support@pixelnova.app"
-                  className="text-blue-400"
-                >
-                  support@pixelnova.app
-                </a>
-                .
-              </p>
-              <p className="text-xs text-slate-400">
-                By using this tool, you agree to our{" "}
-                <a
-                  href="/terms-of-service"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 hover:underline"
-                >
-                  terms of service
-                </a>{" "}
-                and{" "}
-                <a
-                  href="/privacy-policy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 hover:underline"
-                >
-                  privacy policy
-                </a>
-                , as well as the{" "}
-                <a
-                  href="https://huggingface.co/spaces/CompVis/stable-diffusion-license"
-                  className="text-blue-400 hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  model provider license
-                </a>
-                .
-              </p>
             </div>
+            <DisclaimerText className="hidden lg:block" />
           </div>
 
           {/* Results Section */}
@@ -628,21 +594,28 @@ function AIGeneratePage() {
 
             {isLoading && variants.length === 0 && (
               <div className="flex h-64 items-center justify-center">
-                <div className="space-y-4 text-center">
-                  <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
-                  <div className="space-y-2">
-                    <p className="text-lg font-medium text-white">
-                      Creating Your Pixel Art
+                <div className="space-y-6 text-center">
+                  <div className="relative mx-auto h-16 w-16">
+                    <div className="absolute h-full w-full animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
+                    <div className="absolute h-full w-full animate-ping rounded-full border-4 border-purple-400/30"></div>
+                    <div className="absolute h-full w-full animate-pulse rounded-full bg-purple-400/10"></div>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl font-bold text-transparent">
+                      ✨ Pixel Magic in Progress ✨
                     </p>
-                    <p className="animate-pulse text-slate-400">
+                    <p className="animate-pulse bg-gradient-to-r from-slate-400 to-slate-300 bg-clip-text text-lg font-medium text-transparent">
                       {loadingMessage}
+                    </p>
+                    <p className="text-sm text-slate-400">
+                      Transforming your imagination into pixel perfection...
                     </p>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
               {variants.map((variant, index) => (
                 <div
                   key={variant.id}
@@ -676,6 +649,7 @@ function AIGeneratePage() {
                   </span>
                 </div>
               ))}
+              <DisclaimerText className="block lg:hidden" />
             </div>
           </div>
         </div>
@@ -686,6 +660,51 @@ function AIGeneratePage() {
         featureName="AI Pixel Art Generator"
       />
       <UpgradeModal />
+    </div>
+  );
+}
+
+function DisclaimerText({ className }: { className?: string }) {
+  return (
+    <div className={className}>
+      <p className="pt-4 text-xs text-slate-400">
+        Disclaimer: This is a beta feature. We are working on adding more models
+        and features. If you have any feedback, please contact us at{" "}
+        <a href="mailto:support@pixelnova.app" className="text-blue-400">
+          support@pixelnova.app
+        </a>
+        .
+      </p>
+      <p className="text-xs text-slate-400">
+        By using this tool, you agree to our{" "}
+        <a
+          href="/terms-of-service"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:underline"
+        >
+          terms of service
+        </a>{" "}
+        and{" "}
+        <a
+          href="/privacy-policy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:underline"
+        >
+          privacy policy
+        </a>
+        , as well as the{" "}
+        <a
+          href="https://huggingface.co/spaces/CompVis/stable-diffusion-license"
+          className="text-blue-400 hover:underline"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          model provider license
+        </a>
+        .
+      </p>
     </div>
   );
 }
