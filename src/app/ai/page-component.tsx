@@ -13,6 +13,7 @@ import {
   HelpCircle,
   Sparkles,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,7 +22,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import { useGeneratePixelArt } from "@/hooks/use-api";
+import { useGeneratePixelArt, useCheckout } from "@/hooks/use-api";
+import { loadStripe } from "@stripe/stripe-js";
+import { env } from "@/env";
 import useUser, { setPostSignInRedirectUrl } from "@/hooks/use-user";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -93,6 +96,30 @@ function AIGeneratePage() {
     Array<{ id: string; image: string; name: string }>
   >([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const checkout = useCheckout();
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+
+  async function handleUpgradeCheckout() {
+    setIsCheckoutLoading(true);
+
+    const stripe = await loadStripe(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+    if (!stripe) {
+      toast.error("Payment system unavailable. Please try again.");
+      setIsCheckoutLoading(false);
+      return;
+    }
+
+    try {
+      const { id: sessionId } = await checkout.mutateAsync(
+        env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO,
+      );
+      await stripe.redirectToCheckout({ sessionId });
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to initiate checkout. Please try again.");
+      setIsCheckoutLoading(false);
+    }
+  }
 
   // Resolution mapping
   const resolutionToNumber: Record<
@@ -285,57 +312,173 @@ function AIGeneratePage() {
 
   const UpgradeModal = () => (
     <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
-      <DialogContent className="border-slate-700/50 bg-slate-800 sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl text-white">
-            <Sparkles className="h-6 w-6 text-yellow-400" />
-            Unlock Unlimited Creativity
-          </DialogTitle>
-          <DialogDescription className="pt-2 text-slate-300">
-            <div className="text-md space-y-4">
-              <p>
-                You've reached your free tier limit of generations this month.
-                Upgrade to Pro to unlock:
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-2">
-                  <div className="rounded-full bg-green-500/20 p-1">
-                    <Wand2 className="h-4 w-4 text-green-500" />
-                  </div>
-                  <span>
-                    {PLAN_LIMITS.PRO.MAX_GENERATIONS} Monthly AI Generations
-                  </span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="rounded-full bg-blue-500/20 p-1">
-                    <Package className="h-4 w-4 text-blue-500" />
-                  </div>
-                  <span>Unlimited Image Conversions</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="rounded-full bg-purple-500/20 p-1">
-                    <Sparkles className="h-4 w-4 text-purple-500" />
-                  </div>
-                  <span>Priority Support</span>
-                </li>
-              </ul>
-              <div className="flex justify-center pt-4">
-                <Link href="/pricing" className="w-full">
-                  <Button
-                    size="lg"
-                    className="w-full bg-gradient-to-r from-purple-600 to-orange-600 text-lg font-semibold"
-                  >
-                    Upgrade to Pro
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
+      <DialogContent className="overflow-hidden border-0 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 p-0 sm:max-w-lg">
+        {/* Animated gradient border effect */}
+        <div className="absolute inset-0 -z-10 rounded-lg bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 opacity-20 blur-xl" />
+
+        {/* Top accent bar */}
+        <div className="h-1.5 w-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500" />
+
+        <div className="px-6 pb-6 pt-5">
+          {/* Badge */}
+          <div className="mb-4 flex justify-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 px-3 py-1 text-sm font-semibold text-amber-300">
+              <Sparkles className="h-3.5 w-3.5" />
+              Limited Time: 20% OFF
+            </span>
+          </div>
+
+          {/* Headline */}
+          <DialogHeader className="space-y-2 text-center">
+            <DialogTitle className="text-3xl font-bold tracking-tight text-white">
+              Unlimited Creativity Starts Now
+            </DialogTitle>
+            <p className="text-lg text-slate-300">
+              Unlock{" "}
+              <span className="font-semibold text-purple-400">
+                {PLAN_LIMITS.PRO.MAX_GENERATIONS} AI generations
+              </span>{" "}
+              and keep creating
+            </p>
+          </DialogHeader>
+
+          {/* Price block */}
+          <div className="my-6 rounded-xl border border-slate-700/50 bg-slate-800/50 p-4 text-center">
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-2xl text-slate-500 line-through">
+                $12.99
+              </span>
+              <span className="text-4xl font-bold text-white">$9.99</span>
+              <span className="text-slate-400">/month</span>
+            </div>
+            <p className="mt-1 text-sm text-emerald-400">
+              New User Limited Time Offer!
+            </p>
+          </div>
+
+          {/* Benefits */}
+          <DialogDescription asChild>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 rounded-lg bg-purple-500/10 p-3">
+                <div className="mt-0.5 rounded-full bg-purple-500/20 p-1.5">
+                  <Wand2 className="h-4 w-4 text-purple-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-white">
+                    {PLAN_LIMITS.PRO.MAX_GENERATIONS} AI Generations/Month
+                  </p>
+                  <p className="text-sm text-slate-400">
+                    Create professional pixel art in seconds
+                  </p>
+                </div>
               </div>
-              <p className="text-center text-sm text-slate-400">
-                Cancel anytime. Instant access upon upgrade.
-              </p>
+
+              <div className="flex items-start gap-3 rounded-lg bg-blue-500/10 p-3">
+                <div className="mt-0.5 rounded-full bg-blue-500/20 p-1.5">
+                  <Package className="h-4 w-4 text-blue-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-white">
+                    Unlimited Image Conversions
+                  </p>
+                  <p className="text-sm text-slate-400">
+                    Convert any image to pixel art instantly
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-lg bg-emerald-500/10 p-3">
+                <div className="mt-0.5 rounded-full bg-emerald-500/20 p-1.5">
+                  <Sparkles className="h-4 w-4 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-white">
+                    Priority Support + Early Features
+                  </p>
+                  <p className="text-sm text-slate-400">
+                    Get help fast & access new tools first
+                  </p>
+                </div>
+              </div>
             </div>
           </DialogDescription>
-        </DialogHeader>
+
+          {/* CTA */}
+          <div className="mt-6 space-y-3">
+            <Button
+              size="lg"
+              onClick={handleUpgradeCheckout}
+              disabled={isCheckoutLoading}
+              className="relative w-full overflow-hidden bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 py-6 text-lg font-bold shadow-lg shadow-purple-500/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/30 disabled:opacity-80"
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {isCheckoutLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Preparing checkout...
+                  </>
+                ) : (
+                  <>
+                    Unlock Pro Now
+                    <ArrowRight className="h-5 w-5" />
+                  </>
+                )}
+              </span>
+            </Button>
+
+            {/* Trust signals */}
+            <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
+              <span className="flex items-center gap-1">
+                <svg
+                  className="h-3.5 w-3.5 text-emerald-500"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Cancel anytime
+              </span>
+              <span className="flex items-center gap-1">
+                <svg
+                  className="h-3.5 w-3.5 text-emerald-500"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Instant access
+              </span>
+              <span className="flex items-center gap-1">
+                <svg
+                  className="h-3.5 w-3.5 text-emerald-500"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Secure checkout
+              </span>
+            </div>
+          </div>
+
+          {/* Social proof */}
+          <p className="mt-4 text-center text-sm text-slate-400">
+            Join <span className="font-medium text-white">1,000+</span> creators
+            making pixel art with Pixel Nova
+          </p>
+        </div>
       </DialogContent>
     </Dialog>
   );

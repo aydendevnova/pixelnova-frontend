@@ -21,11 +21,10 @@ export default function LimitsPage() {
             <div className="rounded-lg bg-gray-50 p-6">
               <h3 className="mb-2 text-lg font-medium">AI Image Generations</h3>
               <p className="text-gray-700">
-                Free users can generate up to{" "}
-                <span className="font-semibold">4 AI images</span> per month.
-                This includes any pixel art generations using our AI tools. This
-                is designed to be a way to get you started with our platform and
-                to get a feel for what we can do.
+                Free users must upgrade to a paid plan to access AI image
+                generation tools. This includes all pixel art generations using
+                our AI tools. Upgrade to Pro to unlock unlimited AI generations
+                and get started creating amazing pixel art.
               </p>
             </div>
 

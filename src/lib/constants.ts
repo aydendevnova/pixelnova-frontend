@@ -2,8 +2,8 @@ export type UserTier = "NONE" | "PRO";
 
 export const PLAN_LIMITS = {
   NONE: {
-    MAX_GENERATIONS: 4,
-    MAX_CONVERSIONS: 10,
+    MAX_GENERATIONS: 0,
+    MAX_CONVERSIONS: 20,
   },
   PRO: {
     MAX_GENERATIONS: 220,
