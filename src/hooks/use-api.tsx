@@ -8,7 +8,6 @@ import { useSession } from "@supabase/auth-helpers-react";
 const API_ROUTES = {
   UPDATE_ACCOUNT: "/api/update-account",
   CHECK_USERNAME: "/api/check-username",
-  REDUCE_COLORS: "/api/reduce-colors",
   CONVERT_IMAGE: "/api/convert-image",
   CHECKOUT: "/api/checkout",
   GENERATE_PIXEL_ART: "/api/generate-pixel-art",
@@ -61,54 +60,6 @@ export function useCheckUsername() {
         },
       );
       return response.data;
-    },
-  });
-}
-
-export function useReduceColors({
-  onSuccess,
-}: {
-  onSuccess?: (data: { image: string }) => void;
-}) {
-  const session = useSession();
-
-  return useMutation({
-    mutationFn: async ({
-      imageFile,
-      factor = 96,
-    }: {
-      imageFile: File;
-      factor?: number;
-    }) => {
-      if (!session) {
-        throw new Error("No session found");
-      }
-
-      const formData = new FormData();
-      formData.append("image", imageFile);
-      formData.append("factor", factor.toString());
-
-      const response = await axios.post(
-        `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.REDUCE_COLORS}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        },
-      );
-      return {
-        a: response.data.a,
-        b: response.data.b,
-        c: response.data.c,
-        image: response.data.image,
-      };
-    },
-    onSuccess: (data) => {
-      if (onSuccess) {
-        onSuccess(data);
-      }
     },
   });
 }

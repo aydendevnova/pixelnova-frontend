@@ -20,7 +20,7 @@ import { ConversionsDisplay } from "@/components/conversions-display";
 import { getMaxConversions, PLAN_LIMITS, UserTier } from "@/lib/constants";
 import { resizeImageWithPica } from "@/lib/utils/image";
 import Link from "next/link";
-import { useConvertImage, useReduceColors } from "@/hooks/use-api";
+import { useConvertImage } from "@/hooks/use-api";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -383,12 +383,10 @@ export default function ConvertImagePageClient() {
   const session = useSession();
   const router = useRouter();
   const convertImage = useConvertImage();
-  const reduceColors = useReduceColors({});
 
   const [step, setStep] = useState(1);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [downscaledImage, setDownscaledImage] = useState<string | null>(null);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [pendingImageAction, setPendingImageAction] = useState<{
     type: "upload" | "url";
@@ -468,20 +466,6 @@ export default function ConvertImagePageClient() {
       // Initial downscale to 512px max dimension using Pica
       const resizedImage = await resizeImageWithPica(imageUrl);
 
-      // Convert resized image to File object for the API
-      const response = await fetch(resizedImage);
-      const blob = await response.blob();
-      const resizedFile = new File([blob], "resized-image.png", {
-        type: "image/png",
-      });
-
-      setProcessingStage("Reducing colors...");
-      const reducedColorsResult = await reduceColors.mutateAsync({
-        imageFile: resizedFile,
-        factor: colorFactor,
-      });
-      const reducedColorsImage = reducedColorsResult.image;
-
       setProcessingStage("Preparing image preview...");
       const img = new Image();
       img.onload = async () => {
@@ -493,14 +477,13 @@ export default function ConvertImagePageClient() {
           setShowSmallImageWarning(true);
         }
 
-        setUploadedImage(reducedColorsImage);
-        setDownscaledImage(reducedColorsImage);
+        setUploadedImage(resizedImage);
         setUploadedFile(file);
 
         setStep(2);
         setIsProcessing(false);
       };
-      img.src = reducedColorsImage;
+      img.src = resizedImage;
     } catch (error) {
       console.error("Failed to process image:", error);
       setError("Failed to process image. Please try again.");
@@ -527,20 +510,6 @@ export default function ConvertImagePageClient() {
       // Resize the image using Pica
       const resizedImage = await resizeImageWithPica(imageUrl);
 
-      // Convert resized image to File object for the API
-      const response = await fetch(resizedImage);
-      const blob = await response.blob();
-      const resizedFile = new File([blob], "resized-image.png", {
-        type: "image/png",
-      });
-
-      setProcessingStage("Reducing colors...");
-      const reducedColorsResult = await reduceColors.mutateAsync({
-        imageFile: resizedFile,
-        factor: colorFactor,
-      });
-      const reducedColorsImage = reducedColorsResult.image;
-
       setProcessingStage("Preparing image preview...");
       const img = new Image();
       img.onload = async () => {
@@ -552,17 +521,17 @@ export default function ConvertImagePageClient() {
           setShowSmallImageWarning(true);
         }
 
-        const response = await fetch(reducedColorsImage);
+        const response = await fetch(resizedImage);
         const blob = await response.blob();
         const file = new File([blob], "history-image.png", {
           type: "image/png",
         });
-        setUploadedImage(reducedColorsImage);
+        setUploadedImage(resizedImage);
         setUploadedFile(file);
         setStep(2);
         setIsProcessing(false);
       };
-      img.src = reducedColorsImage;
+      img.src = resizedImage;
     } catch (error) {
       console.error("Failed to process history image:", error);
       setError(
@@ -573,7 +542,7 @@ export default function ConvertImagePageClient() {
   };
 
   const handleProcess = async (targetSegments: number) => {
-    if (!downscaledImage) return;
+    if (!uploadedImage) return;
 
     // Check conversion limits
     if (
@@ -594,8 +563,8 @@ export default function ConvertImagePageClient() {
       setIsProcessing(true);
       setProcessingStage("Converting to pixel art...");
 
-      // Convert the color-reduced image to a File for the API
-      const response = await fetch(downscaledImage);
+      // Convert the uploaded image to a File for the API
+      const response = await fetch(uploadedImage);
       const blob = await response.blob();
       const imageFile = new File([blob], "convert-image.png", {
         type: "image/png",

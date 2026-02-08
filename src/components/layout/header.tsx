@@ -35,6 +35,7 @@ const pathsWithBackground = [
   "/privacy-policy",
   "/limits",
   "/support",
+  "/credits",
 ];
 
 export default function Header() {

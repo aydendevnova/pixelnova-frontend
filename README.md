@@ -118,3 +118,9 @@ The current implementation moves these computationally intensive tasks to optimi
 - Access to more powerful pixel art models and techniques
 
 This architectural shift allows us to leverage specialized machine learning models and image processing libraries on the backend while keeping the frontend focused on providing a smooth, responsive editing experience.
+
+## License
+
+This project is licensed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+See the [LICENSE](LICENSE) file for the full text.

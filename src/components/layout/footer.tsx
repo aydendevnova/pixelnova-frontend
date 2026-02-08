@@ -21,7 +21,7 @@ export default function Footer() {
               <span className="text-xl font-bold text-white">Pixel Nova</span>
             </div>
             <p className="mt-2 text-center text-sm text-slate-400 md:text-left">
-              © 2025 PixelNova LLC
+              © 2026 PixelNova LLC
               <br />
               Florida, United States
             </p>
@@ -130,6 +130,12 @@ export default function Footer() {
                 className="text-sm text-slate-400 transition-colors hover:text-white"
               >
                 Privacy Policy
+              </Link>
+              <Link
+                href="/credits"
+                className="text-sm text-slate-400 transition-colors hover:text-white"
+              >
+                Credits
               </Link>
             </div>
           </div>
