@@ -3,13 +3,6 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeftIcon,
@@ -27,10 +20,10 @@ import { ConversionsDisplay } from "@/components/conversions-display";
 import { getMaxConversions, PLAN_LIMITS, UserTier } from "@/lib/constants";
 import { resizeImageWithPica } from "@/lib/utils/image";
 import Link from "next/link";
-import { PRESET_RESOLUTIONS } from "@/lib/client-image-processing";
-import { useUpdateGenerationCount, useReduceColors } from "@/hooks/use-api";
+import { useConvertImage, useReduceColors } from "@/hooks/use-api";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface StepOneProps {
   onImageGenerated: (file: File, imageUrl: string, prompt: string) => void;
@@ -179,56 +172,46 @@ const StepOne = ({
   );
 };
 
+const FIDELITY_PRESETS = [
+  { value: 32, label: "32px" },
+  { value: 64, label: "64px" },
+  { value: 128, label: "128px" },
+  { value: 256, label: "256px" },
+] as const;
+
+// 0 = auto-detect (let WASM decide grid), >0 = forced grid segments
+const AUTO_DETECT_VALUE = 0;
+
 interface StepTwoProps {
   uploadedImage: string | null;
-  onProcess: (resolution: number, variationRange: number) => void;
+  onProcess: (targetSegments: number) => void;
   isProcessing: boolean;
-  results: Array<{ image: string; resolution: number }> | null;
+  result: string | null;
 }
 
 const StepTwo = ({
   uploadedImage,
   onProcess,
   isProcessing,
-  results,
+  result,
 }: StepTwoProps) => {
-  const [resolution, setResolution] = useState<number>(32);
-  const [variationRange, setVariationRange] = useState<number>(1);
-  const [error, setError] = useState<string | null>(null);
+  const [isAutoDetect, setIsAutoDetect] = useState(true);
+  const [targetSegments, setTargetSegments] = useState<number>(64);
 
-  // Handle keyboard shortcuts
+  const effectiveTarget = isAutoDetect ? AUTO_DETECT_VALUE : targetSegments;
+
+  // Handle Enter key shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      if (e.key === "Enter") {
         e.preventDefault();
-        setResolution((prev) => {
-          const increment = e.key === "ArrowUp" ? 1 : -1;
-          const newValue = prev + increment;
-          return Math.max(1, Math.min(256, newValue));
-        });
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        if (resolution > 0 && resolution <= 256) {
-          onProcess(resolution, variationRange);
-        }
+        onProcess(effectiveTarget);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [resolution, variationRange, onProcess]);
-
-  const handleResolutionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (!isNaN(value)) {
-      if (value > 0 && value <= 256) {
-        setResolution(value);
-        setError(null);
-      } else {
-        setError("Resolution must be between 1 and 256");
-      }
-    }
-  };
+  }, [onProcess, effectiveTarget]);
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row">
@@ -238,83 +221,48 @@ const StepTwo = ({
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-600/20 via-teal-600/20 to-cyan-600/20 opacity-75 blur-xl"></div>
           <div className="relative space-y-4">
             <h3 className="text-lg font-medium text-white">
-              Resolution Settings
+              Convert to Pixel Art
             </h3>
 
-            <div className="space-y-4">
-              {/* Custom Resolution Input */}
+            {/* Auto-detect toggle */}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="auto-detect"
+                checked={isAutoDetect}
+                onCheckedChange={(checked) =>
+                  setIsAutoDetect(checked === true)
+                }
+              />
+              <label
+                htmlFor="auto-detect"
+                className="cursor-pointer text-sm font-medium text-slate-200"
+              >
+                Auto-detect quality (recommended)
+              </label>
+            </div>
+            {isAutoDetect && (
+              <p className="text-xs text-slate-400">
+                The algorithm will automatically detect the optimal pixel grid
+                for your image.
+              </p>
+            )}
+
+            {/* Fidelity Override */}
+            {!isAutoDetect && (
               <div className="space-y-2">
                 <label className="text-sm text-slate-200">
-                  Custom Resolution
+                  Output Resolution
                 </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={resolution}
-                    onChange={handleResolutionChange}
-                    min={1}
-                    max={256}
-                    className="bg-slate-900/50 text-slate-200"
-                  />
-                  <div className="flex flex-col gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-6 bg-white px-2"
-                      onClick={() => setResolution((r) => Math.min(256, r + 1))}
-                    >
-                      ↑
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-6 bg-white px-2"
-                      onClick={() => setResolution((r) => Math.max(1, r - 1))}
-                    >
-                      ↓
-                    </Button>
-                  </div>
-                </div>
-                {error && <p className="text-xs text-red-500">{error}</p>}
-              </div>
-
-              {/* Variation Range Selector */}
-              <div className="space-y-2">
-                <label className="text-sm text-slate-200">Variations</label>
-                <Select
-                  value={variationRange.toString()}
-                  onValueChange={(value) => setVariationRange(parseInt(value))}
-                >
-                  <SelectTrigger className="bg-slate-900/50 text-slate-200">
-                    <SelectValue placeholder="Select variations" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">No variations</SelectItem>
-                    <SelectItem value="1">+1 pixel (2 sizes)</SelectItem>
-                    <SelectItem value="3">±3 pixels (7 sizes)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-slate-400">
-                  Generate additional sizes around your target resolution
-                </p>
-              </div>
-
-              {/* Preset Buttons */}
-              <div className="space-y-2">
-                <label className="text-sm text-slate-200">Quick Presets</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {PRESET_RESOLUTIONS.map((preset) => (
+                  {FIDELITY_PRESETS.map((preset) => (
                     <Button
                       key={preset.value}
                       variant={
-                        resolution === preset.value ? "default" : "outline"
+                        targetSegments === preset.value ? "default" : "outline"
                       }
-                      onClick={() => {
-                        setResolution(preset.value);
-                        setError(null);
-                      }}
+                      onClick={() => setTargetSegments(preset.value)}
                       className={
-                        resolution === preset.value
+                        targetSegments === preset.value
                           ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                           : "border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-slate-700"
                       }
@@ -323,36 +271,42 @@ const StepTwo = ({
                     </Button>
                   ))}
                 </div>
+                <p className="text-xs text-slate-400">
+                  Forces the output to approximately this many unique pixels per
+                  axis.
+                </p>
               </div>
+            )}
 
-              <Button
-                onClick={() => onProcess(resolution, variationRange)}
-                disabled={isProcessing || resolution <= 0 || resolution > 256}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkle className="mr-2 h-4 w-4" />
-                    Process Image
-                  </>
-                )}
-              </Button>
-            </div>
+            <Button
+              onClick={() => onProcess(effectiveTarget)}
+              disabled={isProcessing}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Sparkle className="mr-2 h-4 w-4" />
+                  Convert to Pixel Art
+                </>
+              )}
+            </Button>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-slate-200">Tips</h4>
+              <h4 className="font-medium text-slate-200">How it works</h4>
               <ul className="space-y-1 text-xs text-slate-400">
-                <li>• Use ↑/↓ keys or buttons to adjust resolution</li>
+                <li>• Colors are quantized for a clean palette</li>
+                <li>
+                  {isAutoDetect
+                    ? "• The pixel grid is automatically detected"
+                    : "• The pixel grid is set to your chosen resolution"}
+                </li>
+                <li>• Image is resampled to produce sharp pixel art</li>
                 <li>• Press Enter to quickly process</li>
-                <li>• Try different resolutions to find the best result</li>
-                <li>• Lower values = more pixelated</li>
-                <li>• Higher values = more detail</li>
-                <li>• Use variations to compare similar sizes</li>
               </ul>
             </div>
           </div>
@@ -384,41 +338,37 @@ const StepTwo = ({
                   </div>
                 </div>
 
-                {/* Processed Results */}
-                {results &&
-                  results.map((result, index) => (
-                    <div
-                      key={index}
-                      className="group relative rounded-xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur"
-                    >
-                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 opacity-75 blur-xl"></div>
-                      <div className="relative flex flex-col items-center space-y-2">
-                        <h3 className="text-sm font-medium text-white">
-                          {result.resolution}x{result.resolution}
-                        </h3>
-                        <img
-                          src={result.image}
-                          alt={`Pixelated ${result.resolution}x${result.resolution}`}
-                          className="h-[30vh] w-auto object-contain lg:h-[40vh]"
-                          style={{ imageRendering: "pixelated" }}
-                        />
-                        <Button
-                          onClick={() => {
-                            const link = document.createElement("a");
-                            link.href = result.image;
-                            link.download = `pixelated_${result.resolution}x${result.resolution}.png`;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                          }}
-                          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
-                        >
-                          <DownloadIcon className="mr-2 h-4 w-4" />
-                          Download Image
-                        </Button>
-                      </div>
+                {/* Processed Result */}
+                {result && (
+                  <div className="group relative rounded-xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur">
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 opacity-75 blur-xl"></div>
+                    <div className="relative flex flex-col items-center space-y-2">
+                      <h3 className="text-sm font-medium text-white">
+                        Pixel Art Result
+                      </h3>
+                      <img
+                        src={result}
+                        alt="Pixel art result"
+                        className="h-[30vh] w-auto object-contain lg:h-[40vh]"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                      <Button
+                        onClick={() => {
+                          const link = document.createElement("a");
+                          link.href = result;
+                          link.download = "pixel_art.png";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                      >
+                        <DownloadIcon className="mr-2 h-4 w-4" />
+                        Download Image
+                      </Button>
                     </div>
-                  ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -432,7 +382,7 @@ export default function ConvertImagePageClient() {
   const { profile, user } = useUser();
   const session = useSession();
   const router = useRouter();
-  const updateGenerationCount = useUpdateGenerationCount();
+  const convertImage = useConvertImage();
   const reduceColors = useReduceColors({});
 
   const [step, setStep] = useState(1);
@@ -452,10 +402,7 @@ export default function ConvertImagePageClient() {
   });
   const [showSmallImageWarning, setShowSmallImageWarning] = useState(false);
 
-  const [results, setResults] = useState<Array<{
-    image: string;
-    resolution: number;
-  }> | null>(null);
+  const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -514,8 +461,8 @@ export default function ConvertImagePageClient() {
       setIsProcessing(true);
       setProcessingStage("Optimizing image size...");
 
-      // Clear previous results when new image is uploaded
-      setResults(null);
+      // Clear previous result when new image is uploaded
+      setResult(null);
       setShowSmallImageWarning(false);
 
       // Initial downscale to 512px max dimension using Pica
@@ -573,8 +520,8 @@ export default function ConvertImagePageClient() {
       setIsProcessing(true);
       setProcessingStage("Optimizing image size...");
 
-      // Clear previous results when new image is selected
-      setResults(null);
+      // Clear previous result when new image is selected
+      setResult(null);
       setShowSmallImageWarning(false);
 
       // Resize the image using Pica
@@ -625,7 +572,7 @@ export default function ConvertImagePageClient() {
     }
   };
 
-  const handleProcess = async (resolution: number, variationRange: number) => {
+  const handleProcess = async (targetSegments: number) => {
     if (!downscaledImage) return;
 
     // Check conversion limits
@@ -645,50 +592,23 @@ export default function ConvertImagePageClient() {
 
     try {
       setIsProcessing(true);
-      setProcessingStage(
-        variationRange > 0
-          ? "Processing image variations..."
-          : "Processing image...",
-      );
+      setProcessingStage("Converting to pixel art...");
 
-      if (variationRange === 0) {
-        // Single image processing - use client-side downscaling with proper aspect ratio
-        const { downscaleImage } = await import(
-          "@/lib/client-image-processing"
-        );
-        const finalImage = await downscaleImage(downscaledImage, resolution);
+      // Convert the color-reduced image to a File for the API
+      const response = await fetch(downscaledImage);
+      const blob = await response.blob();
+      const imageFile = new File([blob], "convert-image.png", {
+        type: "image/png",
+      });
 
-        // Tell server to increment generation count
-        await updateGenerationCount.mutateAsync();
+      // Server handles WASM processing + conversion count increment
+      const convertResult = await convertImage.mutateAsync({
+        imageFile,
+        kColors: colorFactor,
+        targetSegments,
+      });
 
-        setResults([{ image: finalImage, resolution }]);
-      } else if (variationRange === 1 || variationRange === 3) {
-        // Handle variations - use client-side downscaling with proper aspect ratio
-        const { downscaleImage } = await import(
-          "@/lib/client-image-processing"
-        );
-        const variations = [];
-        const startRes = resolution - variationRange;
-        const endRes = resolution + (variationRange === 1 ? 1 : variationRange);
-
-        for (let currentRes = startRes; currentRes <= endRes; currentRes++) {
-          if (currentRes <= 0) continue;
-
-          setProcessingStage(`Processing ${currentRes}px width variation...`);
-
-          const finalImage = await downscaleImage(downscaledImage, currentRes);
-
-          variations.push({
-            image: finalImage,
-            resolution: currentRes,
-          });
-        }
-
-        // Tell server to increment generation count once for the whole batch
-        await updateGenerationCount.mutateAsync();
-
-        setResults(variations);
-      }
+      setResult(convertResult.image);
     } catch (error) {
       console.error("Failed to process image:", error);
       setError("Failed to process image. Please try again.");
@@ -719,14 +639,14 @@ export default function ConvertImagePageClient() {
       ),
     },
     {
-      title: "Set Output Resolution",
-      description: "Choose the resolution for your pixel art",
+      title: "Convert to Pixel Art",
+      description: "Process your image with the pixel snapper",
       content: (
         <StepTwo
           uploadedImage={uploadedImage}
           onProcess={handleProcess}
           isProcessing={isProcessing}
-          results={results}
+          result={result}
         />
       ),
     },

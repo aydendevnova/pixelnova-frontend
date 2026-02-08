@@ -5,17 +5,14 @@ import { useMutation } from "@tanstack/react-query";
 import { env } from "@/env";
 import { UpdateAccountBody } from "@/shared-types";
 import { useSession } from "@supabase/auth-helpers-react";
-import { useCredits, CREDITS_COST } from "@/hooks/use-credits";
-
 const API_ROUTES = {
   UPDATE_ACCOUNT: "/api/update-account",
   CHECK_USERNAME: "/api/check-username",
   REDUCE_COLORS: "/api/reduce-colors",
-  GENERATE_IMAGE: "/api/generate-image",
+  CONVERT_IMAGE: "/api/convert-image",
   CHECKOUT: "/api/checkout",
   GENERATE_PIXEL_ART: "/api/generate-pixel-art",
   CREATE_PORTAL_SESSION: "/api/create-portal-session",
-  UPDATE_CONVERSION_COUNT: "/api/update-conversion-count",
 } as const;
 
 export function useUpdateAccount() {
@@ -116,31 +113,6 @@ export function useReduceColors({
   });
 }
 
-export function useGenerateImage() {
-  const session = useSession();
-
-  return useMutation({
-    mutationFn: async (prompt: string) => {
-      if (!session) {
-        throw new Error("No session found");
-      }
-
-      const response = await axios.post(
-        `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.GENERATE_IMAGE}`,
-        { prompt },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          responseType: "arraybuffer",
-        },
-      );
-      return response.data;
-    },
-  });
-}
-
 export function useCheckout() {
   const session = useSession();
   return useMutation({
@@ -170,11 +142,9 @@ export function useGeneratePixelArt() {
     mutationFn: async ({
       prompt,
       useOpenAI,
-      resolution,
     }: {
       prompt: string;
       useOpenAI: boolean;
-      resolution: number;
     }) => {
       if (!session) {
         throw new Error("No session found");
@@ -183,7 +153,7 @@ export function useGeneratePixelArt() {
       try {
         const response = await axios.post(
           `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.GENERATE_PIXEL_ART}`,
-          { prompt, useOpenAI, resolution },
+          { prompt, useOpenAI },
           {
             headers: {
               "Content-Type": "application/json",
@@ -238,23 +208,43 @@ export function useBillingPortal() {
   });
 }
 
-export function useUpdateGenerationCount() {
+export function useConvertImage() {
   const session = useSession();
+
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({
+      imageFile,
+      kColors = 16,
+      targetSegments = 0,
+    }: {
+      imageFile: File;
+      kColors?: number;
+      targetSegments?: number;
+    }) => {
       if (!session) {
         throw new Error("No session found");
       }
+
+      const formData = new FormData();
+      formData.append("image", imageFile);
+      formData.append("kColors", kColors.toString());
+      formData.append("targetSegments", targetSegments.toString());
+
       const response = await axios.post(
-        `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.UPDATE_CONVERSION_COUNT}`,
-        {},
+        `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.CONVERT_IMAGE}`,
+        formData,
         {
           headers: {
+            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${session.access_token}`,
           },
         },
       );
-      return response.data;
+      return response.data as {
+        image: string;
+        maxConversions: number;
+        currentCount: number;
+      };
     },
   });
 }

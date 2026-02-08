@@ -43,14 +43,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import toast from "react-hot-toast";
 
 export default function AIGeneratePageSuspense() {
@@ -78,9 +70,6 @@ function AIGeneratePage() {
   const searchParams = useSearchParams();
   const [prompt, setPrompt] = useState("");
   const [useOpenAI, setUseOpenAI] = useState(false);
-  const [resolution, setResolution] = useState<
-    "64x64" | "96x96" | "128x128" | "256x256"
-  >("128x128");
   const [loadingMessage, setLoadingMessage] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Set<number>>(
     new Set(),
@@ -120,17 +109,6 @@ function AIGeneratePage() {
       setIsCheckoutLoading(false);
     }
   }
-
-  // Resolution mapping
-  const resolutionToNumber: Record<
-    "64x64" | "96x96" | "128x128" | "256x256",
-    number
-  > = {
-    "64x64": 64,
-    "96x96": 96,
-    "128x128": 128,
-    "256x256": 256,
-  };
 
   // Effect to load prompt from localStorage on mount
   useEffect(() => {
@@ -182,7 +160,6 @@ function AIGeneratePage() {
       {
         prompt,
         useOpenAI,
-        resolution: resolutionToNumber[resolution],
       },
       {
         onSuccess: (imageData) => {
@@ -490,8 +467,7 @@ function AIGeneratePage() {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "_")
       .slice(0, 50);
-    const imgWidth = resolution.split("x")[0];
-    return `pixel_art_${sanitizedPrompt}_${imgWidth}px_${timestamp}_${randomId}.png`;
+    return `pixel_art_${sanitizedPrompt}_${timestamp}_${randomId}.png`;
   };
 
   const handleSingleDownload = async (variant: {
@@ -619,39 +595,6 @@ function AIGeneratePage() {
                 use the image for (e.g. "game sprite", "game asset", "profile
                 picture", etc).
               </p>
-
-              <div className="flex items-center gap-4 py-2">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="resolution"
-                    className="text-sm font-medium text-white"
-                  >
-                    Resolution:
-                  </Label>
-                  <Select
-                    value={resolution}
-                    onValueChange={(value) =>
-                      setResolution(
-                        value as "64x64" | "96x96" | "128x128" | "256x256",
-                      )
-                    }
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger className="w-[120px] border-slate-600 bg-slate-800/30 text-white">
-                      <SelectValue placeholder="Select resolution" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="64x64">64x64</SelectItem>
-                      <SelectItem value="96x96">96x96</SelectItem>
-                      <SelectItem value="128x128">128x128</SelectItem>
-                      <SelectItem value="256x256">256x256</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <span className="text-sm text-slate-300">
-                  Change if your result looks blurry
-                </span>
-              </div>
 
               {/* <div className="flex items-center gap-2">
                 <Switch checked={useOpenAI} onCheckedChange={setUseOpenAI} />
