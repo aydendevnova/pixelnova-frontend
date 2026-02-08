@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import {
@@ -22,6 +22,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useGeneratePixelArt, useCheckout } from "@/hooks/use-api";
 import { loadStripe } from "@stripe/stripe-js";
 import { env } from "@/env";
@@ -66,11 +73,22 @@ function AIGeneratePageLoading() {
   );
 }
 
+const PROGRESS_MESSAGES = [
+  { at: 0, text: "Preparing to generate your pixel art..." },
+  { at: 15, text: "Model is generating your image..." },
+  { at: 55, text: "Refining pixel details..." },
+  { at: 75, text: "Snapping colors and textures..." },
+  { at: 90, text: "Finishing up..." },
+]
+
 function AIGeneratePage() {
   const searchParams = useSearchParams();
   const [prompt, setPrompt] = useState("");
   const [useOpenAI, setUseOpenAI] = useState(false);
+  const [model, setModel] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("");
+  const [progress, setProgress] = useState(0);
+  const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const [selectedVariants, setSelectedVariants] = useState<Set<number>>(
     new Set(),
   );
@@ -126,6 +144,48 @@ function AIGeneratePage() {
     }
   }, [searchParams]);
 
+  const startProgress = useCallback(() => {
+    setProgress(0)
+    const startTime = Date.now()
+    // Reach ~92% in ~13s using an ease-out curve
+    progressInterval.current = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000
+      // Asymptotic curve: fast start, slows toward 92%
+      const next = Math.min(92, 92 * (1 - Math.exp(-elapsed / 5)))
+      setProgress(next)
+
+      // Update loading message at thresholds
+      const msg = [...PROGRESS_MESSAGES]
+        .reverse()
+        .find((m) => next >= m.at)
+      if (msg) setLoadingMessage(msg.text)
+    }, 200)
+  }, [])
+
+  const stopProgress = useCallback((success: boolean) => {
+    if (progressInterval.current) {
+      clearInterval(progressInterval.current)
+      progressInterval.current = null
+    }
+    if (success) {
+      setProgress(100)
+      setTimeout(() => {
+        setProgress(0)
+        setLoadingMessage("")
+      }, 400)
+    } else {
+      setProgress(0)
+      setLoadingMessage("")
+    }
+  }, [])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (progressInterval.current) clearInterval(progressInterval.current)
+    }
+  }, [])
+
   // Effect to save prompt to localStorage whenever it changes
   useEffect(() => {
     if (prompt.trim()) {
@@ -153,17 +213,18 @@ function AIGeneratePage() {
       return;
     }
 
-    // Set initial loading message
-    setLoadingMessage("Preparing to generate your pixel art...");
+    // Start fake progress bar
+    startProgress()
 
     generatePixelArt(
       {
         prompt,
         useOpenAI,
+        model,
       },
       {
         onSuccess: (imageData) => {
-          setLoadingMessage("");
+          stopProgress(true)
           const newVariant = {
             id: Date.now().toString(),
             image: imageData,
@@ -183,24 +244,12 @@ function AIGeneratePage() {
           });
         },
         onError: (error: any) => {
-          setLoadingMessage("");
+          stopProgress(false)
           toast.error(error);
           throw error;
         },
       },
     );
-
-    // Update loading message based on OpenAI usage
-    if (useOpenAI) {
-      setLoadingMessage("Using ChatGPT to enhance your prompt...");
-      setTimeout(() => {
-        if (isLoading) {
-          setLoadingMessage("Generating pixel art from enhanced prompt...");
-        }
-      }, 3000);
-    } else {
-      setLoadingMessage("Generating your pixel art...");
-    }
   };
 
   const handleVariantClick = (index: number) => {
@@ -604,6 +653,29 @@ function AIGeneratePage() {
                 </p>
               </div> */}
 
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">
+                  Model
+                </label>
+                <Select
+                  value={String(model)}
+                  onValueChange={(v) => setModel(Number(v))}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger className="w-full bg-slate-800/30 text-white border-slate-700">
+                    <SelectValue placeholder="Select a model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">
+                      Retro Pixel Flux (Recommended)
+                    </SelectItem>
+                    <SelectItem value="1">
+                      Flux 1 LoRA Modern Pixel Art
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <Textarea
                 value={prompt}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
@@ -635,9 +707,22 @@ function AIGeneratePage() {
                     "Generate Pixel Art"
                   )}
                 </Button>
-                {isLoading && loadingMessage && (
-                  <div className="animate-pulse text-center text-sm text-slate-300">
-                    {loadingMessage}
+                {isLoading && (
+                  <div className="w-full space-y-2">
+                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-700/60">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-purple-500 to-orange-500 transition-all duration-300 ease-out"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-300">
+                        {loadingMessage}
+                      </span>
+                      <span className="text-xs tabular-nums text-slate-400">
+                        {Math.round(progress)}%
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -678,30 +763,24 @@ function AIGeneratePage() {
               </DropdownMenu>
             </div>
 
-            {isLoading && variants.length === 0 && (
-              <div className="flex h-64 items-center justify-center">
-                <div className="space-y-6 text-center">
-                  <div className="relative mx-auto h-16 w-16">
-                    <div className="absolute h-full w-full animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
-                    <div className="absolute h-full w-full animate-ping rounded-full border-4 border-purple-400/30"></div>
-                    <div className="absolute h-full w-full animate-pulse rounded-full bg-purple-400/10"></div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              {isLoading && progress >= 15 && (
+                <div className="flex flex-col items-center rounded-xl border border-slate-600/50 bg-slate-700/20 p-4">
+                  <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-slate-700/40">
+                    {/* Animated shimmer overlay */}
+                    <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-600/30 via-slate-500/20 to-slate-600/30" />
+                    <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-slate-400/10 to-transparent" />
+                    {/* Blurry placeholder icon */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="h-16 w-16 rounded-xl bg-slate-500/20 blur-sm" />
+                    </div>
                   </div>
-                  <div className="space-y-3">
-                    <p className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl font-bold text-transparent">
-                      ✨ Pixel Magic in Progress ✨
-                    </p>
-                    <p className="animate-pulse bg-gradient-to-r from-slate-400 to-slate-300 bg-clip-text text-lg font-medium text-transparent">
-                      {loadingMessage}
-                    </p>
-                    <p className="text-sm text-slate-400">
-                      Transforming your imagination into pixel perfection...
-                    </p>
+                  <div className="mt-3 flex w-full flex-col gap-2">
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-slate-600/40" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-slate-600/30" />
                   </div>
                 </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              )}
               {variants.map((variant, index) => (
                 <div
                   key={variant.id}

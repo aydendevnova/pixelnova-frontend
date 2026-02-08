@@ -93,9 +93,11 @@ export function useGeneratePixelArt() {
     mutationFn: async ({
       prompt,
       useOpenAI,
+      model = 0,
     }: {
       prompt: string;
       useOpenAI: boolean;
+      model?: number;
     }) => {
       if (!session) {
         throw new Error("No session found");
@@ -104,7 +106,7 @@ export function useGeneratePixelArt() {
       try {
         const response = await axios.post(
           `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.GENERATE_PIXEL_ART}`,
-          { prompt, useOpenAI },
+          { prompt, useOpenAI, model },
           {
             headers: {
               "Content-Type": "application/json",
