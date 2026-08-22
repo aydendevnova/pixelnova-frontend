@@ -38,7 +38,7 @@ export default function ColorizerLandingSection() {
         <div className="mt-20 grid grid-cols-1 gap-8 md:grid-cols-2">
           <div className="relative overflow-hidden rounded-2xl border border-slate-700/50 bg-slate-800/50 backdrop-blur">
             <Image
-              alt="AI colorizer preview"
+              alt="Colorizer preview"
               className="object-contain"
               height={800}
               width={1000}

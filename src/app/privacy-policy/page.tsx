@@ -9,7 +9,7 @@ export default function PrivacyPolicy() {
         </p>
 
         <p className="mb-8">
-          PixelNova LLC ("Pixel Nova," "we," "us," or "our"), located in
+          PixelNova LLC ("Pixel Nova Studio," "we," "us," or "our"), located in
           Florida, United States, respects your privacy and is committed to
           protecting your personal information. This Privacy Policy explains how
           we collect, use, disclose, and safeguard your information when you use
@@ -19,9 +19,9 @@ export default function PrivacyPolicy() {
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">1. Scope</h2>
           <p>
-            This Privacy Policy applies to all users of the Pixel Nova platform,
-            including but not limited to the website, applications, and related
-            services provided by Pixel Nova LLC.
+            This Privacy Policy applies to all users of the Pixel Nova Studio
+            platform, including but not limited to the website, applications,
+            and related services provided by Pixel Nova LLC.
           </p>
         </section>
 
@@ -83,7 +83,7 @@ export default function PrivacyPolicy() {
               </p>
               <ul className="list-disc space-y-1 pl-4 text-sm">
                 <li>Authenticate your identity and provide secure login</li>
-                <li>Create and maintain your Pixel Nova account</li>
+                <li>Create and maintain your Pixel Nova Studio account</li>
                 <li>
                   Provide user-facing features prominent in our app interface
                 </li>
@@ -133,16 +133,16 @@ export default function PrivacyPolicy() {
               </p>
               <ul className="list-disc space-y-1 pl-4 text-sm">
                 <li>
-                  Google user data is used solely for features visible in Pixel
-                  Nova's interface
+                  Google user data is used solely for features visible in the
+                  Pixel Nova Studio interface
                 </li>
                 <li>
                   No human reading of data except for security, legal
                   compliance, or with explicit consent
                 </li>
                 <li>
-                  Data is not used for AI model training without explicit user
-                  consent
+                  Data is not used for machine learning model training without
+                  explicit user consent
                 </li>
                 <li>
                   All employees and contractors comply with Google's User Data
@@ -153,8 +153,8 @@ export default function PrivacyPolicy() {
               <p className="mb-1 mt-3 text-sm font-medium">User Control:</p>
               <ul className="list-disc space-y-1 pl-4 text-sm">
                 <li>
-                  You can revoke Pixel Nova's access through your Google Account
-                  settings at any time
+                  You can revoke Pixel Nova Studio's access through your Google
+                  Account settings at any time
                 </li>
                 <li>
                   You can request deletion of your Google user data through our{" "}
@@ -173,9 +173,9 @@ export default function PrivacyPolicy() {
           <div className="space-y-4">
             <h3 className="text-lg font-medium">2.3. Usage Data</h3>
             <ul className="list-disc space-y-2 pl-6">
-              <li>Prompts and inputs provided when generating content</li>
+              <li>Images you upload for conversion or editing</li>
               <li>
-                AI generation outputs (pixel art images), which are stored in
+                Processed outputs (pixel art images), which are stored in
                 publicly accessible URLs
               </li>
               <li>
@@ -222,15 +222,6 @@ export default function PrivacyPolicy() {
               security monitoring
             </p>
           </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">2.6. AI Processing Data</h3>
-            <p>
-              Prompts and related data are shared with model providers,
-              including OpenAI and Hugging Face, for the purpose of generating
-              content.
-            </p>
-          </div>
         </section>
 
         <section className="space-y-4">
@@ -238,7 +229,7 @@ export default function PrivacyPolicy() {
           <p>We use the collected data to:</p>
           <ul className="list-disc space-y-2 pl-6">
             <li>Provide, operate, and improve the Service</li>
-            <li>Process user requests and generate AI-driven pixel art</li>
+            <li>Process user requests and convert images to pixel art</li>
             <li>
               Perform security monitoring, abuse detection, and moderation
             </li>
@@ -287,13 +278,8 @@ export default function PrivacyPolicy() {
           <p>We may share your information in the following circumstances:</p>
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <strong>AI Model Providers:</strong> Prompts and related data are
-              transmitted to third-party model providers such as OpenAI and
-              Hugging Face.
-            </li>
-            <li>
               <strong>Cloud Storage Providers:</strong> User data, including
-              generated images, is stored via Supabase providers and associated
+              stored images, is stored via Supabase providers and associated
               cloud infrastructure.
             </li>
             <li>
@@ -324,8 +310,8 @@ export default function PrivacyPolicy() {
           </h2>
           <p>
             User data is stored on cloud infrastructure provided by Supabase and
-            may reside in the United States or other jurisdictions. Publicly
-            generated images are stored with publicly accessible URLs.
+            may reside in the United States or other jurisdictions. Stored
+            images are kept at publicly accessible URLs.
           </p>
           <p className="mt-4">
             We retain user data as long as necessary for the purposes described
@@ -352,33 +338,8 @@ export default function PrivacyPolicy() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">6.1. Payment Processing</h2>
-          <p>
-            Payment transactions are processed by Stripe, Inc. ("Stripe"). When
-            you make a purchase:
-          </p>
-          <ul className="list-disc space-y-2 pl-6">
-            <li>
-              Payment information is collected and processed directly by Stripe
-            </li>
-            <li>
-              We receive transaction confirmations and subscription status
-              updates
-            </li>
-            <li>No credit card information is stored on our servers</li>
-            <li>
-              Stripe's privacy policy governs how your payment data is handled
-            </li>
-          </ul>
-          <p className="mt-4">
-            For billing inquiries, contact us at support@pixelnova.app. For
-            payment security questions, refer to Stripe's privacy policy.
-          </p>
-        </section>
-
-        <section className="space-y-4">
           <h2 className="text-xl font-semibold">
-            6.2. International Data Transfers
+            6.1. International Data Transfers
           </h2>
           <p>
             Your personal data may be transferred to, stored, and processed in
@@ -398,13 +359,13 @@ export default function PrivacyPolicy() {
 
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">
-            6.3. Content Ownership and Generated Images
+            6.2. Content Ownership and Stored Images
           </h2>
-          <p>Regarding content generated through our service:</p>
+          <p>Regarding content you create through our service:</p>
           <ul className="list-disc space-y-2 pl-6">
-            <li>You retain ownership of prompts and inputs you provide</li>
+            <li>You retain ownership of the images you provide</li>
             <li>
-              Generated pixel art images are owned by you, subject to our Terms
+              Processed pixel art images are owned by you, subject to our Terms
               of Service
             </li>
             <li>Images are stored with publicly accessible URLs by default</li>
@@ -418,11 +379,11 @@ export default function PrivacyPolicy() {
 
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">
-            6.4. Automated Decision Making and AI Processing
+            6.3. Automated Decision Making
           </h2>
-          <p>Our service uses automated systems and AI models for:</p>
+          <p>Our service uses automated systems for:</p>
           <ul className="list-disc space-y-2 pl-6">
-            <li>Content generation based on your prompts</li>
+            <li>Image processing and pixel art conversion</li>
             <li>Content moderation and safety filtering</li>
             <li>Usage pattern analysis for service improvement</li>
             <li>Abuse detection and prevention</li>
@@ -539,7 +500,7 @@ export default function PrivacyPolicy() {
               Google OAuth Verification Compliance
             </h3>
             <p className="text-sm">
-              Pixel Nova fully complies with Google's OAuth verification
+              Pixel Nova Studio fully complies with Google's OAuth verification
               requirements, including:
             </p>
             <ul className="list-disc space-y-2 pl-4 text-sm">
@@ -590,17 +551,6 @@ export default function PrivacyPolicy() {
           <ul className="list-disc space-y-2 pl-6">
             <li>
               <strong>Supabase:</strong> Database and authentication services
-            </li>
-            <li>
-              <strong>OpenAI:</strong> AI model processing for content
-              generation
-            </li>
-            <li>
-              <strong>Hugging Face:</strong> AI model processing and hosting
-            </li>
-            <li>
-              <strong>Stripe:</strong> Payment processing and subscription
-              management
             </li>
             <li>
               <strong>Google OAuth:</strong> Third-party authentication
@@ -683,8 +633,8 @@ export default function PrivacyPolicy() {
             <li>Account access is immediately disabled</li>
             <li>Personal data is anonymized or deleted within 30 days</li>
             <li>
-              Generated images may remain publicly accessible unless
-              specifically requested for removal
+              Stored images may remain publicly accessible unless specifically
+              requested for removal
             </li>
             <li>
               Some data may be retained for legal, security, or fraud prevention
@@ -720,10 +670,10 @@ export default function PrivacyPolicy() {
           </h2>
           <p>
             Currently, user data is not used to train machine learning models.
-            Pixel Nova reserves the right to update this policy and begin using
-            submitted data for model training in the future. If this occurs,
-            users will be notified in advance, and the Privacy Policy will be
-            updated accordingly.
+            Pixel Nova Studio reserves the right to update this policy and begin
+            using submitted data for model training in the future. If this
+            occurs, users will be notified in advance, and the Privacy Policy
+            will be updated accordingly.
           </p>
         </section>
 

@@ -38,7 +38,7 @@ Flow:
 Home Page
 
 A clean landing page introduces the app with a "Start Editing" button.
-Navigation options: Learn (tutorials), Community (gallery of shared art), Premium (upsell).
+Navigation options: Learn (tutorials).
 Editor
 
 Canvas: Central area where users draw. Default size: 32x32 pixels.

@@ -41,9 +41,9 @@ export default function SkinToneLandingSection() {
                 Diverse Representation
               </h3>
               <p className="text-slate-300">
-                Our AI-powered skin tone generator helps you create inclusive
-                pixel art characters that represent people of all backgrounds.
-                Generate harmonious skin tone palettes with just one click.
+                Our skin tone generator helps you create inclusive pixel art
+                characters that represent people of all backgrounds. Generate
+                harmonious skin tone palettes with just one click.
               </p>
             </div>
             <div className="grid gap-6">

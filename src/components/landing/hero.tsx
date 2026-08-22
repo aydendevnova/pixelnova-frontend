@@ -1,11 +1,8 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 // Import Swiper React components
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation, EffectFade } from "swiper/modules";
@@ -17,9 +14,6 @@ import "swiper/css/navigation";
 import "swiper/css/effect-fade";
 
 export default function HeroLandingSection() {
-  const router = useRouter();
-  const [prompt, setPrompt] = useState("");
-
   const carouselImages = [
     { src: "/images/landing/purple_staff.png", alt: "Purple Staff" },
     { src: "/images/landing/wizard.png", alt: "Wizard" },
@@ -32,11 +26,6 @@ export default function HeroLandingSection() {
     { src: "/images/landing/skyscraper.png", alt: "Skyscraper" },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    router.push(`/ai?prompt=${encodeURIComponent(prompt)}`);
-  };
-
   return (
     <section className="w-full py-12 md:py-24 lg:py-32 xl:py-52">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
@@ -44,81 +33,36 @@ export default function HeroLandingSection() {
           <div className="flex flex-col justify-center space-y-4 max-md:mt-20">
             <div className="max-w-xl space-y-2">
               <Badge className="w-fit border-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                Now Live
+                Free for everyone
               </Badge>
               <h1 className="max-w-xl text-3xl font-bold tracking-tighter text-white sm:text-5xl xl:text-6xl/none">
-                Your Ideas to Pixel Art in Seconds
+                Pixel Nova Studio
               </h1>
               <p className="max-w-[600px] text-slate-300 md:text-xl">
-                Transform any text prompt into stunning pixel art in seconds. No
-                artistic skills needed - just describe what you want and let our
-                AI do the magic.
+                A free suite of pixel art tools. Convert images to true pixel
+                art, colorize sprites, build skin tone palettes, and draw in the
+                editor.
               </p>
 
-              <form
-                onSubmit={handleSubmit}
-                className="flex flex-col gap-4 pt-6"
-              >
-                <div className="relative flex w-full max-w-[700px] items-center">
-                  <Input
-                    type="text"
-                    placeholder="Describe your pixel art idea..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleSubmit(e);
-                      }
-                    }}
-                    autoFocus
-                    className="block h-14 rounded-2xl border-slate-700 bg-slate-900/50 px-6 text-lg text-white placeholder:text-slate-400 lg:hidden"
-                  />
-                  <Input
-                    type="text"
-                    placeholder="Describe your pixel art idea... (e.g. 'a cute blue slime')"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleSubmit(e);
-                      }
-                    }}
-                    autoFocus
-                    className="hidden h-14 rounded-2xl border-slate-700 bg-slate-900/50 px-6 text-lg text-white placeholder:text-slate-400 lg:block"
-                  />
+              <div className="flex flex-wrap gap-4 pt-6">
+                <Link href="/convert">
                   <Button
-                    type="submit"
-                    className="absolute right-2 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 px-6 text-base font-medium hover:from-purple-700 hover:via-pink-700 hover:to-orange-700"
+                    size="lg"
+                    className="rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 px-8 text-base font-medium hover:from-purple-700 hover:via-pink-700 hover:to-orange-700"
                   >
-                    Generate
+                    Convert an Image
                   </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 text-sm text-slate-400">
-                  Try:
-                  <Link
-                    href="/ai?prompt=a magical sword with blue flames"
-                    className="hover:text-white"
+                </Link>
+                <Link href="/editor">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-full border-slate-600 bg-slate-900/50 px-8 text-base font-medium text-white hover:bg-slate-800"
                   >
-                    magical sword
-                  </Link>
-                  <span>•</span>
-                  <Link
-                    href="/ai?prompt=cute red dragon"
-                    className="hover:text-white"
-                  >
-                    red dragon
-                  </Link>
-                  <span>•</span>
-                  <Link
-                    href="/ai?prompt=retro game style treasure chest"
-                    className="hover:text-white"
-                  >
-                    treasure chest
-                  </Link>
-                </div>
-              </form>
+                    Open the Editor
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
           <div className="relative mx-auto aspect-square w-full max-w-[600px] overflow-hidden rounded-2xl">

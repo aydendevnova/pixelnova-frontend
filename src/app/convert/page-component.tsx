@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeftIcon,
@@ -16,8 +16,6 @@ import {
 import useUser from "@/hooks/use-user";
 import { SignInModal } from "@/components/modals/signin-modal";
 import { setPostSignInRedirectUrl } from "@/hooks/use-user";
-import { ConversionsDisplay } from "@/components/conversions-display";
-import { getMaxConversions, PLAN_LIMITS, UserTier } from "@/lib/constants";
 import { resizeImageWithPica } from "@/lib/utils/image";
 import Link from "next/link";
 import { useConvertImage } from "@/hooks/use-api";
@@ -229,9 +227,7 @@ const StepTwo = ({
               <Checkbox
                 id="auto-detect"
                 checked={isAutoDetect}
-                onCheckedChange={(checked) =>
-                  setIsAutoDetect(checked === true)
-                }
+                onCheckedChange={(checked) => setIsAutoDetect(checked === true)}
               />
               <label
                 htmlFor="auto-detect"
@@ -379,7 +375,7 @@ const StepTwo = ({
 };
 
 export default function ConvertImagePageClient() {
-  const { profile, user } = useUser();
+  const { user } = useUser();
   const session = useSession();
   const router = useRouter();
   const convertImage = useConvertImage();
@@ -544,21 +540,6 @@ export default function ConvertImagePageClient() {
   const handleProcess = async (targetSegments: number) => {
     if (!uploadedImage) return;
 
-    // Check conversion limits
-    if (
-      profile?.tier &&
-      profile.conversion_count >= getMaxConversions(profile.tier as UserTier)
-    ) {
-      setError(
-        `You've reached your ${PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS} image conversion limit.${
-          profile.tier === "NONE"
-            ? " Upgrade to Pro for unlimited conversions!"
-            : ""
-        }`,
-      );
-      return;
-    }
-
     try {
       setIsProcessing(true);
       setProcessingStage("Converting to pixel art...");
@@ -589,8 +570,7 @@ export default function ConvertImagePageClient() {
   const steps = [
     {
       title: "Convert Image to Pixel Art",
-      description:
-        "Generate with AI or upload an image to convert to pixel art",
+      description: "Upload an image to convert it into true pixel art",
       content: (
         <div className="space-y-4">
           <StepOne
@@ -728,8 +708,6 @@ export default function ConvertImagePageClient() {
               View Tutorial
             </Button>
           </Link>
-
-          <ConversionsDisplay />
         </div>
 
         <div className="mb-8 flex w-full gap-2">
@@ -744,35 +722,6 @@ export default function ConvertImagePageClient() {
             />
           ))}
         </div>
-
-        {/* Show conversion limit alert */}
-        {profile?.tier &&
-          profile.conversion_count >=
-            getMaxConversions(profile.tier as UserTier) && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Conversion Limit Reached</AlertTitle>
-              <AlertDescription>
-                You've reached your{" "}
-                {PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS ===
-                Infinity
-                  ? "unlimited"
-                  : PLAN_LIMITS[profile.tier as UserTier].MAX_CONVERSIONS}{" "}
-                image conversion limit.{" "}
-                {profile.tier === "NONE" && (
-                  <>
-                    <a
-                      href="/pricing"
-                      className="text-blue-400 hover:underline"
-                    >
-                      Upgrade to Pro
-                    </a>{" "}
-                    for unlimited conversions!
-                  </>
-                )}
-              </AlertDescription>
-            </Alert>
-          )}
 
         <div className="rounded-lg">{currentStep.content}</div>
       </div>

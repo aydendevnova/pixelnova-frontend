@@ -4,21 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 export const metadata: Metadata = {
-  title: "Pixel Nova | AI Pixel Art Editor & Generator",
+  title: "Dashboard | Pixel Nova Studio",
   description:
-    "Create stunning pixel art with our AI-powered online editor. Features intelligent drawing tools, real-time collaboration, custom palettes, and advanced editing capabilities. Perfect for game developers, digital artists and pixel art enthusiasts.",
+    "All of the Pixel Nova Studio tools in one place: the image converter, the colorizer, the skin tone generator, and the pixel art editor.",
   keywords: [
-    "ai pixel art",
-    "ai pixel art editor",
-    "ai pixel art generator",
     "pixel art editor",
-    "pixel art creator",
-    "pixel art generator",
-    "online pixel art",
     "pixel art tools",
+    "online pixel art",
     "game development",
     "digital art",
-    "pixel art animation",
     "retro art",
     "8-bit art",
     "pixel art software",
@@ -29,9 +23,9 @@ export const metadata: Metadata = {
     { rel: "icon", url: "/favicon.ico" },
   ],
   openGraph: {
-    title: "Pixel Nova | AI Pixel Art Editor & Generator",
+    title: "Dashboard | Pixel Nova Studio",
     description:
-      "Create stunning pixel art with our AI-powered online editor. Perfect for game developers and digital artists.",
+      "All of the Pixel Nova Studio tools in one place. Free for everyone.",
     type: "website",
     url: "https://editor.pixelnova.app",
     images: [
@@ -39,7 +33,7 @@ export const metadata: Metadata = {
         url: "/logo.png",
         width: 1200,
         height: 630,
-        alt: "Pixel Nova Logo",
+        alt: "Pixel Nova Studio Logo",
       },
     ],
   },
@@ -49,14 +43,14 @@ export default async function Home() {
   return (
     <div className="min-h-screen overflow-y-auto bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
       <div className="duration-500 animate-in fade-in">
-        {/* Hero Section - AI Generator */}
+        {/* Hero Section - Converter */}
         <section className="px-4 pb-8 pt-16">
           <div className="mx-auto max-w-7xl">
             <div className="mb-8 text-center">
               <h1 className="mb-4 flex items-center justify-center gap-4 text-5xl font-bold">
                 <Image
                   src="/logo.png"
-                  alt="Pixel Nova Logo"
+                  alt="Pixel Nova Studio Logo"
                   width={74}
                   height={74}
                   style={{
@@ -64,86 +58,41 @@ export default async function Home() {
                   }}
                 />
                 <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
-                  Pixel Nova
+                  Pixel Nova Studio
                 </span>
               </h1>
-              <p className="text-xl text-slate-400">
-                AI-Powered Pixel Art Creation Suite
-              </p>
+              <p className="text-xl text-slate-400">A free pixel art toolkit</p>
             </div>
 
             {/* Main Features Grid */}
 
-            <div className="grid gap-8 md:grid-cols-2">
-              {/* AI Generator Card */}
-              <div className="group relative">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-orange-600/20 opacity-75 blur-xl transition duration-300 group-hover:opacity-100"></div>
-                <div className="relative rounded-2xl border border-slate-700/50 bg-slate-800/50 p-8 backdrop-blur transition-all duration-300 hover:border-purple-500/50">
-                  <div className="mb-6 flex items-start justify-between">
-                    <div>
-                      <h2 className="mb-2 text-3xl font-bold text-white">
-                        Create Pixel Art with AI
-                      </h2>
-                      <Badge className="border-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                        ✨ Text to Pixel Art
-                      </Badge>
-                    </div>
-                    <div className="text-5xl opacity-20">🎨</div>
-                  </div>
-                  <p className="mb-6 text-lg leading-relaxed text-slate-300">
-                    Transform your ideas into pixel art instantly. Just describe
-                    what you want, and our AI will create beautiful pixel art
-                    for your games, social media, or projects.
-                  </p>
-                  <div className="flex flex-row gap-4">
-                    <Link href="/ai">
-                      <Button
-                        size="lg"
-                        className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 px-8 font-semibold text-white hover:from-purple-700 hover:via-pink-700 hover:to-orange-700"
-                      >
-                        Start Creating
-                      </Button>
-                    </Link>
-
-                    <Link href="/gallery">
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        className="border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-slate-700"
-                      >
-                        View Gallery
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-
-              {/* AI Downscaler Card */}
+            <div className="grid gap-8">
+              {/* Converter Card */}
               <div className="group relative">
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-600/20 via-teal-600/20 to-cyan-600/20 opacity-75 blur-xl transition duration-300 group-hover:opacity-100"></div>
                 <div className="relative rounded-2xl border border-slate-700/50 bg-slate-800/50 p-8 backdrop-blur transition-all duration-300 hover:border-emerald-500/50">
                   <div className="mb-6 flex items-start justify-between">
                     <div>
                       <h2 className="mb-2 text-3xl font-bold text-white">
-                        Fix AI-Generated Pixel Art
+                        Convert Images to Pixel Art
                       </h2>
                       <Badge className="border-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
-                        ✨ Magic Fix
+                        ✨ Pixel Perfect
                       </Badge>
                     </div>
                     <div className="text-5xl opacity-20">✨</div>
                   </div>
                   <p className="mb-6 text-lg leading-relaxed text-slate-300">
-                    Got pixel art style images from ChatGPT, Midjourney, or
-                    other AI tools? Our magic fixer transforms them into clean,
-                    crisp pixel art that looks perfect up close.
+                    Got an image that only looks like pixel art? Our converter
+                    rebuilds it into clean, crisp pixel art that stays sharp up
+                    close.
                   </p>
                   <Link href="/convert">
                     <Button
                       size="lg"
                       className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-8 font-semibold text-white hover:from-emerald-700 hover:via-teal-700 hover:to-cyan-700"
                     >
-                      Fix My Pixel Art
+                      Convert an Image
                     </Button>
                   </Link>
                 </div>
@@ -225,7 +174,7 @@ export default async function Home() {
                   </div>
                   <p className="mb-6 text-slate-400">
                     Our custom pixel art editor made for new users. Perfect for
-                    fine-tuning AI pixel art.
+                    fine-tuning your sprites.
                   </p>
                   <Link href="/editor" className="mt-auto">
                     <Button

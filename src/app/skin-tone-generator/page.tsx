@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import SkinToneGeneratorComponent from "./page-component";
 
 export const metadata: Metadata = {
-  title: "Pixel Art Skin Tone Generator | Create Diverse Character Sprites",
+  title: "Pixel Art Skin Tone Generator | Pixel Nova Studio",
   description:
     "Generate inclusive and diverse skin tone variations for your pixel art characters. Create authentic representations with our specialized tool. Perfect for game developers and character artists.",
   keywords: [
@@ -37,10 +37,10 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Pixel Nova Skin Tone Generator - Create Diverse Characters",
+        alt: "Pixel Nova Studio Skin Tone Generator",
       },
     ],
-    siteName: "Pixel Nova",
+    siteName: "Pixel Nova Studio",
     locale: "en_US",
   },
   twitter: {

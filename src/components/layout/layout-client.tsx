@@ -11,7 +11,6 @@ import { useEffect } from "react";
 import { Toaster as ToasterRadixUI } from "../ui/toaster";
 import { Toaster as ToasterHotToast } from "react-hot-toast";
 import { usePathname } from "next/navigation";
-import { CreditsProvider } from "@/hooks/use-credits";
 import Footer from "./footer";
 
 // Create a Supabase client
@@ -69,39 +68,37 @@ export default function LayoutClient({
     >
       <QueryClientProvider client={queryClient}>
         <SessionContextProvider supabaseClient={supabase}>
-          <CreditsProvider>
-            <UserProvider>
-              <div
-                className={`relative flex min-h-screen flex-col ${
-                  pathname == "/editor" ? "overflow-hidden" : "dark"
-                }`}
-              >
-                <Header />
-                <ToasterRadixUI />
-                <ToasterHotToast />
+          <UserProvider>
+            <div
+              className={`relative flex min-h-screen flex-col ${
+                pathname == "/editor" ? "overflow-hidden" : "dark"
+              }`}
+            >
+              <Header />
+              <ToasterRadixUI />
+              <ToasterHotToast />
 
-                {children}
-                {pathname == "/editor" && (
-                  <div className="fixed bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 opacity-50">
-                    <img
-                      src="/logo.png"
-                      alt="Pixel Nova"
-                      width={16}
-                      height={16}
-                      className="rounded-full"
-                    />
-                    <span className="font-semibold text-blue-500">
-                      Pixel Nova
-                    </span>
-                    <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-orange-800">
-                      public alpha
-                    </span>
-                  </div>
-                )}
-                <Footer />
-              </div>
-            </UserProvider>
-          </CreditsProvider>
+              {children}
+              {pathname == "/editor" && (
+                <div className="fixed bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 opacity-50">
+                  <img
+                    src="/logo.png"
+                    alt="Pixel Nova Studio"
+                    width={16}
+                    height={16}
+                    className="rounded-full"
+                  />
+                  <span className="font-semibold text-blue-500">
+                    Pixel Nova Studio
+                  </span>
+                  <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-orange-800">
+                    public alpha
+                  </span>
+                </div>
+              )}
+              <Footer />
+            </div>
+          </UserProvider>
         </SessionContextProvider>
       </QueryClientProvider>
     </ErrorBoundary>

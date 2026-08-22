@@ -418,14 +418,8 @@ export default function AdminDashboard() {
                 <div>{selectedUserProfile.email}</div>
                 <div className="font-semibold">Full Name</div>
                 <div>{selectedUserProfile.full_name}</div>
-                <div className="font-semibold">Tier</div>
-                <div>{selectedUserProfile.tier}</div>
-                <div className="font-semibold">Generation Count</div>
-                <div>{selectedUserProfile.generation_count}</div>
                 <div className="font-semibold">Conversion Count</div>
                 <div>{selectedUserProfile.conversion_count}</div>
-                <div className="font-semibold">Lifetime Generations</div>
-                <div>{selectedUserProfile.generation_count_lifetime}</div>
                 <div className="font-semibold">Lifetime Conversions</div>
                 <div>{selectedUserProfile.conversion_count_lifetime}</div>
                 <div className="font-semibold">Created At</div>

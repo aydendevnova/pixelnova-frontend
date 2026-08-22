@@ -39,14 +39,12 @@ export default function PixelPerfectLandingSection() {
             <div className="mx-auto max-w-3xl space-y-6 md:space-y-8">
               <div className="text-center">
                 <h3 className="mb-3 text-xl font-semibold text-white md:text-2xl">
-                  The Problem with AI "Pixel Art" from <i>Other Tools</i>
+                  The Problem with "Pixel Art Style" Images
                 </h3>
                 <p className="text-sm text-slate-300 md:text-base">
-                  AI tools like ChatGPT, Midjourney, and DALL-E create "pixel
-                  art style" images that look blurry when zoomed in. They're not
-                  true pixel art. Our generator is the only true pixel art
-                  generator. However, you can convert images from other tools
-                  into true pixel art.
+                  Images that merely look like pixel art turn blurry when zoomed
+                  in &mdash; the pixels do not line up on a real grid. Our
+                  converter rebuilds them into true, pixel-perfect art.
                 </p>
               </div>
 

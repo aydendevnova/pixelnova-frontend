@@ -11,14 +11,16 @@ export default function Footer() {
             <div className="flex items-center gap-2">
               <Image
                 src="/logo.png"
-                alt="Pixel Nova Logo"
+                alt="Pixel Nova Studio Logo"
                 width={32}
                 height={32}
                 style={{
                   imageRendering: "pixelated",
                 }}
               />
-              <span className="text-xl font-bold text-white">Pixel Nova</span>
+              <span className="text-xl font-bold text-white">
+                Pixel Nova Studio
+              </span>
             </div>
             <p className="mt-2 text-center text-sm text-slate-400 md:text-left">
               © 2026 PixelNova LLC
@@ -36,12 +38,6 @@ export default function Footer() {
                 className="text-sm text-slate-400 transition-colors hover:text-white"
               >
                 Pixel Art Editor
-              </Link>
-              <Link
-                href="/ai"
-                className="text-sm text-slate-400 transition-colors hover:text-white"
-              >
-                AI Pixel Art
               </Link>
               <Link
                 href="/convert"
@@ -81,18 +77,6 @@ export default function Footer() {
                 Tutorials
               </Link>
               <Link
-                href="/gallery"
-                className="text-sm text-slate-400 transition-colors hover:text-white"
-              >
-                Gallery
-              </Link>
-              <Link
-                href="/pricing"
-                className="text-sm text-slate-400 transition-colors hover:text-white"
-              >
-                Pricing
-              </Link>
-              <Link
                 href="/support"
                 className="text-sm text-slate-400 transition-colors hover:text-white"
               >
@@ -112,12 +96,6 @@ export default function Footer() {
                 className="text-sm text-slate-400 transition-colors hover:text-white"
               >
                 My Account
-              </Link>
-              <Link
-                href="/limits"
-                className="text-sm text-slate-400 transition-colors hover:text-white"
-              >
-                Usage Limits
               </Link>
               <Link
                 href="/terms-of-service"

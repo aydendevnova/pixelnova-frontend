@@ -26,9 +26,9 @@ export default function EditorLandingSection() {
     },
     {
       icon: <Wand2 className="h-5 w-5 text-emerald-500" />,
-      title: "AI-Powered Traits",
+      title: "Character Traits",
       description:
-        "Generate and mix character traits with our revolutionary AI system",
+        "Build and mix character traits with reusable palettes and layers",
     },
   ];
 

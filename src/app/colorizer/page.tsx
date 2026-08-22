@@ -2,9 +2,9 @@ import { Metadata } from "next";
 import ColorizerPageComponent from "./page-component";
 
 export const metadata: Metadata = {
-  title: "Smart Pixel Art Colorizer | AI Color Palette Generator | Pixel Nova",
+  title: "Pixel Art Colorizer | Pixel Nova Studio",
   description:
-    "Transform your pixel art with intelligent color palettes. Our AI-powered colorizer helps you explore different color schemes, create variations, and perfect your pixel art style instantly.",
+    "Transform your pixel art with new color palettes. The colorizer helps you explore color schemes, create variations, and perfect your pixel art style instantly. Free to use.",
   keywords: [
     // Core Features
     "pixel art colorizer",
@@ -37,10 +37,10 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Pixel Nova Smart Colorizer - Transform Your Pixel Art",
+        alt: "Pixel Nova Studio Colorizer",
       },
     ],
-    siteName: "Pixel Nova",
+    siteName: "Pixel Nova Studio",
     locale: "en_US",
   },
   twitter: {

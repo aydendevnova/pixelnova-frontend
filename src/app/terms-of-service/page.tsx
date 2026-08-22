@@ -115,14 +115,13 @@ export default function TermsOfService() {
             <div>
               <h3 className="text-lg font-medium">3.1. Service Features</h3>
               <p>
-                Pixel Nova provides AI-powered pixel art generation, image
-                conversion tools, and related creative services. Features
-                include but are not limited to:
+                Pixel Nova Studio provides image conversion tools and related
+                creative services, free of charge. Features include but are not
+                limited to:
               </p>
               <ul className="list-disc space-y-2 pl-6">
-                <li>AI-generated pixel art creation</li>
                 <li>Image-to-pixel-art conversion</li>
-                <li>Personal gallery and asset management</li>
+                <li>Sprite colorization and skin tone palette generation</li>
                 <li>Editor tools and canvas functionality</li>
                 <li>Export and download capabilities</li>
               </ul>
@@ -133,8 +132,7 @@ export default function TermsOfService() {
                 We strive to maintain high service availability but do not
                 guarantee uninterrupted access. The Service may be temporarily
                 unavailable due to maintenance, updates, or circumstances beyond
-                our control. We do not provide service level agreements (SLAs)
-                for free tier users.
+                our control. We do not provide service level agreements (SLAs).
               </p>
             </div>
             <div>
@@ -144,8 +142,7 @@ export default function TermsOfService() {
               <p>
                 We may offer beta or experimental features. These features are
                 provided "as is" and may be modified or discontinued without
-                notice. Pro users may receive early access to new features as
-                part of their subscription benefits.
+                notice.
               </p>
             </div>
           </div>
@@ -153,102 +150,20 @@ export default function TermsOfService() {
 
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">
-            4. Subscription Plans and Billing
+            4. User Content and Intellectual Property
           </h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">4.1. Plan Types</h3>
-              <ul className="list-disc space-y-2 pl-6">
-                <li>
-                  <strong>Free Tier:</strong> Limited generations and
-                  conversions with basic support
-                </li>
-                <li>
-                  <strong>Pro Subscription:</strong> Monthly recurring
-                  subscription with increased limits and priority features
-                </li>
-                <li>
-                  <strong>Buy-as-You-Go (Future):</strong> Pay-per-use model for
-                  additional credits beyond subscription limits
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-medium">4.2. Payment Processing</h3>
-              <p>
-                All payments are processed securely through Stripe, Inc. By
-                subscribing, you authorize us to charge your chosen payment
-                method for applicable fees. We do not store your payment
-                information on our servers.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-medium">4.3. Billing and Renewals</h3>
-              <ul className="list-disc space-y-2 pl-6">
-                <li>Subscription fees are billed monthly in advance</li>
-                <li>Subscriptions automatically renew unless cancelled</li>
-                <li>
-                  Usage limits reset at the beginning of each billing cycle
-                </li>
-                <li>
-                  Price changes will be communicated with at least 30 days
-                  notice
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-medium">
-                4.4. Cancellation and Refunds
-              </h3>
-              <ul className="list-disc space-y-2 pl-6">
-                <li>
-                  You may cancel your subscription at any time through your
-                  account settings
-                </li>
-                <li>
-                  Cancellation takes effect at the end of the current billing
-                  period
-                </li>
-                <li>
-                  No refunds are provided for partial months except where
-                  required by law
-                </li>
-                <li>
-                  Refunds may be granted at our sole discretion for technical
-                  issues or service failures
-                </li>
-                <li>Disputed charges should be reported within 60 days</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-medium">
-                4.5. Usage Limits and Overage
-              </h3>
-              <p>
-                Each plan includes specific usage limits. Exceeding limits may
-                result in service restrictions until the next billing cycle or
-                require additional credit purchases when available.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold">
-            5. User Content and Intellectual Property
-          </h2>
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-medium">5.1. Content Ownership</h3>
+              <h3 className="text-lg font-medium">4.1. Content Ownership</h3>
               <p>
                 You retain full ownership of all art and content you create
-                using Pixel Nova, including AI-generated pixel art. This
-                includes commercial rights to use, modify, distribute, and
-                monetize your creations without restriction.
+                using Pixel Nova Studio. This includes commercial rights to use,
+                modify, distribute, and monetize your creations without
+                restriction.
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">5.2. License to PixelNova</h3>
+              <h3 className="text-lg font-medium">4.2. License to PixelNova</h3>
               <p>
                 You grant us a non-exclusive, royalty-free, worldwide license
                 to:
@@ -267,26 +182,26 @@ export default function TermsOfService() {
             </div>
             <div>
               <h3 className="text-lg font-medium">
-                5.3. Public URLs and Accessibility
+                4.3. Public URLs and Accessibility
               </h3>
               <p>
-                Generated images are stored with publicly accessible URLs by
+                Images you process are stored with publicly accessible URLs by
                 default. While these URLs are not indexed or easily
                 discoverable, anyone with the URL can view the image. You can
                 request removal of specific images through our support.
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">5.4. Data Training Policy</h3>
+              <h3 className="text-lg font-medium">4.4. Data Training Policy</h3>
               <p>
-                Currently, user-submitted data and generated content are not
-                used for AI model training. We reserve the right to change this
-                policy with advance notice and Privacy Policy updates. Any
-                future use will include opt-out mechanisms.
+                Currently, user-submitted data is not used for machine learning
+                model training. We reserve the right to change this policy with
+                advance notice and Privacy Policy updates. Any future use will
+                include opt-out mechanisms.
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">5.5. Copyright and DMCA</h3>
+              <h3 className="text-lg font-medium">4.5. Copyright and DMCA</h3>
               <p>
                 You are responsible for ensuring your content does not infringe
                 third-party rights. We respond to valid DMCA takedown notices.
@@ -297,10 +212,10 @@ export default function TermsOfService() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">6. Acceptable Use Policy</h2>
+          <h2 className="text-xl font-semibold">5. Acceptable Use Policy</h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">6.1. Prohibited Content</h3>
+              <h3 className="text-lg font-medium">5.1. Prohibited Content</h3>
               <p>
                 You agree not to create, upload, or distribute content that is:
               </p>
@@ -317,7 +232,7 @@ export default function TermsOfService() {
             </div>
             <div>
               <h3 className="text-lg font-medium">
-                6.2. Strictly Prohibited Activities
+                5.2. Strictly Prohibited Activities
               </h3>
               <div className="border-l-4 border-red-500 bg-red-50 p-4">
                 <p className="font-bold text-red-700">
@@ -333,23 +248,16 @@ export default function TermsOfService() {
                     or simulated)
                   </li>
                   <li>Any depiction of exploitation or abuse</li>
-                  <li>
-                    Content that violates our AI model providers' terms (OpenAI,
-                    Hugging Face)
-                  </li>
                 </ul>
               </div>
             </div>
             <div>
               <h3 className="text-lg font-medium">
-                6.3. Technical Restrictions
+                5.3. Technical Restrictions
               </h3>
               <p>You may not:</p>
               <ul className="list-disc space-y-2 pl-6">
-                <li>
-                  Reverse-engineer, decompile, or extract source code or AI
-                  models
-                </li>
+                <li>Reverse-engineer, decompile, or extract source code</li>
                 <li>
                   Circumvent usage limits, security measures, or access controls
                 </li>
@@ -363,18 +271,14 @@ export default function TermsOfService() {
             </div>
             <div>
               <h3 className="text-lg font-medium">
-                6.4. Commercial Use Restrictions
+                5.4. Commercial Use Restrictions
               </h3>
-              <p>While you own your generated content, you may not:</p>
+              <p>While you own the content you create, you may not:</p>
               <ul className="list-disc space-y-2 pl-6">
-                <li>Resell access to the Pixel Nova service itself</li>
+                <li>Resell access to the Pixel Nova Studio service itself</li>
                 <li>
-                  Create competing AI pixel art services using our outputs as
-                  training data
-                </li>
-                <li>
-                  Use the service for high-volume commercial generation without
-                  appropriate plans
+                  Use the service for automated high-volume processing that
+                  degrades it for other users
                 </li>
               </ul>
             </div>
@@ -383,11 +287,11 @@ export default function TermsOfService() {
 
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">
-            7. Content Moderation and Enforcement
+            6. Content Moderation and Enforcement
           </h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">7.1. Automated Moderation</h3>
+              <h3 className="text-lg font-medium">6.1. Automated Moderation</h3>
               <p>
                 We employ automated systems to detect prohibited content
                 including:
@@ -400,18 +304,17 @@ export default function TermsOfService() {
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-medium">7.2. Enforcement Actions</h3>
+              <h3 className="text-lg font-medium">6.2. Enforcement Actions</h3>
               <p>Violations may result in:</p>
               <ul className="list-disc space-y-2 pl-6">
                 <li>Content removal or blocking</li>
                 <li>Temporary account suspension</li>
                 <li>Permanent account termination</li>
                 <li>Reporting to appropriate legal authorities</li>
-                <li>Forfeiture of remaining subscription benefits</li>
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-medium">7.3. Appeals Process</h3>
+              <h3 className="text-lg font-medium">6.3. Appeals Process</h3>
               <p>
                 If you believe enforcement action was taken in error, you may
                 appeal by contacting{" "}
@@ -430,11 +333,11 @@ export default function TermsOfService() {
 
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">
-            8. API Access and Developer Terms
+            7. API Access and Developer Terms
           </h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">8.1. Future API Access</h3>
+              <h3 className="text-lg font-medium">7.1. Future API Access</h3>
               <p>
                 API access may be offered in the future subject to separate
                 terms and rate limits. Current rate limiting applies to web
@@ -442,22 +345,20 @@ export default function TermsOfService() {
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">8.2. Rate Limits</h3>
+              <h3 className="text-lg font-medium">7.2. Rate Limits</h3>
               <p>Current rate limits apply:</p>
               <ul className="list-disc space-y-2 pl-6">
                 <li>200 requests per 15 minutes for general API endpoints</li>
-                <li>250 requests per hour for AI generation endpoints</li>
-                <li>Additional limits based on subscription tier</li>
               </ul>
             </div>
           </div>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">9. Data and Privacy</h2>
+          <h2 className="text-xl font-semibold">8. Data and Privacy</h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">9.1. Data Collection</h3>
+              <h3 className="text-lg font-medium">8.1. Data Collection</h3>
               <p>
                 Our data collection and use practices are governed by our{" "}
                 <a
@@ -470,7 +371,7 @@ export default function TermsOfService() {
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">9.2. Data Export</h3>
+              <h3 className="text-lg font-medium">8.2. Data Export</h3>
               <p>
                 You may request export of your personal data and generated
                 content by contacting support. We will provide data in a
@@ -478,11 +379,11 @@ export default function TermsOfService() {
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">9.3. Data Retention</h3>
+              <h3 className="text-lg font-medium">8.3. Data Retention</h3>
               <p>
                 We retain user data as outlined in our Privacy Policy. Upon
                 account deletion, personal data is removed within 30 days,
-                though generated images may remain publicly accessible unless
+                though stored images may remain publicly accessible unless
                 specifically requested for removal.
               </p>
             </div>
@@ -490,22 +391,15 @@ export default function TermsOfService() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">10. Third-Party Services</h2>
+          <h2 className="text-xl font-semibold">9. Third-Party Services</h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">10.1. Service Providers</h3>
+              <h3 className="text-lg font-medium">9.1. Service Providers</h3>
               <p>Our service integrates with third-party providers:</p>
               <ul className="list-disc space-y-2 pl-6">
                 <li>
-                  <strong>Stripe:</strong> Payment processing and subscription
-                  management
-                </li>
-                <li>
                   <strong>Supabase:</strong> Database and authentication
                   services
-                </li>
-                <li>
-                  <strong>OpenAI & Hugging Face:</strong> AI model providers
                 </li>
                 <li>
                   <strong>Cloudflare:</strong> Content delivery and security
@@ -513,7 +407,7 @@ export default function TermsOfService() {
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-medium">10.2. Third-Party Terms</h3>
+              <h3 className="text-lg font-medium">9.2. Third-Party Terms</h3>
               <p>
                 Your use of integrated services is subject to their respective
                 terms of service. We are not responsible for third-party service
@@ -525,11 +419,11 @@ export default function TermsOfService() {
 
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">
-            11. Disclaimers and Warranties
+            10. Disclaimers and Warranties
           </h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">11.1. Service Disclaimer</h3>
+              <h3 className="text-lg font-medium">10.1. Service Disclaimer</h3>
               <p>
                 THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT
                 WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. WE DISCLAIM ALL
@@ -538,18 +432,7 @@ export default function TermsOfService() {
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">
-                11.2. AI-Generated Content
-              </h3>
-              <p>
-                AI-generated content may be unpredictable. We do not guarantee
-                the accuracy, quality, or appropriateness of generated outputs.
-                Users are responsible for reviewing and validating all generated
-                content.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-medium">11.3. External Links</h3>
+              <h3 className="text-lg font-medium">10.2. External Links</h3>
               <p>
                 We are not responsible for the content or availability of
                 external websites or services linked from our platform.
@@ -559,19 +442,19 @@ export default function TermsOfService() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">12. Limitation of Liability</h2>
+          <h2 className="text-xl font-semibold">11. Limitation of Liability</h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">12.1. Liability Cap</h3>
+              <h3 className="text-lg font-medium">11.1. Liability Cap</h3>
               <p>
-                TO THE MAXIMUM EXTENT PERMITTED BY LAW, OUR TOTAL LIABILITY FOR
-                ANY CLAIMS ARISING FROM THESE TERMS OR THE SERVICE SHALL NOT
-                EXCEED THE AMOUNT YOU PAID US IN THE TWELVE (12) MONTHS
-                PRECEDING THE CLAIM.
+                THE SERVICE IS PROVIDED FREE OF CHARGE. TO THE MAXIMUM EXTENT
+                PERMITTED BY LAW, OUR TOTAL LIABILITY FOR ANY CLAIMS ARISING
+                FROM THESE TERMS OR THE SERVICE SHALL NOT EXCEED ONE HUNDRED US
+                DOLLARS (US$100).
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">12.2. Excluded Damages</h3>
+              <h3 className="text-lg font-medium">11.2. Excluded Damages</h3>
               <p>
                 WE SHALL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, CONSEQUENTIAL,
                 SPECIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, DATA,
@@ -579,7 +462,7 @@ export default function TermsOfService() {
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">12.3. Force Majeure</h3>
+              <h3 className="text-lg font-medium">11.3. Force Majeure</h3>
               <p>
                 We are not liable for delays or failures due to circumstances
                 beyond our reasonable control, including natural disasters,
@@ -591,7 +474,7 @@ export default function TermsOfService() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">13. Indemnification</h2>
+          <h2 className="text-xl font-semibold">12. Indemnification</h2>
           <p>
             You agree to indemnify, defend, and hold harmless PixelNova LLC, its
             affiliates, officers, directors, employees, and agents from any
@@ -609,52 +492,50 @@ export default function TermsOfService() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">14. Termination</h2>
+          <h2 className="text-xl font-semibold">13. Termination</h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">14.1. Termination by You</h3>
+              <h3 className="text-lg font-medium">13.1. Termination by You</h3>
               <p>
                 You may terminate your account at any time by contacting support
-                or using account deletion features. Paid subscriptions will
-                continue until the end of the current billing period.
+                or using account deletion features.
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">14.2. Termination by Us</h3>
+              <h3 className="text-lg font-medium">13.2. Termination by Us</h3>
               <p>We may suspend or terminate your access immediately for:</p>
               <ul className="list-disc space-y-2 pl-6">
                 <li>Violation of these Terms or our policies</li>
-                <li>Failure to pay subscription fees</li>
                 <li>Illegal or harmful activities</li>
                 <li>Extended periods of inactivity</li>
               </ul>
             </div>
             <div>
               <h3 className="text-lg font-medium">
-                14.3. Effect of Termination
+                13.3. Effect of Termination
               </h3>
               <p>
                 Upon termination, your right to use the Service ceases
                 immediately. We may delete your account data subject to our
-                Privacy Policy, though generated images with public URLs may
-                remain accessible.
+                Privacy Policy, though stored images with public URLs may remain
+                accessible.
               </p>
             </div>
           </div>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">15. Dispute Resolution</h2>
+          <h2 className="text-xl font-semibold">14. Dispute Resolution</h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">15.1. Governing Law</h3>
+              <h3 className="text-lg font-medium">14.1. Governing Law</h3>
               <p>
                 These Terms are governed by the laws of the State of Florida and
                 the United States, without regard to conflict of law principles.
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">15.2. Arbitration</h3>
+              <h3 className="text-lg font-medium">14.2. Arbitration</h3>
               <p>
                 Any disputes arising under these Terms shall be resolved through
                 binding arbitration in Florida, administered by the American
@@ -663,7 +544,7 @@ export default function TermsOfService() {
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">15.3. Class Action Waiver</h3>
+              <h3 className="text-lg font-medium">14.3. Class Action Waiver</h3>
               <p>
                 You agree to resolve disputes individually and waive any right
                 to participate in class actions, except where prohibited by law.
@@ -674,11 +555,11 @@ export default function TermsOfService() {
 
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">
-            16. Export Control and International Use
+            15. Export Control and International Use
           </h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">16.1. Export Compliance</h3>
+              <h3 className="text-lg font-medium">15.1. Export Compliance</h3>
               <p>
                 The Service may be subject to US export control laws. You agree
                 to comply with all applicable export and import laws and
@@ -687,7 +568,7 @@ export default function TermsOfService() {
             </div>
             <div>
               <h3 className="text-lg font-medium">
-                16.2. International Access
+                15.2. International Access
               </h3>
               <p>
                 The Service is operated from the United States. Users accessing
@@ -700,11 +581,11 @@ export default function TermsOfService() {
 
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">
-            17. Modifications and Updates
+            16. Modifications and Updates
           </h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">17.1. Terms Updates</h3>
+              <h3 className="text-lg font-medium">16.1. Terms Updates</h3>
               <p>
                 We reserve the right to modify these Terms at any time. Material
                 changes will be communicated via email or in-app notification at
@@ -712,15 +593,15 @@ export default function TermsOfService() {
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">17.2. Service Changes</h3>
+              <h3 className="text-lg font-medium">16.2. Service Changes</h3>
               <p>
                 We may modify, suspend, or discontinue any aspect of the Service
                 with or without notice. We will provide reasonable notice for
-                material changes affecting paid features.
+                material changes.
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">17.3. Continued Use</h3>
+              <h3 className="text-lg font-medium">16.3. Continued Use</h3>
               <p>
                 Your continued use of the Service after Terms modifications
                 constitutes acceptance of the updated Terms. If you disagree
@@ -731,10 +612,10 @@ export default function TermsOfService() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">18. General Provisions</h2>
+          <h2 className="text-xl font-semibold">17. General Provisions</h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-medium">18.1. Entire Agreement</h3>
+              <h3 className="text-lg font-medium">17.1. Entire Agreement</h3>
               <p>
                 These Terms, together with our Privacy Policy, constitute the
                 entire agreement between you and PixelNova LLC regarding the
@@ -742,14 +623,14 @@ export default function TermsOfService() {
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">18.2. Severability</h3>
+              <h3 className="text-lg font-medium">17.2. Severability</h3>
               <p>
                 If any provision of these Terms is found unenforceable, the
                 remaining provisions will remain in full force and effect.
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">18.3. Assignment</h3>
+              <h3 className="text-lg font-medium">17.3. Assignment</h3>
               <p>
                 You may not assign or transfer your rights under these Terms. We
                 may assign our rights and obligations to any party without
@@ -757,14 +638,14 @@ export default function TermsOfService() {
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">18.4. Waiver</h3>
+              <h3 className="text-lg font-medium">17.4. Waiver</h3>
               <p>
                 Our failure to enforce any provision of these Terms does not
                 constitute a waiver of that provision or any other provision.
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-medium">18.5. Notices</h3>
+              <h3 className="text-lg font-medium">17.5. Notices</h3>
               <p>
                 Legal notices will be sent to the email address associated with
                 your account. You are responsible for keeping your contact
@@ -775,7 +656,7 @@ export default function TermsOfService() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">19. Contact Information</h2>
+          <h2 className="text-xl font-semibold">18. Contact Information</h2>
           <p>For questions about these Terms or the Service, contact us at:</p>
           <div className="mt-4">
             <p>
@@ -796,8 +677,6 @@ export default function TermsOfService() {
           </div>
           <div className="mt-4">
             <p className="text-sm text-gray-600">
-              For billing questions, use subject line "Billing Inquiry"
-              <br />
               For DMCA notices, use subject line "DMCA Notice"
               <br />
               For abuse reports, use subject line "Abuse Report"

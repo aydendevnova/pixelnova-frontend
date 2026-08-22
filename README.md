@@ -1,10 +1,10 @@
-# PixelNova
+# Pixel Nova Studio
 
 https://pixelnova.app
 
-PixelNova is a full-stack web-based pixel art editor with AI-powered generation and conversion tools. Built for artists, game developers, and hobbyists, it provides a browser-based environment for creating and manipulating pixel art with professional-grade features including layers, history management, and real-time canvas rendering.
+Pixel Nova Studio is a free, full-stack web-based pixel art toolkit. Built for artists, game developers, and hobbyists, it provides a browser-based environment for creating and manipulating pixel art with professional-grade features including layers, history management, and real-time canvas rendering.
 
-The application includes an integrated pixel art editor with drawing tools, AI-powered image generation, automatic image-to-pixel-art conversion, and a colorization engine. Users can manage projects through a dashboard, browse community galleries, and export work in standard formats. Authentication, credit management, and subscription tiers are handled through Supabase and Stripe.
+The application includes an integrated pixel art editor with drawing tools, automatic image-to-pixel-art conversion, a colorization engine, and a skin tone palette generator. Every feature is free — there are no plans, credits, or paid tiers. Authentication is handled through Supabase.
 
 ## Screenshots
 
@@ -16,17 +16,9 @@ The application includes an integrated pixel art editor with drawing tools, AI-p
 
 ![Editor Interface - Full-featured pixel art creation tools](images/editor.png)
 
-### AI Generation
-
-![AI Generation - Text-to-pixel-art generation interface](images/generate-ai.png)
-
 ### Image Conversion
 
 ![Image Conversion - Automatic pixel art conversion tools](images/convert.png)
-
-### See All Your Creations!
-
-![Gallery - Browse your pixel art creations](images/gallery.png)
 
 ## Tech Stack
 
@@ -38,13 +30,10 @@ The application includes an integrated pixel art editor with drawing tools, AI-p
 - Radix UI / Shadcn UI component library
 - Zustand for state management
 - Framer Motion for animations
-- Stripe for payment integration
 
 **Backend & Services**
 
-- tRPC for type-safe API layer
 - Supabase (authentication, database, storage)
-- Stripe for payment processing
 - Image processing with Pica and Sharp
 - express.js
 
@@ -56,14 +45,12 @@ The application includes an integrated pixel art editor with drawing tools, AI-p
 ## Features
 
 - **Pixel Art Editor**: Drawing tools (pencil, eraser, color picker, selection), multi-layer support, zoom/pan, undo/redo
-- **AI Generation**: Text-to-pixel-art and image-to-pixel-art conversion
+- **Image Converter**: Turn any image into true, pixel-perfect pixel art
 - **Colorizer**: Automatic color palette generation and application
 - **Skin Tone Generator**: Generate skin tone variations for character sprites
-- **Gallery System**: Browse and share pixel art creations
-- **User Dashboard**: Project management, credit tracking, conversion history
+- **User Dashboard**: Quick access to every tool
 - **Authentication**: Secure user accounts with password reset and session management
-- **Credit System**: Usage-based credits for AI features and conversions
-- **Subscription Tiers**: Free and premium plans via Stripe
+- **Free for everyone**: No plans, credits, or usage limits
 
 ## Setup
 
@@ -90,7 +77,7 @@ npm run deploy
 src/
 ├── app/              # Next.js App Router pages
 ├── components/       # React components (editor, landing, modals, UI)
-├── hooks/            # Custom React hooks (auth, credits, API)
+├── hooks/            # Custom React hooks (auth, API)
 ├── lib/              # Utilities, image processing, Supabase client
 ├── store/            # Zustand stores (editor, history)
 └── types/            # TypeScript type definitions
@@ -115,9 +102,6 @@ The current implementation moves these computationally intensive tasks to optimi
 - Better scalability through distributed processing
 - Improved reliability and consistent performance
 - Easier maintenance and deployment
-- Access to more powerful pixel art models and techniques
-
-This architectural shift allows us to leverage specialized machine learning models and image processing libraries on the backend while keeping the frontend focused on providing a smooth, responsive editing experience.
 
 ## License
 

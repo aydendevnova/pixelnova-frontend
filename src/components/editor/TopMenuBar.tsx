@@ -347,12 +347,12 @@ export default function TopMenuBar({
         <Link href="/" className="flex items-center gap-2">
           <NextImage
             src="/logo.png"
-            alt="Pixel Nova"
+            alt="Pixel Nova Studio"
             width={32}
             height={32}
             className="shrink-0 rounded-full"
           />
-          <div className="hidden text-white md:inline">Pixel Nova</div>
+          <div className="hidden text-white md:inline">Pixel Nova Studio</div>
           <span className="hidden rounded-full px-1.5 py-0.5 text-xs font-medium text-orange-800 md:inline">
             public alpha
           </span>

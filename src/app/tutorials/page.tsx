@@ -1,56 +1,43 @@
 import { Metadata } from "next";
-import { Wand2, ImageDown } from "lucide-react";
+import { ImageDown } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { LucideIcon, Calendar, Clock } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Pixel Nova Tutorials | Generate Pixel Art with AI",
+  title: "Tutorials | Pixel Nova Studio",
   description:
-    "Master pixel art creation with our comprehensive tutorials. Learn AI generation, image conversion, and professional techniques. Perfect for beginners and experienced pixel artists alike.",
+    "Guides for the Pixel Nova Studio tools. Learn how to convert images into true pixel art and get the most out of the editor.",
   keywords: [
-    // Content Types
     "pixel art tutorials",
-    "AI art guides",
     "pixel art learning",
     "game art tutorials",
     "pixel art techniques",
-
-    // Topics
-    "AI pixel art creation",
     "image conversion guide",
     "pixel art basics",
-    "character design tutorial",
     "game asset creation",
-
-    // Skill Levels
     "beginner pixel art",
-    "advanced techniques",
-    "professional pixel art",
-    "game development guides",
-    "pixel art masterclass",
   ].join(", "),
   openGraph: {
-    title: "Pixel Art Tutorials | Learn AI Art Creation",
+    title: "Tutorials | Pixel Nova Studio",
     description:
-      "Learn professional pixel art creation techniques. Comprehensive guides for AI generation, conversion, and more.",
+      "Guides for the Pixel Nova Studio tools, from image conversion to the editor.",
     type: "website",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Pixel Nova Tutorials - Learn Pixel Art Creation",
+        alt: "Pixel Nova Studio Tutorials",
       },
     ],
-    siteName: "Pixel Nova",
+    siteName: "Pixel Nova Studio",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Learn Pixel Art Creation | Free Tutorials",
-    description:
-      "Master pixel art with our comprehensive guides. From basics to advanced AI techniques.",
+    title: "Tutorials | Pixel Nova Studio",
+    description: "Free guides for every Pixel Nova Studio tool.",
     images: ["/og-image.jpg"],
     creator: "@thepixelnova",
   },
@@ -77,31 +64,19 @@ export default function TutorialsPage() {
         <div className="mb-8 pt-8">
           <h1 className="text-4xl font-bold text-white">Tutorials</h1>
           <p className="text-slate-400">
-            Learn how to use Pixel Nova's features
+            Learn how to use the Pixel Nova Studio tools
           </p>
         </div>
 
         <div className="grid gap-8">
-          <TutorialBlogCard
-            href="/tutorials/ai-pixel-art"
-            imageSrc="/images/tutorials/blue_sword.png"
-            imageAlt="AI Pixel Art Example"
-            date="June 20, 2025"
-            readTime="2 min read"
-            title="AI Pixel Art Generation"
-            description="Learn how to use our AI-powered pixel art generator to create unique pixel art from text prompts. Master the art of crafting perfect prompts and understanding the settings that lead to the best results."
-            Icon={Wand2}
-            accentColor="purple"
-          />
-
           <TutorialBlogCard
             href="/tutorials/convert-to-pixel-art"
             imageSrc="/images/tutorials/sample_ai_2.png"
             imageAlt="Image Conversion Example"
             date="June 20, 2025"
             readTime="2 min read"
-            title="Convert AI Images to Real Pixel Art"
-            description="Discover how to convert and fix AI-generated images into authentic pixel art using our specialized tools. Learn best practices for achieving clean, crisp pixel art from any AI-generated source image."
+            title="Convert Images to Real Pixel Art"
+            description="Discover how to turn any image into authentic pixel art with the converter. Learn best practices for achieving clean, crisp results from any source image."
             Icon={ImageDown}
             accentColor="blue"
           />

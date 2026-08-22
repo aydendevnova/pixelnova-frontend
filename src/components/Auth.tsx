@@ -115,7 +115,7 @@ export default function Auth() {
               <h1 className="mb-4 flex items-center justify-center gap-4 text-4xl font-bold">
                 <Image
                   src="/logo.png"
-                  alt="Pixel Nova Logo"
+                  alt="Pixel Nova Studio Logo"
                   width={64}
                   height={64}
                   style={{
@@ -123,7 +123,7 @@ export default function Auth() {
                   }}
                 />
                 <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
-                  Pixel Nova
+                  Pixel Nova Studio
                 </span>
               </h1>
             </div>

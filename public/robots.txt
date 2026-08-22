@@ -1,5 +1,5 @@
 # Robots.txt for PixelNova.app
-# Last updated: December 2024
+# Last updated: August 2026
 
 # Allow all search engines to crawl public content
 User-agent: *
@@ -19,14 +19,10 @@ Disallow: /login/
 Disallow: /reset-password/
 Disallow: /update-password/
 
-# Block dynamic/user-specific pages
-Disallow: /gallery
-Disallow: /cancel/
-Disallow: /success/
-Disallow: /limits/
-
 # Allow important pages for SEO
-Allow: /pricing/
+Allow: /convert/
+Allow: /colorizer/
+Allow: /skin-tone-generator/
 Allow: /tutorials/
 Allow: /privacy-policy/
 Allow: /terms-of-service/

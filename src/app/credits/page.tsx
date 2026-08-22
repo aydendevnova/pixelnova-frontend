@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "next/link";
 
 export default function Credits() {
   return (
@@ -12,7 +12,7 @@ export default function Credits() {
         </p>
 
         <p>
-          Pixel Nova is built on top of several open-source projects and
+          Pixel Nova Studio is built on top of several open-source projects and
           third-party services. This page documents what we use, how we use it,
           and the applicable licenses. If you are a developer or someone who
           cares about transparency in software, this page is for you.
@@ -49,74 +49,19 @@ export default function Credits() {
           </div>
         </section>
 
-        {/* AI Models */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold">AI Models</h2>
-          <p>
-            Pixel Nova uses machine learning models hosted on Hugging Face for
-            AI-powered pixel art generation. The following models are currently
-            in use. Additional models may be integrated in the future.
-          </p>
-
-          <div className="space-y-4">
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-              <h3 className="text-lg font-medium">
-                Retro Pixel Flux LoRA
-              </h3>
-              <p className="mt-1 text-sm text-gray-600">
-                Used for text-to-image pixel art generation via the Hugging Face
-                Inference API. This model is a LoRA fine-tune that produces
-                retro-style pixel art sprites from text prompts.
-              </p>
-              <div className="mt-2 text-sm">
-                <p>
-                  <strong>Model:</strong>{" "}
-                  <a
-                    href="https://huggingface.co/prithivMLmods/Retro-Pixel-Flux-LoRA"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    prithivMLmods/Retro-Pixel-Flux-LoRA
-                  </a>
-                </p>
-                <p>
-                  <strong>Platform:</strong>{" "}
-                  <a
-                    href="https://huggingface.co"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    Hugging Face
-                  </a>
-                </p>
-                <p>
-                  <strong>Integration:</strong> Hugging Face Inference API
-                  (server-side)
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Pixel Snapper */}
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">
-            SpriteFusion Pixel Snapper
-          </h2>
+          <h2 className="text-xl font-semibold">SpriteFusion Pixel Snapper</h2>
           <p>
-            Pixel Nova uses the SpriteFusion Pixel Snapper for post-processing
-            AI-generated pixel art. The tool snaps pixels to a clean, consistent
-            grid and quantizes colors to a strict palette, correcting the
-            inconsistent pixel sizes and grid drift that AI image models
-            typically produce. We compile the Rust source to WebAssembly and run
-            it server-side in Node.js.
+            Pixel Nova Studio uses the SpriteFusion Pixel Snapper to convert
+            uploaded images into true pixel art. The tool snaps pixels to a
+            clean, consistent grid and quantizes colors to a strict palette,
+            correcting the inconsistent pixel sizes and grid drift found in
+            images that only look like pixel art. We compile the Rust source to
+            WebAssembly and run it server-side in Node.js.
           </p>
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <h3 className="text-lg font-medium">
-              spritefusion-pixel-snapper
-            </h3>
+            <h3 className="text-lg font-medium">spritefusion-pixel-snapper</h3>
             <div className="mt-2 text-sm">
               <p>
                 <strong>Author:</strong> Hugo Duprez
@@ -171,12 +116,12 @@ export default function Credits() {
               <br />
               THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
               ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
-              WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-              NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-              BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-              ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-              CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-              SOFTWARE.
+              WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE
+              AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+              HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+              WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+              OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+              DEALINGS IN THE SOFTWARE.
             </p>
           </div>
         </section>
@@ -185,17 +130,14 @@ export default function Credits() {
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">Third-Party Services</h2>
           <p>
-            The following services are used in the operation of Pixel Nova. They
-            are not open-source dependencies but are integral to the platform.
+            The following services are used in the operation of Pixel Nova
+            Studio. They are not open-source dependencies but are integral to
+            the platform.
           </p>
           <ul className="list-disc space-y-2 pl-6">
             <li>
               <strong>Supabase</strong> &mdash; Authentication, database
               (PostgreSQL), and file storage.
-            </li>
-            <li>
-              <strong>Stripe</strong> &mdash; Payment processing and
-              subscription management.
             </li>
             <li>
               <strong>Cloudflare</strong> &mdash; CDN, DDoS protection, and
@@ -205,10 +147,6 @@ export default function Credits() {
               <strong>Fly.io</strong> &mdash; Backend API hosting and
               deployment.
             </li>
-            <li>
-              <strong>Hugging Face</strong> &mdash; AI model hosting and
-              inference API.
-            </li>
           </ul>
         </section>
 
@@ -216,9 +154,9 @@ export default function Credits() {
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">Open-Source Stack</h2>
           <p>
-            Pixel Nova is built with the following open-source frameworks and
-            libraries, among others. Full dependency lists are available in the
-            respective repository package files.
+            Pixel Nova Studio is built with the following open-source frameworks
+            and libraries, among others. Full dependency lists are available in
+            the respective repository package files.
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
@@ -264,15 +202,21 @@ export default function Credits() {
 
         <p className="text-sm text-gray-500">
           See also:{" "}
-          <Link href="/terms-of-service" className="text-blue-600 hover:underline">
+          <Link
+            href="/terms-of-service"
+            className="text-blue-600 hover:underline"
+          >
             Terms of Service
-          </Link>
-          {" "}&middot;{" "}
-          <Link href="/privacy-policy" className="text-blue-600 hover:underline">
+          </Link>{" "}
+          &middot;{" "}
+          <Link
+            href="/privacy-policy"
+            className="text-blue-600 hover:underline"
+          >
             Privacy Policy
           </Link>
         </p>
       </div>
     </div>
-  )
+  );
 }

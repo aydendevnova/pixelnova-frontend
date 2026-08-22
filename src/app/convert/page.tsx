@@ -2,52 +2,41 @@ import { Metadata } from "next";
 import ConvertImagePageClient from "./page-component";
 
 export const metadata: Metadata = {
-  title: "AI Pixel Art Converter | Fix AI-Generated Pixel Art | Pixel Nova",
+  title: "Image to Pixel Art Converter | Pixel Nova Studio",
   description:
-    "Convert and fix AI-generated pixel art from Midjourney, DALL-E, or ChatGPT. Our smart converter ensures clean, crisp pixel art with perfect pixel alignment and authentic retro style.",
+    "Convert any image into true pixel art. Our converter snaps every pixel to a clean grid and reduces the palette so the result stays sharp at any size. Free to use.",
   keywords: [
-    // Core Features
-    "AI pixel art converter",
-    "pixel art fixer",
     "image to pixel art",
+    "pixel art converter",
     "pixel art cleanup",
-    "AI art converter",
-
-    // AI Platform Integration
-    "fix Midjourney pixel art",
-    "fix DALL-E pixel art",
-    "ChatGPT image converter",
-    "AI image cleanup",
-    "stable diffusion fixer",
-
-    // Technical Features
     "pixel perfect conversion",
     "smart downscaling",
     "pixel art optimization",
     "retro style converter",
-    "pixel art enhancement",
+    "sprite converter",
+    "free pixel art tool",
   ].join(", "),
   openGraph: {
-    title: "AI Pixel Art Converter | Fix AI-Generated Art",
+    title: "Image to Pixel Art Converter",
     description:
-      "Convert and perfect AI-generated pixel art. Transform images from Midjourney, DALL-E, or ChatGPT into clean, authentic pixel art.",
+      "Convert any image into clean, authentic pixel art. Free to use.",
     type: "website",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Pixel Nova Converter - Fix AI-Generated Pixel Art",
+        alt: "Pixel Nova Studio Converter",
       },
     ],
-    siteName: "Pixel Nova",
+    siteName: "Pixel Nova Studio",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Fix AI-Generated Pixel Art | Smart Converter",
+    title: "Image to Pixel Art Converter",
     description:
-      "Transform AI-generated images into clean, authentic pixel art. Perfect for Midjourney, DALL-E, and ChatGPT outputs.",
+      "Convert any image into clean, authentic pixel art. Free to use.",
     images: ["/og-image.jpg"],
     creator: "@thepixelnova",
   },

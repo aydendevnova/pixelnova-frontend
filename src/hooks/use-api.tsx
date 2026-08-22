@@ -9,9 +9,6 @@ const API_ROUTES = {
   UPDATE_ACCOUNT: "/api/update-account",
   CHECK_USERNAME: "/api/check-username",
   CONVERT_IMAGE: "/api/convert-image",
-  CHECKOUT: "/api/checkout",
-  GENERATE_PIXEL_ART: "/api/generate-pixel-art",
-  CREATE_PORTAL_SESSION: "/api/create-portal-session",
 } as const;
 
 export function useUpdateAccount() {
@@ -64,103 +61,6 @@ export function useCheckUsername() {
   });
 }
 
-export function useCheckout() {
-  const session = useSession();
-  return useMutation({
-    mutationFn: async (priceId: string) => {
-      if (!session) {
-        throw new Error("No session found");
-      }
-      const response = await axios.post(
-        `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.CHECKOUT}`,
-        { priceId },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        },
-      );
-      return response.data;
-    },
-  });
-}
-
-export function useGeneratePixelArt() {
-  const session = useSession();
-
-  return useMutation({
-    mutationFn: async ({
-      prompt,
-      useOpenAI,
-      model = 0,
-    }: {
-      prompt: string;
-      useOpenAI: boolean;
-      model?: number;
-    }) => {
-      if (!session) {
-        throw new Error("No session found");
-      }
-
-      try {
-        const response = await axios.post(
-          `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.GENERATE_PIXEL_ART}`,
-          { prompt, useOpenAI, model },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            responseType: "arraybuffer",
-          },
-        );
-
-        // Convert array buffer to base64 for successful response
-        const base64 = btoa(
-          new Uint8Array(response.data).reduce(
-            (data, byte) => data + String.fromCharCode(byte),
-            "",
-          ),
-        );
-        return `data:image/png;base64,${base64}`;
-      } catch (error: any) {
-        // For error responses, decode the ArrayBuffer to get the error message
-        if (error.response?.data instanceof ArrayBuffer) {
-          const decoder = new TextDecoder();
-          const errorText = decoder.decode(error.response.data);
-          const errorJson = JSON.parse(errorText);
-
-          throw errorJson.error || "Failed to generate image";
-        }
-        throw "Failed to generate image";
-      }
-    },
-  });
-}
-
-export function useBillingPortal() {
-  const session = useSession();
-  return useMutation({
-    mutationFn: async () => {
-      if (!session) {
-        throw new Error("No session found");
-      }
-      const response = await axios.post(
-        `${env.NEXT_PUBLIC_EXPRESS_URL}${API_ROUTES.CREATE_PORTAL_SESSION}`,
-        {},
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        },
-      );
-      return response.data.url;
-    },
-  });
-}
-
 export function useConvertImage() {
   const session = useSession();
 
@@ -195,7 +95,6 @@ export function useConvertImage() {
       );
       return response.data as {
         image: string;
-        maxConversions: number;
         currentCount: number;
       };
     },
