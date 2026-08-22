@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://pixelnova.app/tutorials",
+    canonical: "https://pixelnovastudio.app/tutorials",
   },
 };
 

@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://pixelnova.app/skin-tone-generator",
+    canonical: "https://pixelnovastudio.app/skin-tone-generator",
   },
 };
 

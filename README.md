@@ -1,6 +1,6 @@
 # Pixel Nova Studio
 
-https://pixelnova.app
+https://pixelnovastudio.app
 
 Pixel Nova Studio is a free, full-stack web-based pixel art toolkit. Built for artists, game developers, and hobbyists, it provides a browser-based environment for creating and manipulating pixel art with professional-grade features including layers, history management, and real-time canvas rendering.
 

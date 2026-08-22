@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://pixelnova.app/colorizer",
+    canonical: "https://pixelnovastudio.app/colorizer",
   },
 };
 

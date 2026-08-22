@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://pixelnova.app/og-image.jpg",
+        url: "https://pixelnovastudio.app/og-image.jpg",
         width: 1024,
         height: 1024,
         alt: "Pixel Nova Studio",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     title: "Pixel Nova Studio",
     description:
       "A free suite of pixel art tools for artists, game developers, and designers.",
-    images: ["https://pixelnova.app/og-image.jpg"],
+    images: ["https://pixelnovastudio.app/og-image.jpg"],
     creator: "@thepixelnova",
   },
   robots: {
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     google: "verification_token",
   },
   alternates: {
-    canonical: "https://pixelnova.app",
+    canonical: "https://pixelnovastudio.app",
   },
 };
 

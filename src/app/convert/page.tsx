@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://pixelnova.app/convert",
+    canonical: "https://pixelnovastudio.app/convert",
   },
 };
 

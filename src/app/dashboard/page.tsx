@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     description:
       "All of the Pixel Nova Studio tools in one place. Free for everyone.",
     type: "website",
-    url: "https://editor.pixelnova.app",
+    url: "https://editor.pixelnovastudio.app",
     images: [
       {
         url: "/logo.png",

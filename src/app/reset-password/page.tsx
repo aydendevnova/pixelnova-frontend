@@ -22,7 +22,7 @@ export default function ResetPassword() {
       setError(null);
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: "https://editor.pixelnova.app/update-password",
+        redirectTo: "https://editor.pixelnovastudio.app/update-password",
       });
 
       if (error) throw error;

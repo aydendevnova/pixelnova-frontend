@@ -75,7 +75,7 @@ export const metadata: Metadata = {
     google: "verification_token",
   },
   alternates: {
-    canonical: "https://pixelnova.app",
+    canonical: "https://pixelnovastudio.app",
   },
 };
 
