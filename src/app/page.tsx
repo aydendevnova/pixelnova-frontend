@@ -4,6 +4,7 @@ import PixelPerfectLandingSection from "@/components/landing/pixel-perfect";
 import ColorizerLandingSection from "@/components/landing/colorizer";
 import SkinToneLandingSection from "@/components/landing/skin-tones";
 import EditorLandingSection from "@/components/landing/editor";
+import ClosingCtaSection from "@/components/landing/cta";
 
 export const metadata: Metadata = {
   title: "Pixel Nova Studio",
@@ -54,14 +55,16 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen overflow-y-auto bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
-      <div className="duration-500 animate-in fade-in">
-        <HeroLandingSection />
+    <div className="relative min-h-screen overflow-hidden bg-nova-bg">
+      <div className="nova-wash" />
 
+      <div className="relative duration-500 animate-in fade-in">
+        <HeroLandingSection />
         <PixelPerfectLandingSection />
         <ColorizerLandingSection />
         <SkinToneLandingSection />
         <EditorLandingSection />
+        <ClosingCtaSection />
       </div>
     </div>
   );

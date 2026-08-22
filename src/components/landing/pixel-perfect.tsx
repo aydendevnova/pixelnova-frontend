@@ -1,143 +1,121 @@
-import { ArrowRight, Upload, Palette, ChevronRight } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
+
+import { FrameCaption, NovaCta, NovaSection } from "./nova";
+
+const steps = [
+  {
+    n: "01",
+    title: "Upload",
+    body: "Start with any image — photos, artwork, or AI-generated content.",
+  },
+  {
+    n: "02",
+    title: "Customize",
+    body: "Adjust resolution, color palettes, and pixelation until the pixel count is right.",
+  },
+  {
+    n: "03",
+    title: "Export",
+    body: "Download your pixel art in multiple formats.",
+  },
+];
 
 export default function PixelPerfectLandingSection() {
   return (
-    <section className="px-4 py-8 md:py-16">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 text-center">
-          <Badge className="mb-4 border-0 bg-gradient-to-r from-emerald-600 to-teal-700 px-4 py-1 text-white">
-            🎯 Pixel Perfect Conversion
-          </Badge>
-          <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">
-            Convert Any Image to True Pixel Art
-          </h2>
-          <p className="mx-auto max-w-2xl text-base text-slate-300 md:text-lg">
-            Transform AI-generated images, photos, or artwork into authentic
-            pixel art that stays crisp and clean at any resolution.
-          </p>
-        </div>
-
-        <div className="flex justify-center">
-          <Link href="/convert" className="mx-auto mb-8 w-fit">
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
-            >
-              Try Now
-              <ChevronRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-            </Button>
-          </Link>
-        </div>
-
-        <div className="relative mb-12 rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4 backdrop-blur md:p-8">
-          <div className="grid gap-6 md:gap-8">
-            {/* Text Content */}
-            <div className="mx-auto max-w-3xl space-y-6 md:space-y-8">
-              <div className="text-center">
-                <h3 className="mb-3 text-xl font-semibold text-white md:text-2xl">
-                  The Problem with "Pixel Art Style" Images
-                </h3>
-                <p className="text-sm text-slate-300 md:text-base">
-                  Images that merely look like pixel art turn blurry when zoomed
-                  in &mdash; the pixels do not line up on a real grid. Our
-                  converter rebuilds them into true, pixel-perfect art.
-                </p>
-              </div>
-
-              <div className="text-center">
-                <h3 className="mb-3 text-xl font-semibold text-emerald-400 md:text-2xl">
-                  Our Pixel-Perfect Solution
-                </h3>
-                <p className="text-sm text-slate-300 md:text-base">
-                  Convert any image into crisp, clean pixel art where every
-                  single pixel is perfectly placed. Get that authentic retro
-                  game look that stays sharp at any size.
-                </p>
-              </div>
-            </div>
-
-            {/* Image Comparison */}
-            <div className="flex flex-col items-center justify-center gap-4 md:flex-row md:gap-8">
-              <div className="w-full text-center md:w-auto">
-                <div className="relative mx-auto aspect-square w-full max-w-[280px] md:w-[350px]">
-                  <Image
-                    src="/images/tutorials/sample_ai.png"
-                    alt="AI Generated (Blurry)"
-                    fill
-                    className="rounded-lg border border-slate-600 object-cover"
-                  />
-                </div>
-                <p className="mt-3 text-sm text-slate-400">AI Generated</p>
-                <p className="text-xs text-red-400">Blurry when zoomed</p>
-              </div>
-              <div className="rotate-90 text-2xl font-bold text-emerald-400 md:rotate-0">
-                →
-              </div>
-              <div className="w-full text-center md:w-auto">
-                <div className="relative mx-auto aspect-square w-full max-w-[280px] md:w-[350px]">
-                  <Image
-                    src="/images/tutorials/sample_pixel.png"
-                    alt="Pixel Perfect"
-                    fill
-                    className="rounded-lg border border-slate-600 object-cover"
-                    style={{ imageRendering: "pixelated" }}
-                  />
-                </div>
-                <p className="mt-3 text-sm text-slate-400">Pixel Perfect</p>
-                <p className="text-xs text-emerald-400">Sharp at any size</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="group rounded-xl border border-slate-800 bg-slate-900/50 p-4 transition-all duration-300 hover:border-emerald-500/50 hover:bg-slate-800/50 md:p-6">
-            <div className="mb-4 inline-block rounded-full bg-emerald-500/20 p-3">
-              <Upload className="h-5 w-5 text-emerald-500" />
-            </div>
-            <h4 className="mb-2 text-lg font-semibold text-white">Upload</h4>
-            <p className="text-sm text-slate-400 md:text-base">
-              Start with any image - photos, artwork, or AI-generated content
+    <NovaSection id="convert">
+      <div className="flex flex-col gap-16 md:gap-[72px]">
+        <div className="grid gap-12 md:grid-cols-2 md:gap-[72px]">
+          <div className="flex flex-col gap-[18px]">
+            <h2 className="m-0 text-[clamp(1.75rem,3.4vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
+              AI &ldquo;pixel art&rdquo; from other tools isn&rsquo;t pixel art
+            </h2>
+            <p className="m-0 text-pretty text-[17px] leading-[1.65] text-nova-fg/[0.62]">
+              AI tools like ChatGPT, Midjourney, and DALL&middot;E create
+              pixel-art-<em>style</em> images that fall apart when you zoom in.
+              Ours is a true pixel art generator — and it converts anything
+              those tools make into the real thing.
             </p>
           </div>
-
-          <div className="group rounded-xl border border-slate-800 bg-slate-900/50 p-4 transition-all duration-300 hover:border-emerald-500/50 hover:bg-slate-800/50 md:p-6">
-            <div className="mb-4 inline-block rounded-full bg-emerald-500/20 p-3">
-              <Palette className="h-5 w-5 text-emerald-500" />
-            </div>
-            <h4 className="mb-2 text-lg font-semibold text-white">Customize</h4>
-            <p className="text-sm text-slate-400 md:text-base">
-              Adjust resolution, color palettes, and pixelation settings to find
-              the perfect number of pixels
-            </p>
-          </div>
-
-          <div className="group rounded-xl border border-slate-800 bg-slate-900/50 p-4 transition-all duration-300 hover:border-emerald-500/50 hover:bg-slate-800/50 md:p-6">
-            <div className="mb-4 inline-block rounded-full bg-emerald-500/20 p-3">
-              <ArrowRight className="h-5 w-5 text-emerald-500" />
-            </div>
-            <h4 className="mb-2 text-lg font-semibold text-white">Export</h4>
-            <p className="text-sm text-slate-400 md:text-base">
-              Download your pixel art in multiple formats
+          <div className="flex flex-col gap-[18px] md:border-l md:border-nova-fg/10 md:pl-10">
+            <h2 className="m-0 text-[clamp(1.75rem,3.4vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.025em]">
+              Every single pixel, placed on purpose
+            </h2>
+            <p className="m-0 text-pretty text-[17px] leading-[1.65] text-nova-fg/[0.62]">
+              Crisp, clean output with that authentic retro-game look — sharp at
+              1× and at 1600×.
             </p>
           </div>
         </div>
-      </div>
-      <div className="mt-8 flex justify-center md:mt-12">
-        <Link href="/convert" className="mx-auto mb-8 w-fit">
-          <Button
-            size="lg"
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
+
+        {/* Before → after */}
+        <div className="grid items-center gap-9 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+          <div className="flex flex-col gap-3.5">
+            <div className="nova-frame aspect-[4/3]">
+              <Image
+                src="/images/tutorials/sample_ai.png"
+                alt="AI-generated image that turns blurry when zoomed in"
+                fill
+                sizes="(max-width: 768px) 100vw, 40vw"
+                className="object-contain p-6 blur-[1.5px]"
+              />
+              <FrameCaption>ai_generated.png</FrameCaption>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-base">AI generated</span>
+              <span className="font-mono text-xs text-nova-fg/40">
+                blurry when zoomed
+              </span>
+            </div>
+          </div>
+
+          <span
+            aria-hidden="true"
+            className="rotate-90 justify-self-center font-mono text-[22px] text-nova-accent md:rotate-0"
           >
-            Try Converting to Pixel Art Now
-            <ChevronRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-          </Button>
-        </Link>
+            →
+          </span>
+
+          <div className="flex flex-col gap-3.5">
+            <div className="nova-frame-grid aspect-[4/3] !border-nova-accent bg-nova-accent/[0.07]">
+              <Image
+                src="/images/tutorials/sample_pixel.png"
+                alt="The same subject rebuilt as true pixel art"
+                fill
+                sizes="(max-width: 768px) 100vw, 40vw"
+                className="object-contain p-6"
+                style={{ imageRendering: "pixelated" }}
+              />
+              <FrameCaption bright>pixel_perfect.png</FrameCaption>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-base">Pixel perfect</span>
+              <span className="font-mono text-xs text-nova-warm">
+                sharp at any size
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="nova-cellgrid md:grid-cols-3">
+          {steps.map((step) => (
+            <div key={step.n} className="nova-cell">
+              <span className="font-mono text-xs text-nova-accent">
+                {step.n}
+              </span>
+              <h3 className="m-0 text-2xl font-semibold tracking-[-0.02em]">
+                {step.title}
+              </h3>
+              <p className="m-0 text-[15px] leading-[1.6] text-nova-fg/[0.58]">
+                {step.body}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <NovaCta href="/convert" variant="outline" className="self-start">
+          Try converting now
+        </NovaCta>
       </div>
-    </section>
+    </NovaSection>
   );
 }

@@ -2,8 +2,35 @@ import LayoutClient from "@/components/layout/layout-client";
 import "@/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
+import {
+  IBM_Plex_Mono,
+  Instrument_Sans,
+  Instrument_Serif,
+} from "next/font/google";
 import { type Metadata } from "next";
 import Script from "next/script";
+
+const instrumentSans = Instrument_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-instrument-sans",
+  display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-instrument-serif",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-plex-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Pixel Nova Studio",
@@ -56,8 +83,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable}`}>
-      <body>
+    <html
+      lang="en"
+      className={`${GeistSans.variable} ${instrumentSans.variable} ${instrumentSerif.variable} ${plexMono.variable}`}
+    >
+      <body className="bg-nova-bg text-nova-fg antialiased">
         <Script
           src="https://cloud.umami.is/script.js"
           data-website-id="a4fb1317-1159-4702-8b14-7b24dbbfab06"

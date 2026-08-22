@@ -604,7 +604,7 @@ export default function ConvertImagePageClient() {
   const currentStep = steps[step - 1] ?? steps[0]!;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-4 pt-20 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-4 lg:p-8">
       <div className="mx-auto max-w-7xl duration-500 animate-in fade-in">
         <SignInModal
           isOpen={showSignInModal}

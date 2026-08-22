@@ -13,6 +13,7 @@ import {
   Info,
   Grid,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,6 +84,23 @@ function SortableColorItem({ color }: { color: SkinToneColor }) {
   );
 }
 
+const EXAMPLE_IMAGE = {
+  src: "/images/examples/skin-tone-character.png",
+};
+
+// Skin tone swatches of the bundled sample sprite, pre-selected so visitors see
+// a working setup immediately. Order does not matter here - the list is sorted
+// by luminance (darkest first) before it lands in state.
+const EXAMPLE_SKIN_TONE_COLORS: string[] = [
+  "#a84545",
+  "#ca6258",
+  "#e27968",
+  "#e5907b",
+  "#f3ae95",
+  "#fcd1af",
+  "#fcdcc0",
+];
+
 export default function SkinToneGeneratorComponent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -100,6 +118,7 @@ export default function SkinToneGeneratorComponent() {
   const [selectedVariants, setSelectedVariants] = useState<Set<number>>(
     new Set(),
   );
+  const [isLoadingExample, setIsLoadingExample] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -107,30 +126,6 @@ export default function SkinToneGeneratorComponent() {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        setUploadedImage(dataUrl);
-
-        // Get image dimensions
-        const img = new Image();
-        img.onload = () => {
-          setImageDimensions({ width: img.width, height: img.height });
-        };
-        img.src = dataUrl;
-
-        setSelectedColors([]);
-        setImageColors([]);
-        extractColors(dataUrl);
-      };
-      reader.readAsDataURL(file);
-    }
-    e.target.value = "";
-  };
 
   const extractColors = useCallback((imageUrl: string) => {
     const img = document.createElement("img");
@@ -165,6 +160,66 @@ export default function SkinToneGeneratorComponent() {
       setImageColors(Array.from(colors));
     };
   }, []);
+
+  const loadImageFromDataUrl = useCallback(
+    (dataUrl: string, presetColors: string[] = []) => {
+      setUploadedImage(dataUrl);
+
+      // Get image dimensions
+      const img = new Image();
+      img.onload = () => {
+        setImageDimensions({ width: img.width, height: img.height });
+      };
+      img.src = dataUrl;
+
+      // Pre-selected tones (example image) arrive darkest-first so the
+      // generator is ready to run without any manual sorting.
+      setSelectedColors(
+        sortByLuminance(presetColors).map((color) => ({
+          id: crypto.randomUUID(),
+          color,
+        })),
+      );
+      setImageColors([]);
+      extractColors(dataUrl);
+    },
+    [extractColors],
+  );
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        loadImageFromDataUrl(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = "";
+  };
+
+  // Loads the bundled sample sprite so visitors can try the tool without
+  // uploading anything of their own.
+  const loadExampleImage = useCallback(async () => {
+    setIsLoadingExample(true);
+    try {
+      const response = await fetch(EXAMPLE_IMAGE.src);
+      if (!response.ok) throw new Error("Failed to load example image");
+      const blob = await response.blob();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () =>
+          reject(new Error("Failed to read example image"));
+        reader.readAsDataURL(blob);
+      });
+      loadImageFromDataUrl(dataUrl, EXAMPLE_SKIN_TONE_COLORS);
+    } catch (error) {
+      console.error("Failed to load example image:", error);
+    } finally {
+      setIsLoadingExample(false);
+    }
+  }, [loadImageFromDataUrl]);
 
   useEffect(() => {
     if (!uploadedImage) return;
@@ -454,7 +509,7 @@ export default function SkinToneGeneratorComponent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20 ">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
       <div className="duration-500 animate-in fade-in">
         <div className="flex flex-col gap-4 lg:flex-row ">
           {/* Column Sections */}
@@ -508,13 +563,38 @@ export default function SkinToneGeneratorComponent() {
                   onChange={handleImageUpload}
                   className="hidden"
                 />
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="bg-gradient-to-r from-blue-600 to-cyan-600"
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Choose File
-                </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Choose File
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={loadExampleImage}
+                    disabled={isLoadingExample}
+                    className="border-slate-600 bg-slate-800/50 text-slate-200 hover:bg-slate-700 hover:text-white"
+                  >
+                    {isLoadingExample ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <img
+                        src={EXAMPLE_IMAGE.src}
+                        alt=""
+                        aria-hidden="true"
+                        className="mr-2 h-6 w-6 rounded border border-slate-600 bg-slate-900 object-contain"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                    )}
+                    See example
+                  </Button>
+                </div>
+                <p className="text-sm text-slate-400">
+                  No image handy? Load our sample character to see how the
+                  generator works.
+                </p>
               </div>
             ) : (
               <div className="space-y-4">

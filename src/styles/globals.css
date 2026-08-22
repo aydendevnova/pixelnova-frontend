@@ -85,3 +85,146 @@
     transform: scale(1);
   }
 }
+
+/* ==========================================================================
+   Pixel Nova Studio — design language
+   Source of truth: "Pixel Nova Studio.dc.html" (Claude Design).
+   Sharp corners, hairline rules, mono eyebrows/buttons, plum-black ground.
+   ========================================================================== */
+
+:root {
+  --nova-bg: #0b0711;
+  --nova-ink: #0d0912;
+  --nova-fg: #f2eef7;
+  --nova-accent: oklch(0.74 0.17 300);
+  --nova-warm: oklch(0.79 0.13 70);
+  /* Hairline rules, in ascending prominence. */
+  --nova-line: rgba(242, 238, 247, 0.08);
+  --nova-line-strong: rgba(242, 238, 247, 0.12);
+}
+
+@supports not (color: oklch(0.74 0.17 300)) {
+  :root {
+    --nova-accent: #bc8fff;
+    --nova-warm: #f0ab55;
+  }
+}
+
+::selection {
+  background: rgba(188, 143, 255, 0.35);
+}
+
+@layer components {
+  /* The fixed nebula wash that sits behind every landing section. */
+  .nova-wash {
+    @apply pointer-events-none fixed inset-0;
+    background-image: radial-gradient(
+        120% 70% at 78% -12%,
+        rgba(140, 86, 240, 0.3) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        90% 60% at 8% 8%,
+        rgba(74, 42, 140, 0.28) 0%,
+        transparent 62%
+      ),
+      radial-gradient(
+        80% 60% at 50% 108%,
+        rgba(206, 116, 86, 0.16) 0%,
+        transparent 60%
+      );
+  }
+
+  /* 48px pixel grid, faded out toward the bottom-left. */
+  .nova-grid {
+    @apply pointer-events-none absolute inset-0;
+    background-image: repeating-linear-gradient(
+        0deg,
+        rgba(242, 238, 247, 0.035) 0 1px,
+        transparent 1px 48px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgba(242, 238, 247, 0.035) 0 1px,
+        transparent 1px 48px
+      );
+    -webkit-mask-image: radial-gradient(
+      120% 90% at 70% 0%,
+      #000 0%,
+      transparent 75%
+    );
+    mask-image: radial-gradient(120% 90% at 70% 0%, #000 0%, transparent 75%);
+  }
+
+  /* Mono eyebrow / caption / label. */
+  .nova-label {
+    @apply font-mono uppercase tracking-[0.14em];
+  }
+
+  /* Buttons. Square, mono, uppercase — three weights. */
+  .nova-btn {
+    @apply inline-flex items-center justify-center whitespace-nowrap px-[34px] py-4 font-mono text-[13px] uppercase leading-none tracking-[0.14em] transition-colors duration-200;
+  }
+  .nova-btn-solid {
+    @apply nova-btn text-nova-ink;
+    background: var(--nova-accent);
+  }
+  .nova-btn-solid:hover {
+    background: var(--nova-fg);
+  }
+  .nova-btn-warm {
+    @apply nova-btn text-nova-ink;
+    background: var(--nova-warm);
+  }
+  .nova-btn-warm:hover {
+    background: var(--nova-fg);
+  }
+  .nova-btn-outline {
+    @apply nova-btn text-nova-fg;
+    border: 1px solid var(--nova-accent);
+  }
+  .nova-btn-outline:hover {
+    background: var(--nova-accent);
+    color: var(--nova-ink);
+  }
+
+  /* Framed media well — hairline border over a faint checker.
+     Deliberately has no in-flow children: the image fills it and the caption
+     is absolutely positioned, so aspect-ratio alone drives the box. */
+  .nova-frame {
+    @apply relative overflow-hidden border border-nova-fg/[0.12] bg-nova-fg/[0.03];
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(242, 238, 247, 0.05) 0 10px,
+      transparent 10px 20px
+    );
+  }
+
+  /* Framed media well with a pixel lattice instead of a checker. */
+  .nova-frame-grid {
+    @apply relative overflow-hidden border border-nova-fg/[0.12] bg-nova-fg/[0.03];
+    background-image: repeating-linear-gradient(
+        0deg,
+        rgba(242, 238, 247, 0.05) 0 1px,
+        transparent 1px 16px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgba(242, 238, 247, 0.05) 0 1px,
+        transparent 1px 16px
+      );
+  }
+
+  /* Hairline-separated cell grid: 1px gaps let the parent bg read as rules. */
+  .nova-cellgrid {
+    @apply grid gap-px border border-nova-fg/10 bg-nova-fg/10;
+  }
+  .nova-cell {
+    @apply flex flex-col gap-3 bg-nova-bg/[0.55] p-9;
+  }
+
+  /* Two-column spec row list. */
+  .nova-specrow {
+    @apply grid gap-6 border-b border-nova-fg/[0.12] py-5 sm:grid-cols-[200px_1fr];
+  }
+}

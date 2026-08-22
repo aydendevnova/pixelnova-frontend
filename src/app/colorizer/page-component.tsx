@@ -37,6 +37,11 @@ import {
   ImageResult,
 } from "@/lib/utils/download";
 
+const EXAMPLE_IMAGE = {
+  src: "/images/examples/colorizer-character.png",
+  fileName: "example-character.png",
+};
+
 export default function ColorizerPageComponent() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,6 +65,7 @@ export default function ColorizerPageComponent() {
     new Set(),
   );
   const [grayscaleImage, setGrayscaleImage] = useState<ImageData | null>(null);
+  const [isLoadingExample, setIsLoadingExample] = useState(false);
 
   // Pre-compute image URLs to avoid repeated canvas operations
   const imageUrls = useMemo(
@@ -85,10 +91,7 @@ export default function ColorizerPageComponent() {
     colorOffsetRef.current = value * 0.25;
   }, []);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const loadImageFile = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -115,7 +118,31 @@ export default function ColorizerPageComponent() {
       img.src = e.target?.result as string;
     };
     reader.readAsDataURL(file);
+  }, []);
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    loadImageFile(file);
   };
+
+  // Loads the bundled sample sprite so visitors can try the tool without
+  // uploading anything of their own.
+  const loadExampleImage = useCallback(async () => {
+    setIsLoadingExample(true);
+    try {
+      const response = await fetch(EXAMPLE_IMAGE.src);
+      if (!response.ok) throw new Error("Failed to load example image");
+      const blob = await response.blob();
+      loadImageFile(
+        new File([blob], EXAMPLE_IMAGE.fileName, { type: "image/png" }),
+      );
+    } catch (error) {
+      console.error("Failed to load example image:", error);
+    } finally {
+      setIsLoadingExample(false);
+    }
+  }, [loadImageFile]);
 
   const removeImage = () => {
     setUploadedImage(null);
@@ -221,7 +248,7 @@ export default function ColorizerPageComponent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
       <div className="duration-500 animate-in fade-in">
         <div className="flex flex-col gap-4 lg:flex-row">
           {/* Left Column - Upload and Controls */}
@@ -274,13 +301,38 @@ export default function ColorizerPageComponent() {
                   onChange={handleImageUpload}
                   className="hidden"
                 />
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="bg-gradient-to-r from-blue-600 to-cyan-600"
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Choose File
-                </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Choose File
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={loadExampleImage}
+                    disabled={isLoadingExample}
+                    className="border-slate-600 bg-slate-800/50 text-slate-200 hover:bg-slate-700 hover:text-white"
+                  >
+                    {isLoadingExample ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <img
+                        src={EXAMPLE_IMAGE.src}
+                        alt=""
+                        aria-hidden="true"
+                        className="mr-2 h-6 w-6 rounded border border-slate-600 bg-slate-900 object-contain"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                    )}
+                    See example
+                  </Button>
+                </div>
+                <p className="text-sm text-slate-400">
+                  No image handy? Load our sample sprite to see how the
+                  colorizer works.
+                </p>
               </div>
             ) : (
               <div className="space-y-4">

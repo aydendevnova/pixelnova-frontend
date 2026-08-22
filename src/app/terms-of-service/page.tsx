@@ -1,6 +1,6 @@
 export default function TermsOfService() {
   return (
-    <div className="mx-auto mt-20 max-w-4xl bg-white px-4 py-8 text-black">
+    <div className="mx-auto max-w-4xl bg-white px-4 py-8 text-black">
       <h1 className="mb-8 text-3xl font-bold">Terms of Service</h1>
       <h3>A product of PixelNova LLC</h3>
 

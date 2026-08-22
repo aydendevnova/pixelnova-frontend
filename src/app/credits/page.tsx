@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Credits() {
   return (
-    <div className="mx-auto mt-20 max-w-4xl bg-white px-4 py-8 text-black">
+    <div className="mx-auto max-w-4xl bg-white px-4 py-8 text-black">
       <h1 className="mb-2 text-3xl font-bold">Credits & Attributions</h1>
       <h3 className="text-gray-600">A product of PixelNova LLC</h3>
 

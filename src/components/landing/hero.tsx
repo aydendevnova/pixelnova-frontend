@@ -1,104 +1,93 @@
 "use client";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import Image from "next/image";
-// Import Swiper React components
+import { useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Pagination, Navigation, EffectFade } from "swiper/modules";
+import { Autoplay, EffectFade } from "swiper/modules";
 
-// Import Swiper styles
 import "swiper/css";
-import "swiper/css/pagination";
-import "swiper/css/navigation";
 import "swiper/css/effect-fade";
 
+import { FrameCaption, NovaCta } from "./nova";
+
+const carouselImages = [
+  { src: "/images/landing/purple_staff.png", alt: "Purple staff sprite" },
+  { src: "/images/landing/wizard.png", alt: "Wizard sprite" },
+  { src: "/images/landing/dragon.png", alt: "Dragon sprite" },
+  { src: "/images/tutorials/blue_slime.png", alt: "Blue slime sprite" },
+  { src: "/images/landing/cat_girl.png", alt: "Cat girl sprite" },
+  { src: "/images/landing/chest.png", alt: "Treasure chest sprite" },
+  { src: "/images/landing/sunset.png", alt: "Pixel art sunset" },
+  { src: "/images/landing/rifle.png", alt: "Rifle sprite" },
+  { src: "/images/landing/skyscraper.png", alt: "Pixel art skyscraper" },
+];
+
+/** Filename shown in the frame caption, derived from the asset path. */
+function fileNameOf(src: string) {
+  return src.split("/").pop() ?? "sprite.png";
+}
+
 export default function HeroLandingSection() {
-  const carouselImages = [
-    { src: "/images/landing/purple_staff.png", alt: "Purple Staff" },
-    { src: "/images/landing/wizard.png", alt: "Wizard" },
-    { src: "/images/landing/dragon.png", alt: "Dragon" },
-    { src: "/images/tutorials/blue_slime.png", alt: "Blue Slime" },
-    { src: "/images/landing/cat_girl.png", alt: "Cat Girl" },
-    { src: "/images/landing/chest.png", alt: "Chest" },
-    { src: "/images/landing/sunset.png", alt: "Sunset" },
-    { src: "/images/landing/rifle.png", alt: "Rifle" },
-    { src: "/images/landing/skyscraper.png", alt: "Skyscraper" },
-  ];
+  const [active, setActive] = useState(0);
 
   return (
-    <section className="w-full py-12 md:py-24 lg:py-32 xl:py-52">
-      <div className="mx-auto max-w-6xl px-4 md:px-6">
-        <div className="grid justify-center gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_400px]">
-          <div className="flex flex-col justify-center space-y-4 max-md:mt-20">
-            <div className="max-w-xl space-y-2">
-              <Badge className="w-fit border-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                Free for everyone
-              </Badge>
-              <h1 className="max-w-xl text-3xl font-bold tracking-tighter text-white sm:text-5xl xl:text-6xl/none">
-                Pixel Nova Studio
-              </h1>
-              <p className="max-w-[600px] text-slate-300 md:text-xl">
-                A free suite of pixel art tools. Convert images to true pixel
-                art, colorize sprites, build skin tone palettes, and draw in the
-                editor.
-              </p>
+    <section className="relative border-b border-nova-fg/[0.08] px-5 pb-20 pt-24 md:px-10 md:pb-24 md:pt-[120px]">
+      <div className="nova-grid" />
 
-              <div className="flex flex-wrap gap-4 pt-6">
-                <Link href="/convert">
-                  <Button
-                    size="lg"
-                    className="rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 px-8 text-base font-medium hover:from-purple-700 hover:via-pink-700 hover:to-orange-700"
-                  >
-                    Convert an Image
-                  </Button>
-                </Link>
-                <Link href="/editor">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="rounded-full border-slate-600 bg-slate-900/50 px-8 text-base font-medium text-white hover:bg-slate-800"
-                  >
-                    Open the Editor
-                  </Button>
-                </Link>
-              </div>
-            </div>
+      <div className="relative mx-auto grid max-w-[1240px] items-end gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-16">
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-5 ml-2">
+            <span className="nova-label text-xs text-nova-warm">
+              Free to use · no paywall anywhere
+            </span>
+            <h1 className="m-0 text-pretty text-[clamp(2.75rem,7vw,5.75rem)] font-semibold leading-[0.98] tracking-[-0.04em]">
+              Convert any image into{" "}
+              <em className="not-italic text-nova-accent">true</em> pixel art
+            </h1>
           </div>
-          <div className="relative mx-auto aspect-square w-full max-w-[600px] overflow-hidden rounded-2xl">
+          <p className="m-0 max-w-[52ch] text-pretty text-lg leading-[1.6] text-nova-fg/[0.66] md:text-[19px]">
+            Transform AI-generated images, photos, or artwork into authentic
+            pixel art that stays crisp and clean at any resolution.
+          </p>
+          <div className="flex flex-wrap items-center gap-5">
+            <NovaCta href="/convert">Try now</NovaCta>
+            <span className="font-mono text-xs text-nova-fg/[0.42]">
+              no signup · browser-based
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2.5">
+          <div className="nova-frame aspect-square">
             <Swiper
-              modules={[Autoplay, Pagination, Navigation, EffectFade]}
-              spaceBetween={0}
+              modules={[Autoplay, EffectFade]}
               slidesPerView={1}
               effect="fade"
-              autoplay={{
-                delay: 1500,
-                disableOnInteraction: false,
-              }}
-              pagination={{
-                clickable: true,
-                bulletActiveClass: "swiper-pagination-bullet-active !bg-white",
-                bulletClass: "swiper-pagination-bullet !bg-white/50",
-              }}
-              navigation={{
-                nextEl: ".swiper-button-next",
-                prevEl: ".swiper-button-prev",
-              }}
-              className="group h-full w-full [&_.swiper-button-next]:!text-white [&_.swiper-button-next]:!opacity-0 hover:[&_.swiper-button-next]:!opacity-100 [&_.swiper-button-prev]:!text-white [&_.swiper-button-prev]:!opacity-0 hover:[&_.swiper-button-prev]:!opacity-100 [&_.swiper-pagination-bullet-active]:!bg-white [&_.swiper-pagination-bullet]:!bg-white/50"
+              loop
+              autoplay={{ delay: 1800, disableOnInteraction: false }}
+              onSlideChange={(swiper) => setActive(swiper.realIndex)}
+              className="!absolute inset-0 h-full w-full"
             >
-              {carouselImages.map((image, index) => (
-                <SwiperSlide key={index}>
+              {carouselImages.map((image) => (
+                <SwiperSlide key={image.src}>
                   <Image
                     src={image.src}
                     alt={image.alt}
                     width={600}
                     height={600}
+                    priority
                     className="h-full w-full object-cover"
                     style={{ imageRendering: "pixelated" }}
                   />
                 </SwiperSlide>
               ))}
             </Swiper>
+            <FrameCaption>
+              {fileNameOf(carouselImages[active]?.src ?? "")} — 64×64 sprite
+            </FrameCaption>
+          </div>
+          <div className="flex justify-between font-mono text-[11px] text-nova-fg/[0.38]">
+            <span>palette: 16</span>
+            <span>zoom: 800%</span>
           </div>
         </div>
       </div>
