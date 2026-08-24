@@ -13,7 +13,6 @@ import {
 } from "@supabase/auth-helpers-react";
 import { type Database } from "@/lib/types_db";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { env } from "@/env";
 import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 
@@ -73,36 +72,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [hasRedirected, setHasRedirected] = useState(false);
-
-  // Query for worker-verified user data
-  const { data: workerUser, isLoading: workerLoading } = useQuery({
-    queryKey: ["worker-user", session?.access_token],
-    queryFn: async () => {
-      if (!session?.access_token) return null;
-
-      try {
-        const response = await fetch(
-          `${env.NEXT_PUBLIC_EXPRESS_URL}/api/protected`,
-          {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to verify user with worker");
-        }
-
-        return response.json();
-      } catch (e) {
-        console.error("Worker verification error:", e);
-        return null;
-      }
-    },
-    enabled: !!session?.access_token,
-    initialData: null,
-  });
 
   // Query for Supabase profile data
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -189,15 +158,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [session?.user?.id, supabaseClient, queryClient]);
 
   const invalidateUser = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["worker-user"] });
     await queryClient.invalidateQueries({ queryKey: ["profile"] });
   };
 
   // Handle post-signin redirect
   useEffect(() => {
-    const isSignedIn = !!session?.user && !!workerUser;
-
-    if (isSignedIn && !hasRedirected) {
+    if (session?.user && !hasRedirected) {
       const redirectUrl = getPostSignInRedirectUrl();
 
       if (redirectUrl) {
@@ -216,13 +182,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (!session?.user) {
       setHasRedirected(false);
     }
-  }, [session?.user, workerUser, router, hasRedirected]);
+  }, [session?.user, router, hasRedirected]);
 
   const value = {
     user: session?.user ?? null,
     profile: profile ?? null,
-    isLoading: !!session?.user && (profileLoading || workerLoading),
-    isSignedIn: !!session?.user && !!workerUser,
+    isLoading: !!session?.user && profileLoading,
+    isSignedIn: !!session?.user,
     invalidateUser,
     setPostSignInRedirect: (url: string) => {
       setPostSignInRedirectUrl(url);
